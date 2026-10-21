@@ -1,0 +1,304 @@
+{
+  "@@locale": "en",
+  "driverPortal": "Driver Portal",
+  "@driverPortal": {
+    "description": "Application name shown on the login header"
+  },
+  "welcomeBack": "Welcome back!",
+  "signInSubtitle": "Sign in to your driver account",
+  "emailHint": "Driver Email",
+  "passwordHint": "Password",
+  "signIn": "Sign In",
+  "contactVaultManager": "Having trouble? Contact your vault manager",
+  "emptyEmail": "Please enter your email",
+  "invalidEmail": "Please enter a valid email address",
+  "emptyPassword": "Please enter your password",
+  "invalidCredentials": "Invalid email or password",
+  "unexpectedError": "Something went wrong. Please try again.",
+  "signingIn": "Signing in",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "pageNotFound": "Page not found",
+  "goodMorning": "Good morning 👋",
+  "goodAfternoon": "Good afternoon 👋",
+  "goodEvening": "Good evening 👋",
+  "notifications": "Notifications",
+  "homeLoadError": "Unable to load your profile.",
+  "tryAgain": "Try again",
+  "balance": "Balance",
+  "charge": "Charge",
+  "maxLimit": "Max Limit",
+  "egp": "EGP",
+  "loadingBalance": "Loading balance",
+  "balanceLoadError": "Unable to load your balance.",
+  "sendCash": "Send Cash",
+  "sendCashTitle": "Send Cash to Driver",
+  "sendCashSubtitle": "Select driver and enter amount",
+  "selectDriver": "Select a driver",
+  "noDrivers": "No drivers available",
+  "yourBalance": "Your balance: {amount}",
+  "@yourBalance": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "yourBalanceAfter": "Your balance after",
+  "amount": "Amount",
+  "mustApprove": "{name} must approve to complete",
+  "@mustApprove": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "cancel": "Cancel",
+  "sendRequest": "Send Request",
+  "sendingRequest": "Sending request",
+  "requestSent": "Request Sent!",
+  "requestSentDetail": "{amount} request sent to {name}",
+  "@requestSentDetail": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "name": {"type": "String"}
+    }
+  },
+  "waitingForApproval": "Waiting for {name} to approve",
+  "@waitingForApproval": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "currentBalance": "Current balance",
+  "close": "Close",
+  "goHome": "Go Home",
+  "selectDriverError": "Select a driver",
+  "invalidAmountError": "Enter an amount greater than zero",
+  "insufficientBalanceError": "Amount exceeds your available balance",
+  "sendCashFailed": "Could not send the request.",
+  "driverCodeBalance": "{code} · {balance}",
+  "@driverCodeBalance": {
+    "placeholders": {
+      "code": {"type": "String"},
+      "balance": {"type": "String"}
+    }
+  },
+  "recordExpense": "Record Expense",
+  "recordExpenseSubtitle": "Will be deducted from your balance",
+  "selectTripHint": "Select trip...",
+  "selectTripTitle": "Select Trip",
+  "tripsAssigned": "{count} trips assigned to you",
+  "@tripsAssigned": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "searchTrips": "Search by code or route...",
+  "noTripResults": "No trips match your search",
+  "tripActive": "Active",
+  "tripCompleted": "Completed",
+  "selectSettlementHint": "Select type...",
+  "settlementTypeTitle": "Settlement Type",
+  "settlementRoadFeesClient": "Road Fees — Client",
+  "settlementRoadFeesVendors": "Road Fees — Vendors",
+  "settlementCrossBorder": "Cross Border",
+  "settlementFuel": "Fuel",
+  "settlementFuelGloss": "تموين",
+  "settlementLicensing": "Licensing",
+  "settlementLicensingGloss": "تراخيص",
+  "settlementPermits": "Permits",
+  "settlementPermitsGloss": "تصاريح",
+  "settlementTransportFees": "Transport Fees",
+  "settlementMaintenance": "Maintenance",
+  "amountEgpLabel": "Amount (EGP)",
+  "balanceAfterPreview": "Balance after: {amount}",
+  "@balanceAfterPreview": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "notesOptional": "Notes (optional)",
+  "notesHint": "Add any notes...",
+  "attachmentsOptional": "Attachments (optional)",
+  "attachments": "Attachments",
+  "attachmentCount": "{count, plural, =1{1 file} other{{count} files}}",
+  "@attachmentCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "camera": "Camera",
+  "gallery": "Gallery",
+  "file": "File",
+  "removeAttachment": "Remove attachment",
+  "selectTripError": "Please select a trip",
+  "selectSettlementError": "Please select a settlement type",
+  "ineligibleTripError": "This trip cannot be used for an expense",
+  "attachmentFailed": "Couldn't add the attachment.",
+  "expenseFailed": "Could not record the expense.",
+  "confirmExpense": "Confirm Expense",
+  "confirmExpenseSubtitle": "This will be deducted from your balance",
+  "deduction": "DEDUCTION",
+  "settlementType": "Settlement Type",
+  "trip": "Trip",
+  "balanceAfter": "Balance After",
+  "back": "Back",
+  "confirmDeduction": "Confirm Deduction",
+  "expenseRecorded": "Expense Recorded",
+  "expenseDeducted": "{expense} has been deducted from your balance",
+  "@expenseDeducted": {
+    "placeholders": {
+      "expense": {"type": "String"}
+    }
+  },
+  "amountDeducted": "Amount Deducted",
+  "newBalance": "New Balance",
+  "tripCode": "Trip Code",
+  "reference": "Reference",
+  "done": "Done",
+  "recordingExpense": "Recording expense",
+  "approvals": "Approvals",
+  "pendingApprovals": "Pending Approvals",
+  "recent": "Recent",
+  "seeAll": "See all",
+  "yesterday": "Yesterday",
+  "pendingCount": "{count} pending",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "filterAll": "All",
+  "fromVault": "From Vault",
+  "fromDrivers": "From Drivers",
+  "roadExpenses": "Road Expenses",
+  "actionRequired": "Action Required",
+  "completed": "Completed",
+  "noPendingApprovals": "No pending approvals",
+  "receivedFromVault": "Received from Vault",
+  "driversVault": "Drivers Vault",
+  "justNow": "Just now",
+  "now": "Now",
+  "minutesAgo": "{count} min ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "approve": "Approve",
+  "approveCashReceipt": "Approve Cash Receipt",
+  "vaultSentFunds": "Vault sent you custody funds",
+  "from": "From",
+  "date": "Date",
+  "approveCashFromDriver": "Approve Cash from Driver",
+  "driverSentCash": "{name} sent you cash",
+  "@driverSentCash": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "receivedFromDriver": "Received from {name}",
+  "@receivedFromDriver": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "decline": "Decline",
+  "roadExpenseApproval": "Road Expense Approval",
+  "adminSubmittedExpense": "Admin submitted this expense for your confirmation",
+  "totalAmount": "TOTAL AMOUNT",
+  "period": "Period",
+  "submittedBy": "Submitted by",
+  "tripDetails": "TRIP DETAILS",
+  "tripsPerAmount": "{count} trips · {amount} / trip",
+  "@tripsPerAmount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "amount": {"type": "String"}
+    }
+  },
+  "tripNumber": "Trip {number}",
+  "@tripNumber": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "grandTotal": "Grand Total",
+  "reject": "Reject",
+  "confirm": "Confirm",
+  "rejectExpenseTitle": "Reject expense?",
+  "rejectExpenseMessage": "This will notify the admin that you have rejected {reference}.",
+  "@rejectExpenseMessage": {
+    "placeholders": {
+      "reference": {"type": "String"}
+    }
+  },
+  "yesReject": "Yes, Reject",
+  "approved": "Approved",
+  "rejected": "Rejected",
+  "navHome": "Home",
+  "navHistory": "History",
+  "expenseCount": "{count, plural, =1{1 expense} other{{count} expenses}}",
+  "@expenseCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "filterExpenses": "Expenses",
+  "filterSent": "Sent",
+  "filterPending": "Pending",
+  "historyToday": "Today — {date}",
+  "@historyToday": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "historyYesterday": "Yesterday — {date}",
+  "@historyYesterday": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "sentTo": "Sent to {name}",
+  "@sentTo": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pendingFrom": "Pending — from {name}",
+  "@pendingFrom": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pendingConfirm": "Pending confirm",
+  "awaitingYourApproval": "Awaiting your approval",
+  "confirmed": "Confirmed",
+  "recorded": "Recorded",
+  "expenseDetails": "Expense Details",
+  "historyDeducted": "DEDUCTED",
+  "close": "Close",
+  "noTransactions": "No transactions",
+  "navProfile": "Profile",
+  "myBalance": "My Balance",
+  "transactionHistory": "Transaction History",
+  "logout": "Logout",
+  "logoutTitle": "Log out?",
+  "logoutMessage": "You will need to sign in again.",
+  "language": "Language",
+  "chooseLanguage": "Choose Language",
+  "languageEnglish": "English",
+  "languageArabic": "العربية",
+  "profileBalance": "Balance: {amount}",
+  "@profileBalance": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "profileIdentity": "{id} · {vault}",
+  "@profileIdentity": {
+    "placeholders": {
+      "id": {"type": "String"},
+      "vault": {"type": "String"}
+    }
+  },
+  "approvalFailed": "Could not update this approval."
+}
