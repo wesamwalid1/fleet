@@ -157,6 +157,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goHome => 'Go Home';
 
   @override
+  String get viewTransaction => 'View Transaction';
+
+  @override
   String get selectDriverError => 'Select a driver';
 
   @override
@@ -593,6 +596,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageArabic => 'العربية';
 
   @override
+  String get profileQuickAccess => 'Quick Access';
+
+  @override
+  String get profileSettings => 'Settings';
+
+  @override
+  String get profileAccount => 'Account';
+
+  @override
+  String get darkMode => 'Dark Mode';
+
+  @override
   String profileBalance(String amount) {
     return 'Balance: $amount';
   }
@@ -604,4 +619,136 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalFailed => 'Could not update this approval.';
+
+  @override
+  String get homeAvailableBalance => 'Available Balance';
+
+  @override
+  String homeLimitUsed(String percent) {
+    return '$percent% of limit used';
+  }
+
+  @override
+  String get homeRemainingLimit => 'Remaining Limit';
+
+  @override
+  String get homeActiveTrip => 'Active Trip';
+
+  @override
+  String get homeNoActiveTrip => 'No Active Trip';
+
+  @override
+  String get homeNoActiveTripHint =>
+      'Expenses can be recorded once a trip is active.';
+
+  @override
+  String get homeActions => 'Actions';
+
+  @override
+  String get homeViewAllApprovals => 'View All Approvals';
+
+  @override
+  String get homeAllCaughtUp => 'You\'re all caught up';
+
+  @override
+  String get homeRecentTransactions => 'Recent Transactions';
+
+  @override
+  String get notificationsFilterUnread => 'Unread';
+
+  @override
+  String get notificationsEmpty => 'No notifications yet';
+
+  @override
+  String get notificationsEmptyHint =>
+      'Updates about cash, approvals, and expenses will appear here.';
+
+  @override
+  String get notificationsNoUnread => 'No unread notifications';
+
+  @override
+  String get notificationsNoUnreadHint => 'You\'re all caught up.';
+
+  @override
+  String get notificationsLoadError => 'Unable to load notifications.';
+
+  @override
+  String get notificationUnread => 'Unread';
+
+  @override
+  String get notificationVaultPendingTitle =>
+      'Vault cash awaiting your approval';
+
+  @override
+  String notificationIncomingTitle(String name) {
+    return 'Cash from $name awaiting your approval';
+  }
+
+  @override
+  String notificationSentApprovedTitle(String name, String amount) {
+    return '$name confirmed your transfer of $amount';
+  }
+
+  @override
+  String notificationSentRejectedTitle(String name, String amount) {
+    return '$name rejected your transfer of $amount';
+  }
+
+  @override
+  String notificationTransferSentTitle(String amount, String name) {
+    return 'You sent $amount to $name';
+  }
+
+  @override
+  String notificationTransferSentBody(String reference) {
+    return 'Waiting for confirmation · $reference';
+  }
+
+  @override
+  String notificationTransferConfirmedBody(String reference) {
+    return 'Confirmed · $reference';
+  }
+
+  @override
+  String get notificationsSearchHint => 'Search notifications';
+
+  @override
+  String get notificationsClearSearch => 'Clear search';
+
+  @override
+  String get notificationsNoResults => 'No matching notifications';
+
+  @override
+  String get notificationsNoResultsHint =>
+      'Try a different word or clear the search.';
+
+  @override
+  String get notificationRoadPendingTitle =>
+      'Road expense needs your confirmation';
+
+  @override
+  String get notificationExpenseRecordedTitle => 'Expense recorded';
+
+  @override
+  String notificationAmountReference(String amount, String reference) {
+    return '$amount · $reference';
+  }
+
+  @override
+  String notificationRefundedBody(String amount, String reference) {
+    return '$amount returned to your balance · $reference';
+  }
+
+  @override
+  String notificationDeductedBody(String amount, String reference) {
+    return '$amount deducted · $reference';
+  }
+
+  @override
+  String get notificationRequestHandled =>
+      'This request was already handled. Showing its current status.';
+
+  @override
+  String get notificationTargetUnavailable =>
+      'This item is no longer available.';
 }

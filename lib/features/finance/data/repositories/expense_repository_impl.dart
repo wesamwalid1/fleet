@@ -1,6 +1,7 @@
 import '../../domain/entities/assigned_trip.dart';
 import '../../domain/entities/expense_attachment.dart';
 import '../../domain/entities/expense_request.dart';
+import '../../domain/entities/expense_trip_scope.dart';
 import '../../domain/entities/settlement_type.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../datasources/mock_cash_ledger.dart';
@@ -29,6 +30,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
     required String? notes,
     required List<ExpenseAttachment> attachments,
     required DateTime createdAt,
+    ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   }) async {
     return _ledger.createRecordedExpense(
       driverId: driverId,
@@ -38,6 +40,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
       notes: notes,
       attachments: attachments,
       createdAt: createdAt,
+      tripScope: tripScope,
     );
   }
 

@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../approvals/presentation/bloc/approvals_bloc.dart';
+import '../../../approvals/presentation/bloc/approvals_state.dart';
 import '../../domain/entities/history_entry.dart';
 import '../bloc/history_bloc.dart';
 import '../bloc/history_event.dart';
@@ -21,6 +27,11 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
+  static const _revealAttempts = 20;
+
+  final _scroll = ScrollController();
+  final _highlightKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -28,71 +39,131 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _scheduleReveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(0));
+  }
+
+  /// Scrolls the highlighted row into view. Rows far below the viewport are
+  /// not built yet, so this pages down until the row exists or the list ends.
+  void _reveal(int attempt) {
+    if (!mounted) return;
+    final target = _highlightKey.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0.3,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+    if (!_scroll.hasClients || attempt >= _revealAttempts) return;
+    final position = _scroll.position;
+    if (position.pixels >= position.maxScrollExtent) return;
+    _scroll.jumpTo(
+      (position.pixels + position.viewportDimension * 0.8).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(attempt + 1));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SafeArea(
-      bottom: false,
-      child: BlocBuilder<HistoryBloc, HistoryState>(
-        builder: (context, state) {
-          if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final groups = groupHistoryByDay(state.visible);
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            children: [
-              _Header(count: state.expenseCount),
-              const SizedBox(height: 16),
-              _Filters(selected: state.filter),
-              const SizedBox(height: 8),
-              if (groups.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 36),
-                  child: Text(
-                    l10n.noTransactions,
-                    key: const Key('history-empty'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                )
-              else
-                for (final group in groups) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16, bottom: 8),
-                    child: Text(
-                      historyDayHeader(
-                        l10n,
-                        group.day,
-                        widget.now(),
-                        Localizations.localeOf(context).toString(),
+    final locale = Localizations.localeOf(context).toString();
+    return BlocListener<HistoryBloc, HistoryState>(
+      listenWhen: (previous, current) =>
+          current.highlightedId != null &&
+          !current.loading &&
+          (previous.highlightedId != current.highlightedId ||
+              previous.loading != current.loading),
+      listener: (context, state) => _scheduleReveal(),
+      child: _historyBody(context, l10n, locale),
+    );
+  }
+
+  Widget _historyBody(
+    BuildContext context,
+    AppLocalizations l10n,
+    String locale,
+  ) {
+    return BlocListener<ApprovalsBloc, ApprovalsState>(
+      listenWhen: (previous, current) => current.revision != previous.revision,
+      listener: (context, state) {
+        context.read<HistoryBloc>().add(const HistoryStarted());
+      },
+      child: ColoredBox(
+        color: Colors.white,
+        child: SafeArea(
+          bottom: false,
+          child: BlocBuilder<HistoryBloc, HistoryState>(
+            builder: (context, state) {
+              if (state.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final groups = groupHistoryByDay(state.visible);
+              return ListView(
+                controller: _scroll,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  12,
+                  20,
+                  32 + MediaQuery.paddingOf(context).bottom,
+                ),
+                children: [
+                  _Header(count: state.expenseCount),
+                  const SizedBox(height: 18),
+                  _Filters(selected: state.filter),
+                  const SizedBox(height: 8),
+                  if (groups.isEmpty)
+                    EmptyState(
+                      key: const Key('history-empty'),
+                      icon: Icons.receipt_long_outlined,
+                      title: l10n.noTransactions,
+                    )
+                  else
+                    for (final group in groups) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20, bottom: 4),
+                        child: Text(
+                          historyDayHeader(
+                            l10n,
+                            group.day,
+                            widget.now(),
+                            locale,
+                          ),
+                          style: AppTextStyles.groupLabel,
+                        ),
                       ),
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  for (final entry in group.entries)
-                    HistoryEntryTile(
-                      entry: entry,
-                      tileKey: Key('history-entry-${entry.id}'),
-                      when: historyClock(
-                        entry.occurredAt,
-                        Localizations.localeOf(context).toString(),
-                      ),
-                      onTap: entry.kind == HistoryKind.expense
-                          ? () => showExpenseDetailSheet(context, entry: entry)
-                          : null,
-                    ),
+                      for (final entry in group.entries)
+                        HistoryEntryTile(
+                          key: state.highlightedId == entry.id
+                              ? _highlightKey
+                              : null,
+                          entry: entry,
+                          showDivider: true,
+                          highlighted: state.highlightedId == entry.id,
+                          when: historyClock(entry.occurredAt, locale),
+                          onTap: entry.kind == HistoryKind.expense
+                              ? () => showExpenseDetailSheet(
+                                  context,
+                                  entry: entry,
+                                )
+                              : null,
+                        ),
+                    ],
                 ],
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -112,28 +183,16 @@ class _Header extends StatelessWidget {
           child: Text(
             l10n.navHistory,
             key: const Key('history-title'),
-            style: const TextStyle(
-              color: AppColors.title,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.pageTitle,
           ),
         ),
-        Container(
+        StatusBadge(
           key: const Key('history-expense-count'),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.pinkBackground,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            l10n.expenseCount(count),
-            style: const TextStyle(
-              color: AppColors.pink,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          label: l10n.expenseCount(count),
+          foreground: AppColors.title,
+          background: AppColors.neutralBackground,
         ),
       ],
     );
@@ -162,39 +221,22 @@ class _Filters extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            for (final (index, filter) in filters.indexed) ...[
+            for (final (index, (filter, key)) in filters.indexed) ...[
               if (index > 0) const SizedBox(width: 8),
-              ChoiceChip(
-                key: Key(filter.$2),
-                label: Text(switch (filter.$1) {
+              AppFilterChip(
+                key: Key(key),
+                label: switch (filter) {
                   HistoryFilter.all => l10n.filterAll,
                   HistoryFilter.expenses => l10n.filterExpenses,
                   HistoryFilter.vault => l10n.fromVault,
                   HistoryFilter.drivers => l10n.fromDrivers,
                   HistoryFilter.sent => l10n.filterSent,
                   HistoryFilter.pending => l10n.filterPending,
-                }),
-                selected: filter.$1 == selected,
-                showCheckmark: false,
-                onSelected: (_) => context.read<HistoryBloc>().add(
-                  HistoryFilterSelected(filter.$1),
+                },
+                selected: filter == selected,
+                onSelected: () => context.read<HistoryBloc>().add(
+                  HistoryFilterSelected(filter),
                 ),
-                labelStyle: TextStyle(
-                  color: filter.$1 == selected ? Colors.white : AppColors.title,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-                selectedColor: AppColors.primary,
-                backgroundColor: Colors.white,
-                side: BorderSide(
-                  color: filter.$1 == selected
-                      ? AppColors.primary
-                      : AppColors.border,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                visualDensity: VisualDensity.compact,
               ),
             ],
           ],

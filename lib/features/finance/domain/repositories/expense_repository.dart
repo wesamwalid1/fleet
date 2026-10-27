@@ -1,6 +1,7 @@
 import '../entities/assigned_trip.dart';
 import '../entities/expense_attachment.dart';
 import '../entities/expense_request.dart';
+import '../entities/expense_trip_scope.dart';
 import '../entities/settlement_type.dart';
 
 abstract class ExpenseRepository {
@@ -16,6 +17,7 @@ abstract class ExpenseRepository {
     required String? notes,
     required List<ExpenseAttachment> attachments,
     required DateTime createdAt,
+    ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   });
 
   /// A recorded expense is final. Approval, rejection, and refunds do not apply.

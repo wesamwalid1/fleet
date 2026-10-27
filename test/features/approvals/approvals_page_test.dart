@@ -253,15 +253,142 @@ void main() {
       TextDirection.rtl,
     );
   });
+
+  testWidgets('approval cards use a compact trailing amount and action', (
+    tester,
+  ) async {
+    await _openApprovals(tester);
+
+    const id = 'DSB-2025-0441';
+    final card = find.byKey(const Key('approval-card-$id'));
+    final details = tester.getRect(find.byKey(Key('approval-details-$id')));
+    final values = tester.getRect(find.byKey(Key('approval-values-$id')));
+    final cardRect = tester.getRect(card);
+    final title = tester.getRect(
+      find.descendant(of: card, matching: find.text('Received from Vault')),
+    );
+    final support = tester.getRect(
+      find.descendant(
+        of: card,
+        matching: find.text('Drivers Vault · Just now'),
+      ),
+    );
+    final amount = tester.getRect(
+      find.descendant(of: card, matching: find.text('+2,000 EGP')),
+    );
+    final action = tester.getRect(find.byKey(const Key('approval-action-$id')));
+
+    expect(values.left - details.right, closeTo(12, 1));
+    expect(values.right, closeTo(cardRect.right - 10, 1));
+    expect(title.left, closeTo(details.left, 1));
+    expect(support.left, closeTo(title.left, 1));
+    expect(support.top, greaterThan(title.bottom - 1));
+    expect(amount.right, closeTo(values.right, 1));
+    expect(action.right, closeTo(values.right, 1));
+    expect(action.top, greaterThan(amount.bottom - 1));
+    expect(title.right, lessThanOrEqualTo(amount.left + 1));
+
+    final titleStyle = tester
+        .widget<Text>(
+          find.descendant(of: card, matching: find.text('Received from Vault')),
+        )
+        .style!;
+    final amountStyle = tester
+        .widget<Text>(
+          find.descendant(of: card, matching: find.text('+2,000 EGP')),
+        )
+        .style!;
+    final supportStyle = tester
+        .widget<Text>(
+          find.descendant(
+            of: card,
+            matching: find.text('Drivers Vault · Just now'),
+          ),
+        )
+        .style!;
+    final actionStyle = tester
+        .widget<Text>(find.descendant(of: card, matching: find.text('Approve')))
+        .style!;
+    expect(titleStyle.fontSize, 14);
+    expect(amountStyle.fontSize, 14);
+    expect(supportStyle.fontSize, lessThan(titleStyle.fontSize!));
+    expect(actionStyle.fontSize, 13);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('arabic approval cards keep the amount on the trailing edge', (
+    tester,
+  ) async {
+    await _openApprovals(tester, locale: const Locale('ar'));
+
+    const id = 'DSB-2025-0441';
+    final card = find.byKey(const Key('approval-card-$id'));
+    expect(Directionality.of(tester.element(card)), TextDirection.rtl);
+    final details = tester.getRect(find.byKey(Key('approval-details-$id')));
+    final values = tester.getRect(find.byKey(Key('approval-values-$id')));
+    final cardRect = tester.getRect(card);
+    final action = tester.getRect(find.byKey(const Key('approval-action-$id')));
+
+    expect(details.left - values.right, closeTo(12, 1));
+    expect(values.left, closeTo(cardRect.left + 10, 1));
+    expect(action.left, closeTo(values.left, 1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a narrow approval card does not overflow', (tester) async {
+    await _openApprovals(
+      tester,
+      surfaceSize: const Size(320, 640),
+      textScale: 1.6,
+    );
+
+    expect(find.text('Received from Vault'), findsWidgets);
+    final card = find.byKey(const Key('approval-card-DSB-2025-0441'));
+    final title = tester.getRect(
+      find.descendant(of: card, matching: find.text('Received from Vault')),
+    );
+    final amount = tester.getRect(
+      find.descendant(of: card, matching: find.textContaining('EGP')),
+    );
+    expect(title.right, lessThanOrEqualTo(amount.left + 1));
+    expect(tester.takeException(), isNull);
+
+    await tester.scrollUntilVisible(
+      find.text('Received from Khaled Ramadan'),
+      250,
+      scrollable: find.byWidgetPredicate(
+        (widget) =>
+            widget is Scrollable &&
+            axisDirectionToAxis(widget.axisDirection) == Axis.vertical,
+      ),
+    );
+    await tester.pump();
+    final longCard = find.byKey(const Key('approval-card-TRF-2025-0123'));
+    final longTitle = tester.getRect(
+      find.descendant(
+        of: longCard,
+        matching: find.text('Received from Khaled Ramadan'),
+      ),
+    );
+    final longAmount = tester.getRect(
+      find.descendant(of: longCard, matching: find.textContaining('EGP')),
+    );
+    expect(longTitle.right, lessThanOrEqualTo(longAmount.left + 1));
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _openApprovals(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
   bool seedApprovals = true,
+  Size surfaceSize = const Size(400, 1200),
+  double textScale = 1,
 }) async {
-  await tester.binding.setSurfaceSize(const Size(400, 1200));
-  addTearDown(() => tester.binding.setSurfaceSize(null));
+  tester.view.physicalSize = surfaceSize;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
     MaterialApp(
       locale: locale,
@@ -272,6 +399,13 @@ Future<void> _openApprovals(
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        );
+      },
       home: HomeScope(
         now: () => DateTime(2026, 10, 20, 9),
         seedApprovals: seedApprovals,

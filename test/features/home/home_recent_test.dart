@@ -1,7 +1,9 @@
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/history/presentation/history_format.dart';
+import 'package:driver_portal_app/features/history/presentation/widgets/history_entry_tile.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/core/theme/app_colors.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -158,7 +160,29 @@ void main() {
     expect(find.byKey(const Key('home-recent-empty')), findsOneWidget);
     expect(find.text('No transactions'), findsOneWidget);
     expect(find.byKey(const Key('recent-entry-DSB-2025-0441')), findsNothing);
+    expect(find.byType(HistoryEntryDivider), findsNothing);
     expect(find.text('2,200 EGP'), findsOneWidget);
+  });
+
+  testWidgets('every recent transaction has a divider below it', (
+    tester,
+  ) async {
+    await _pump(tester);
+
+    const ids = ['TRF-2025-0123', 'DSB-2025-0441', 'TRF-2025-0090'];
+    expect(find.byType(HistoryEntryDivider), findsNWidgets(ids.length));
+    final line = tester.widget<Divider>(find.byType(Divider).first);
+    expect(line.height, 1);
+    expect(line.thickness, 1);
+    expect(line.color, AppColors.title.withValues(alpha: 0.08));
+
+    for (final id in ids) {
+      final tile = tester.getRect(find.byKey(Key('recent-entry-$id')));
+      final below = _dividerBelow(tester, tile);
+      expect(below.top, closeTo(tile.bottom, 1));
+      expect(below.width, closeTo(tile.width, 1));
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('arabic recent copy is localized', (tester) async {
@@ -203,4 +227,13 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+Rect _dividerBelow(WidgetTester tester, Rect tile) {
+  final dividers = find.byType(HistoryEntryDivider);
+  final count = tester.widgetList(dividers).length;
+  return [
+    for (var index = 0; index < count; index++)
+      tester.getRect(dividers.at(index)),
+  ].firstWhere((rect) => (rect.top - tile.bottom).abs() <= 1);
 }

@@ -374,6 +374,12 @@ abstract class AppLocalizations {
   /// **'Go Home'**
   String get goHome;
 
+  /// Opens Transaction History focused on the request that was just sent.
+  ///
+  /// In en, this message translates to:
+  /// **'View Transaction'**
+  String get viewTransaction;
+
   /// No description provided for @selectDriverError.
   ///
   /// In en, this message translates to:
@@ -1148,6 +1154,30 @@ abstract class AppLocalizations {
   /// **'العربية'**
   String get languageArabic;
 
+  /// No description provided for @profileQuickAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Access'**
+  String get profileQuickAccess;
+
+  /// No description provided for @profileSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get profileSettings;
+
+  /// No description provided for @profileAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get profileAccount;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
   /// No description provided for @profileBalance.
   ///
   /// In en, this message translates to:
@@ -1165,6 +1195,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not update this approval.'**
   String get approvalFailed;
+
+  /// No description provided for @homeAvailableBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Balance'**
+  String get homeAvailableBalance;
+
+  /// No description provided for @homeLimitUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of limit used'**
+  String homeLimitUsed(String percent);
+
+  /// No description provided for @homeRemainingLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining Limit'**
+  String get homeRemainingLimit;
+
+  /// No description provided for @homeActiveTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Trip'**
+  String get homeActiveTrip;
+
+  /// No description provided for @homeNoActiveTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'No Active Trip'**
+  String get homeNoActiveTrip;
+
+  /// No description provided for @homeNoActiveTripHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses can be recorded once a trip is active.'**
+  String get homeNoActiveTripHint;
+
+  /// No description provided for @homeActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get homeActions;
+
+  /// No description provided for @homeViewAllApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Approvals'**
+  String get homeViewAllApprovals;
+
+  /// No description provided for @homeAllCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get homeAllCaughtUp;
+
+  /// No description provided for @homeRecentTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Transactions'**
+  String get homeRecentTransactions;
+
+  /// No description provided for @notificationsFilterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get notificationsFilterUnread;
+
+  /// No description provided for @notificationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notificationsEmpty;
+
+  /// No description provided for @notificationsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates about cash, approvals, and expenses will appear here.'**
+  String get notificationsEmptyHint;
+
+  /// No description provided for @notificationsNoUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'No unread notifications'**
+  String get notificationsNoUnread;
+
+  /// No description provided for @notificationsNoUnreadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up.'**
+  String get notificationsNoUnreadHint;
+
+  /// No description provided for @notificationsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load notifications.'**
+  String get notificationsLoadError;
+
+  /// No description provided for @notificationUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get notificationUnread;
+
+  /// No description provided for @notificationVaultPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault cash awaiting your approval'**
+  String get notificationVaultPendingTitle;
+
+  /// No description provided for @notificationIncomingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash from {name} awaiting your approval'**
+  String notificationIncomingTitle(String name);
+
+  /// No description provided for @notificationSentApprovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} confirmed your transfer of {amount}'**
+  String notificationSentApprovedTitle(String name, String amount);
+
+  /// No description provided for @notificationSentRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} rejected your transfer of {amount}'**
+  String notificationSentRejectedTitle(String name, String amount);
+
+  /// No description provided for @notificationTransferSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You sent {amount} to {name}'**
+  String notificationTransferSentTitle(String amount, String name);
+
+  /// No description provided for @notificationTransferSentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for confirmation · {reference}'**
+  String notificationTransferSentBody(String reference);
+
+  /// No description provided for @notificationTransferConfirmedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed · {reference}'**
+  String notificationTransferConfirmedBody(String reference);
+
+  /// No description provided for @notificationsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search notifications'**
+  String get notificationsSearchHint;
+
+  /// No description provided for @notificationsClearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get notificationsClearSearch;
+
+  /// No description provided for @notificationsNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching notifications'**
+  String get notificationsNoResults;
+
+  /// No description provided for @notificationsNoResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different word or clear the search.'**
+  String get notificationsNoResultsHint;
+
+  /// No description provided for @notificationRoadPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Road expense needs your confirmation'**
+  String get notificationRoadPendingTitle;
+
+  /// No description provided for @notificationExpenseRecordedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense recorded'**
+  String get notificationExpenseRecordedTitle;
+
+  /// No description provided for @notificationAmountReference.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} · {reference}'**
+  String notificationAmountReference(String amount, String reference);
+
+  /// No description provided for @notificationRefundedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} returned to your balance · {reference}'**
+  String notificationRefundedBody(String amount, String reference);
+
+  /// No description provided for @notificationDeductedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} deducted · {reference}'**
+  String notificationDeductedBody(String amount, String reference);
+
+  /// No description provided for @notificationRequestHandled.
+  ///
+  /// In en, this message translates to:
+  /// **'This request was already handled. Showing its current status.'**
+  String get notificationRequestHandled;
+
+  /// No description provided for @notificationTargetUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is no longer available.'**
+  String get notificationTargetUnavailable;
 }
 
 class _AppLocalizationsDelegate

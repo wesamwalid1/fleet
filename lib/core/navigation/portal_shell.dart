@@ -1,15 +1,30 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../features/approvals/domain/repositories/approval_repository.dart';
 import '../../features/approvals/presentation/pages/approvals_page.dart';
+import '../../features/approvals/presentation/widgets/approval_sheets.dart';
+import '../../features/history/domain/repositories/history_repository.dart';
+import '../../features/history/presentation/bloc/history_bloc.dart';
+import '../../features/history/presentation/bloc/history_event.dart';
 import '../../features/history/presentation/pages/history_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/notifications/domain/entities/app_notification.dart';
+import '../../features/notifications/domain/entities/notification_destination.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/domain/usecases/mark_notification_read.dart';
+import '../../features/notifications/domain/usecases/resolve_notification_destination.dart';
+import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import 'widgets/portal_bottom_nav.dart';
 
 class PortalShell extends StatefulWidget {
   final DateTime Function() now;
-
   const PortalShell({super.key, required this.now});
 
   @override
@@ -17,31 +32,277 @@ class PortalShell extends StatefulWidget {
 }
 
 class _PortalShellState extends State<PortalShell> {
+  static const _tabCount = 4;
+  static const _swipeDuration = Duration(milliseconds: 280);
+  static const _dragSlop = 18.0;
+  static const _flingVelocity = 700.0;
+
+  final PageController _controller = PageController();
   int _index = 0;
+  bool _swipeEnabled = true;
+
+  int? _pointer;
+  double _dx = 0;
+  double _dy = 0;
+  double _origin = 0;
+  Duration _downAt = Duration.zero;
+  Duration _upAt = Duration.zero;
+  bool _decided = false;
+  bool _horizontal = false;
+  bool _claimed = false;
+  bool _moved = false;
+  bool _released = false;
+  bool _applyScheduled = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _select(int index) {
-    if (index == _index) return;
+    if (index < 0 || index >= _tabCount || index == _index) return;
+    if (!_controller.hasClients) return;
+    _controller.jumpToPage(index);
+  }
+
+  void _onPageChanged(int index) {
+    if (!mounted || index == _index) return;
     setState(() => _index = index);
+  }
+
+  /// Pushed above the shell, so the shell's providers are handed over.
+  void _openNotifications() {
+    final bloc = context.read<NotificationsBloc>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BlocProvider.value(
+          value: bloc,
+          child: NotificationsPage(now: widget.now, onOpen: _openNotification),
+        ),
+      ),
+    );
+  }
+
+  bool _openingNotification = false;
+
+  /// Persists the read state first, then leads to the notification's record.
+  /// Reading never changes the underlying transaction or approval.
+  Future<void> _openNotification(AppNotification notification) async {
+    if (_openingNotification) return;
+    _openingNotification = true;
+    try {
+      final notifications = context.read<NotificationRepository>();
+      final resolve = ResolveNotificationDestination(
+        approvals: context.read<ApprovalRepository>(),
+        history: context.read<HistoryRepository>(),
+      );
+      final history = context.read<HistoryBloc>();
+      final navigator = Navigator.of(context);
+      final shellRoute = ModalRoute.of(context);
+      final messenger = ScaffoldMessenger.of(context);
+      final l10n = AppLocalizations.of(context);
+
+      await MarkNotificationRead(notifications)(
+        driverId: notification.driverId,
+        id: notification.id,
+      );
+      final destination = await resolve(notification);
+      if (!mounted) return;
+      // Back to this shell, not to the navigator's first route: routes below
+      // the shell are outside the signed-in session.
+      navigator.popUntil((route) => route == shellRoute || route.isFirst);
+
+      switch (destination) {
+        case OpenApprovalRequest(:final item):
+          _select(1);
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) return;
+          unawaited(openApprovalRequest(context, item));
+        case ShowHistoryEntry(:final entryId, :final alreadyHandled):
+          history.add(HistoryEntryHighlighted(entryId));
+          _select(2);
+          if (alreadyHandled) {
+            _notice(messenger, l10n.notificationRequestHandled);
+          }
+        case ShowTabFallback(:final tab):
+          _select(tab == NotificationTab.approvals ? 1 : 2);
+          _notice(messenger, l10n.notificationTargetUnavailable);
+      }
+    } finally {
+      _openingNotification = false;
+    }
+  }
+
+  void _notice(ScaffoldMessengerState messenger, String message) {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          key: const Key('notification-target-notice'),
+          behavior: SnackBarBehavior.floating,
+          content: Text(message),
+        ),
+      );
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    if (_pointer == null || notification.metrics.axis != Axis.horizontal) {
+      return false;
+    }
+    if (!_controller.hasClients) return false;
+    final pageContext = _controller.position.context.notificationContext;
+    if (notification.context != pageContext) {
+      _claimed = true;
+    }
+    return false;
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (_pointer != null || !_swipeEnabled) return;
+    _pointer = event.pointer;
+    _dx = 0;
+    _dy = 0;
+    _origin = _controller.hasClients ? _controller.position.pixels : 0;
+    _downAt = event.timeStamp;
+    _decided = false;
+    _horizontal = false;
+    _claimed = false;
+    _moved = false;
+    _released = false;
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (event.pointer != _pointer || _released) return;
+    _dx += event.delta.dx;
+    _dy += event.delta.dy;
+    _scheduleApply();
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (event.pointer != _pointer) return;
+    _released = true;
+    _upAt = event.timeStamp;
+    _scheduleApply();
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    if (event.pointer != _pointer) return;
+    _released = true;
+    _claimed = true;
+    _scheduleApply();
+  }
+
+  void _scheduleApply() {
+    if (_applyScheduled) return;
+    _applyScheduled = true;
+    scheduleMicrotask(() {
+      _applyScheduled = false;
+      if (!mounted) return;
+      _applyDrag();
+    });
+  }
+
+  void _applyDrag() {
+    if (_pointer == null || !_controller.hasClients) return;
+    if (_claimed || !_swipeEnabled) {
+      _restoreOrigin();
+      if (_released) _finishPointer();
+      return;
+    }
+    if (!_decided) {
+      if (_dx.abs() < _dragSlop && _dy.abs() < _dragSlop) {
+        if (_released) _finishPointer();
+        return;
+      }
+      _decided = true;
+      _horizontal = _dx.abs() > _dy.abs();
+    }
+    if (!_horizontal) {
+      _restoreOrigin();
+      if (_released) _finishPointer();
+      return;
+    }
+
+    final position = _controller.position;
+    final ltr = Directionality.of(context) == TextDirection.ltr;
+    final raw = _origin + (ltr ? -_dx : _dx);
+    final pixels = raw.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if ((pixels - position.pixels).abs() > 0.5) {
+      _controller.jumpTo(pixels.toDouble());
+      _moved = true;
+    }
+    if (!_released) return;
+
+    final page = _controller.page ?? _index.toDouble();
+    final elapsedMs = (_upAt - _downAt).inMilliseconds;
+    final seconds = elapsedMs <= 0 ? 0.016 : elapsedMs / 1000;
+    final scrollVelocity = (ltr ? -_dx : _dx) / seconds;
+    var target = page;
+    if (scrollVelocity > _flingVelocity) target += 0.5;
+    if (scrollVelocity < -_flingVelocity) target -= 0.5;
+    final index = target.round().clamp(0, _tabCount - 1);
+    _finishPointer();
+    _controller.animateToPage(
+      index,
+      duration: _swipeDuration,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _restoreOrigin() {
+    if (!_moved || !_controller.hasClients) return;
+    _controller.jumpTo(_origin);
+    _moved = false;
+  }
+
+  void _finishPointer() {
+    _pointer = null;
+    _released = false;
+    _moved = false;
   }
 
   @override
   Widget build(BuildContext context) {
+    _swipeEnabled = ModalRoute.isCurrentOf(context) ?? true;
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: switch (_index) {
-        1 => const ApprovalsPage(),
-        2 => HistoryPage(now: widget.now),
-        3 => ProfilePage(
-          onOpenHome: () => _select(0),
-          onOpenApprovals: () => _select(1),
-          onOpenHistory: () => _select(2),
+      extendBody: true,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: _onPointerDown,
+          onPointerMove: _onPointerMove,
+          onPointerUp: _onPointerUp,
+          onPointerCancel: _onPointerCancel,
+          child: PageView(
+            key: const Key('portal-tabs'),
+            controller: _controller,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: _onPageChanged,
+            children: [
+              HomePage(
+                now: widget.now,
+                onOpenApprovals: () => _select(1),
+                onOpenHistory: () => _select(2),
+                onOpenProfile: () => _select(3),
+                onOpenNotifications: _openNotifications,
+              ),
+              const ApprovalsPage(),
+              HistoryPage(now: widget.now),
+              ProfilePage(
+                onOpenHome: () => _select(0),
+                onOpenApprovals: () => _select(1),
+                onOpenHistory: () => _select(2),
+              ),
+            ],
+          ),
         ),
-        _ => HomePage(
-          now: widget.now,
-          onOpenApprovals: () => _select(1),
-          onOpenHistory: () => _select(2),
-        ),
-      },
+      ),
       bottomNavigationBar: PortalBottomNav(index: _index, onSelected: _select),
     );
   }

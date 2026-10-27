@@ -119,8 +119,8 @@ class _LoginFormState extends State<LoginForm> {
                   key: const Key('login-submit'),
                   onPressed: isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: AppColors.primary.withValues(
+                    backgroundColor: AppColors.inkLift,
+                    disabledBackgroundColor: AppColors.inkLift.withValues(
                       alpha: 0.7,
                     ),
                     foregroundColor: Colors.white,

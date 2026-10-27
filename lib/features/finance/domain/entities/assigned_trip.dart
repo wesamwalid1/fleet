@@ -23,8 +23,7 @@ class AssignedTrip extends Equatable {
     required this.vehicle,
   });
 
-  bool get isEligible =>
-      status == TripStatus.active || status == TripStatus.completed;
+  bool get isEligible => status == TripStatus.active;
 
   @override
   List<Object?> get props => [

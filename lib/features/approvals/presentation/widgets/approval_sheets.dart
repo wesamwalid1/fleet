@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/assets/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/approval_item.dart';
@@ -305,10 +306,12 @@ class _RoadExpenseSheet extends StatelessWidget {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.description_outlined,
-                    color: AppColors.primary,
-                    size: 20,
+                  child: Image.asset(
+                    AppIcons.invoice,
+                    width: 22,
+                    height: 22,
+                    fit: BoxFit.contain,
+                    excludeFromSemantics: true,
                   ),
                 ),
                 const Spacer(),
@@ -367,8 +370,13 @@ class _RoadExpenseSheet extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _DetailRow(label: l10n.reference, value: item.reference),
                   _DetailRow(
+                    asset: AppIcons.hashtag,
+                    label: l10n.reference,
+                    value: item.reference,
+                  ),
+                  _DetailRow(
+                    asset: AppIcons.calendar,
                     label: l10n.period,
                     value: approvalPeriod(
                       item.periodStart!,
@@ -376,7 +384,11 @@ class _RoadExpenseSheet extends StatelessWidget {
                       locale,
                     ),
                   ),
-                  _DetailRow(label: l10n.submittedBy, value: item.submittedBy),
+                  _DetailRow(
+                    asset: AppIcons.receipt,
+                    label: l10n.submittedBy,
+                    value: item.submittedBy,
+                  ),
                 ],
               ),
             ),
@@ -402,10 +414,12 @@ class _RoadExpenseSheet extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(
-                        Icons.local_shipping_outlined,
-                        color: AppColors.primary,
-                        size: 20,
+                      Image.asset(
+                        AppIcons.bus,
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                        excludeFromSemantics: true,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -540,7 +554,13 @@ class _TripLine extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.tag, size: 14, color: AppColors.hint),
+            Image.asset(
+              AppIcons.hashtag,
+              width: 14,
+              height: 14,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+            ),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
@@ -590,10 +610,12 @@ class _TripLine extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 14,
-              color: AppColors.hint,
+            Image.asset(
+              AppIcons.calendar,
+              width: 14,
+              height: 14,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
             ),
             const SizedBox(width: 4),
             Text(
@@ -608,11 +630,17 @@ class _TripLine extends StatelessWidget {
 }
 
 class _DetailRow extends StatelessWidget {
+  final String? asset;
   final String label;
   final String value;
   final Color? valueColor;
 
-  const _DetailRow({required this.label, required this.value, this.valueColor});
+  const _DetailRow({
+    this.asset,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -620,6 +648,16 @@ class _DetailRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
+          if (asset != null) ...[
+            Image.asset(
+              asset!,
+              width: 18,
+              height: 18,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+            ),
+            const SizedBox(width: 8),
+          ],
           Text(
             label,
             style: const TextStyle(color: AppColors.muted, fontSize: 14),

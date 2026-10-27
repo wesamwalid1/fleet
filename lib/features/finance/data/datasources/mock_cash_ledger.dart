@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import '../../domain/entities/approval_timing.dart';
 import '../../domain/entities/assigned_trip.dart';
 import '../../domain/entities/cash_transfer.dart';
 import '../../domain/entities/custody_receipt.dart';
 import '../../domain/entities/expense_attachment.dart';
 import '../../domain/entities/expense_request.dart';
+import '../../domain/entities/expense_trip_scope.dart';
 import '../../domain/entities/finance_driver.dart';
+import '../../domain/entities/finance_event.dart';
 import '../../domain/entities/road_expense_approval.dart';
 import '../../domain/entities/settlement_type.dart';
 import '../../domain/failures/approval_exception.dart';
@@ -41,6 +45,29 @@ class MockCashLedger {
   int _sequence = 124;
   int _expenseSequence = 412138;
   bool _approvalsSeeded = false;
+  final List<void Function(FinanceEvent event)> _listeners = [];
+  final StreamController<void> _changes = StreamController<void>.broadcast();
+
+  /// Fires after every successful change to balances, transfers, receipts,
+  /// road expenses, or expenses. Failed operations and seeding do not fire.
+  Stream<void> get changes => _changes.stream;
+
+  void _changed() => _changes.add(null);
+
+  /// Listeners hear completed outcomes only; seeding does not emit.
+  void addListener(void Function(FinanceEvent event) listener) {
+    _listeners.add(listener);
+  }
+
+  void removeListener(void Function(FinanceEvent event) listener) {
+    _listeners.remove(listener);
+  }
+
+  void _emit(FinanceEvent event) {
+    for (final listener in List.of(_listeners)) {
+      listener(event);
+    }
+  }
 
   MockCashLedger({required int senderBalanceEgp}) {
     const seeds = [
@@ -196,15 +223,16 @@ class MockCashLedger {
     required DateTime createdAt,
     String driverId = senderId,
   }) {
-    _receipts.add(
-      CustodyReceipt(
-        id: id,
-        driverId: driverId,
-        amountEgp: amountEgp,
-        createdAt: createdAt,
-        status: CustodyReceiptStatus.pending,
-      ),
+    final receipt = CustodyReceipt(
+      id: id,
+      driverId: driverId,
+      amountEgp: amountEgp,
+      createdAt: createdAt,
+      status: CustodyReceiptStatus.pending,
     );
+    _receipts.add(receipt);
+    _emit(VaultReceiptCreated(receipt));
+    _changed();
   }
 
   CustodyReceipt approveVaultReceipt(
@@ -224,6 +252,7 @@ class MockCashLedger {
       finalizedAt: finalizedAt ?? DateTime.now(),
     );
     _receipts[index] = updated;
+    _changed();
     return updated;
   }
 
@@ -264,6 +293,7 @@ class MockCashLedger {
       finalizedAt: finalizedAt ?? DateTime.now(),
     );
     _roads[index] = updated;
+    _changed();
     return updated;
   }
 
@@ -282,7 +312,10 @@ class MockCashLedger {
   List<AssignedTrip> eligibleTrips(String driverId) {
     return [
       for (final trip in _trips)
-        if (trip.driverId == driverId && trip.isEligible) trip,
+        if (trip.driverId == driverId &&
+            (trip.status == TripStatus.active ||
+                trip.status == TripStatus.completed))
+          trip,
     ];
   }
 
@@ -294,6 +327,7 @@ class MockCashLedger {
     required String? notes,
     required List<ExpenseAttachment> attachments,
     required DateTime createdAt,
+    ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   }) {
     if (tripId.isEmpty) throw const MissingTripException();
     if (amountEgp <= 0) throw InvalidExpenseAmountException(amountEgp);
@@ -301,7 +335,7 @@ class MockCashLedger {
     if (trip.driverId != driverId) {
       throw const TripAssignedToAnotherDriverException();
     }
-    if (!trip.isEligible) throw const IneligibleTripException();
+    if (!tripScope.allows(trip)) throw const IneligibleTripException();
     final balance = _balances[driverId];
     if (balance == null) throw UnknownDriverException(driverId);
     if (amountEgp > balance) {
@@ -324,6 +358,8 @@ class MockCashLedger {
     );
     _expenseSequence += 1;
     _expenses.add(expense);
+    _emit(ExpenseRecorded(expense));
+    _changed();
     return expense;
   }
 
@@ -380,6 +416,8 @@ class MockCashLedger {
     );
     _sequence += 1;
     _transfers.add(transfer);
+    _emit(TransferCreated(transfer));
+    _changed();
     return transfer;
   }
 
@@ -399,6 +437,8 @@ class MockCashLedger {
       finalizedAt: finalizedAt ?? DateTime.now(),
     );
     _transfers[index] = updated;
+    _emit(TransferApproved(updated));
+    _changed();
     return updated;
   }
 
@@ -416,6 +456,8 @@ class MockCashLedger {
       finalizedAt: finalizedAt ?? DateTime.now(),
     );
     _transfers[index] = updated;
+    _emit(TransferRejected(updated));
+    _changed();
     return updated;
   }
 

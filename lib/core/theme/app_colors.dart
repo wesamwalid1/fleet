@@ -21,4 +21,19 @@ abstract final class AppColors {
   static const pink = Color(0xFFEE46BC);
   static const pinkBackground = Color(0xFFFDF2FA);
   static const neutralBackground = Color(0xFFF2F4F7);
+
+  /// Top of the dark wallet plane: [title] lifted 22% toward [primary].
+  static const inkLift = Color(0xFF242752);
+
+  /// [primary] lightened for accents on the dark plane (8:1 on [title]).
+  static const primaryOnInk = Color(0xFFAEA5F2);
+
+  /// Lavender surface for grouped content inside white sheets.
+  static const primarySurface = Color(0xFFF5F4FD);
+
+  /// Status text shades that keep 4.5:1 on white and on their tinted
+  /// backgrounds: credited or approved, waiting, and rejected.
+  static const creditText = Color(0xFF116F4C);
+  static const pendingText = Color(0xFF954C10);
+  static const rejectedText = Color(0xFFAD3733);
 }

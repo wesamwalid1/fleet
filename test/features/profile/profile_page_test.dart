@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
@@ -24,13 +25,99 @@ void main() {
       expect(find.text('My Balance'), findsOneWidget);
       expect(find.text('2,200 EGP'), findsOneWidget);
       expect(find.text('Pending Approvals'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
+      expect(_pendingRowText('3'), findsOneWidget);
       expect(find.text('Transaction History'), findsOneWidget);
       expect(find.text('Logout'), findsOneWidget);
       expect(find.text('3,200'), findsNothing);
       expect(find.text('1,645 EGP'), findsNothing);
     },
   );
+
+  testWidgets('rows are grouped under quick access, settings, and account', (
+    tester,
+  ) async {
+    await _openProfile(tester);
+
+    Rect top(String key) => tester.getRect(find.byKey(Key(key)));
+    void expectIn(String group, List<String> rows) {
+      for (final row in rows) {
+        expect(
+          find.descendant(
+            of: find.byKey(Key(group)),
+            matching: find.byKey(Key(row)),
+          ),
+          findsOneWidget,
+        );
+      }
+    }
+
+    expectIn('profile-quick-access', [
+      'profile-my-balance',
+      'profile-pending',
+      'profile-history',
+    ]);
+    expectIn('profile-settings', ['profile-language', 'profile-dark-mode']);
+    expectIn('profile-account', ['profile-logout']);
+
+    final quick = tester.getRect(find.text('QUICK ACCESS'));
+    final settings = tester.getRect(find.text('SETTINGS'));
+    final account = tester.getRect(find.text('ACCOUNT'));
+    expect(quick.top, greaterThan(top('profile-header').bottom));
+    expect(top('profile-quick-access').top, greaterThan(quick.bottom));
+    expect(settings.top, greaterThan(top('profile-quick-access').bottom));
+    expect(top('profile-settings').top, greaterThan(settings.bottom));
+    expect(account.top, greaterThan(top('profile-settings').bottom));
+    expect(top('profile-account').top, greaterThan(account.bottom));
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('profile-my-balance')),
+        matching: find.text('2,200 EGP'),
+      ),
+      findsOneWidget,
+    );
+    expect(_pendingRowText('3'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('profile-history')),
+        matching: find.byType(Text),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('dark mode is an off placeholder that never toggles', (
+    tester,
+  ) async {
+    await _openProfile(tester);
+
+    Switch control() => tester.widget<Switch>(
+      find.byKey(const Key('profile-dark-mode-switch')),
+    );
+    expect(find.text('Dark Mode'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('profile-dark-mode')),
+        matching: find.byIcon(Icons.dark_mode_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(control().value, isFalse);
+    expect(control().onChanged, isNull);
+
+    await tester.tap(find.byKey(const Key('profile-dark-mode')));
+    await tester.tap(
+      find.byKey(const Key('profile-dark-mode-switch')),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+    expect(control().value, isFalse);
+    expect(
+      Theme.of(tester.element(find.byKey(const Key('profile-name'))))
+          .brightness,
+      Brightness.light,
+    );
+  });
 
   testWidgets('profile rows open the existing screens', (tester) async {
     await _openProfile(tester);
@@ -68,7 +155,7 @@ void main() {
     expect(find.text('Log out?'), findsNothing);
     expect(find.text('Welcome back!'), findsNothing);
     expect(find.text('Balance: 2,200 EGP'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
+    expect(_pendingRowText('3'), findsOneWidget);
   });
 
   testWidgets('confirm logout returns to login and drops the session', (
@@ -80,6 +167,8 @@ void main() {
     await tester.pumpAndSettle();
     await _login(tester);
 
+    await tester.tap(find.byKey(const Key('nav-approvals')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(
       find.byKey(const Key('approval-action-DSB-2025-0441')),
     );
@@ -88,12 +177,21 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byKey(const Key('approval-approve')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
     expect(find.text('4,200 EGP'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
     expect(find.text('Balance: 4,200 EGP'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('profile-my-balance')),
+        matching: find.text('4,200 EGP'),
+      ),
+      findsOneWidget,
+    );
+    expect(_pendingRowText('2'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('profile-logout')));
     await tester.pump();
@@ -131,6 +229,10 @@ void main() {
     expect(find.text('الموافقات المعلقة'), findsOneWidget);
     expect(find.text('سجل الحركات'), findsOneWidget);
     expect(find.text('تسجيل الخروج'), findsOneWidget);
+    expect(find.text('وصول سريع'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('الحساب'), findsOneWidget);
+    expect(find.text('الوضع الداكن'), findsOneWidget);
     expect(find.text('DR-001 · خزينة السائقين'), findsOneWidget);
     expect(find.textContaining('الرصيد:'), findsOneWidget);
     expect(
@@ -169,6 +271,84 @@ void main() {
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'the whole profile page scrolls and its last row clears the bar',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 560));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      for (final locale in const [Locale('en'), Locale('ar')]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: const TextScaler.linear(1.3)),
+                child: child!,
+              );
+            },
+            home: HomeScope(
+              key: ValueKey(locale),
+              now: () => DateTime(2026, 10, 21, 9),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('nav-profile')));
+        await tester.pumpAndSettle();
+
+        final scroll = find.byKey(const Key('profile-scroll'));
+        expect(
+          find.descendant(
+            of: find.byType(ProfilePage),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  axisDirectionToAxis(widget.axisDirection) == Axis.vertical,
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: scroll,
+            matching: find.byKey(const Key('profile-header')),
+          ),
+          findsOneWidget,
+        );
+        final position = tester
+            .state<ScrollableState>(
+              find.descendant(of: scroll, matching: find.byType(Scrollable)),
+            )
+            .position;
+        expect(position.pixels, 0);
+        expect(position.maxScrollExtent, greaterThan(0));
+
+        await tester.drag(scroll, const Offset(0, -3000));
+        await tester.pumpAndSettle();
+
+        final logout = tester.getRect(find.byKey(const Key('profile-logout')));
+        final bar = tester.getRect(find.byKey(const Key('portal-bottom-nav')));
+        expect(logout.bottom, lessThanOrEqualTo(bar.top));
+        expect(position.pixels, position.maxScrollExtent);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byKey(const Key('profile-logout')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('logout-cancel')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('logout-cancel')));
+        await tester.pumpAndSettle();
+      }
+    },
+  );
 }
 
 Future<void> _openProfile(
@@ -212,4 +392,11 @@ Future<void> _login(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(MockAuthDataSource.delay);
   await tester.pumpAndSettle();
+}
+
+Finder _pendingRowText(String count) {
+  return find.descendant(
+    of: find.byKey(const Key('profile-pending')),
+    matching: find.text(count),
+  );
 }

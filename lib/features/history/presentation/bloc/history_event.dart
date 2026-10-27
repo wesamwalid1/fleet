@@ -13,6 +13,12 @@ final class HistoryStarted extends HistoryEvent {
   const HistoryStarted();
 }
 
+/// The session ledger changed; reload entries in place, keeping the filter
+/// and highlight.
+final class HistoryRefreshed extends HistoryEvent {
+  const HistoryRefreshed();
+}
+
 final class HistoryFilterSelected extends HistoryEvent {
   final HistoryFilter filter;
 
@@ -20,4 +26,17 @@ final class HistoryFilterSelected extends HistoryEvent {
 
   @override
   List<Object?> get props => [filter];
+}
+
+final class HistoryEntryHighlighted extends HistoryEvent {
+  final String id;
+
+  const HistoryEntryHighlighted(this.id);
+
+  @override
+  List<Object?> get props => [id];
+}
+
+final class HistoryHighlightCleared extends HistoryEvent {
+  const HistoryHighlightCleared();
 }

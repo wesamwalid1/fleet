@@ -1,4 +1,5 @@
 import '../entities/expense_attachment.dart';
+import '../entities/expense_trip_scope.dart';
 import '../entities/record_expense_result.dart';
 import '../entities/settlement_type.dart';
 import '../failures/expense_exception.dart';
@@ -17,6 +18,7 @@ class RecordExpense {
     String? notes,
     List<ExpenseAttachment> attachments = const [],
     DateTime? createdAt,
+    ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   }) async {
     if (tripId == null || tripId.isEmpty) {
       throw const MissingTripException();
@@ -36,6 +38,7 @@ class RecordExpense {
       notes: notes,
       attachments: attachments,
       createdAt: createdAt ?? DateTime.now(),
+      tripScope: tripScope,
     );
     final balance = await _repository.getAvailableBalance(driverId);
     return RecordExpenseResult(expense: expense, balanceEgp: balance);

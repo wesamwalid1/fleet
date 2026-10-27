@@ -1,5 +1,7 @@
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/cash_transfer.dart';
+import 'package:driver_portal_app/features/finance/domain/failures/approval_exception.dart';
+import 'package:driver_portal_app/features/finance/domain/failures/send_cash_exception.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/history/data/repositories/history_repository_impl.dart';
 import 'package:driver_portal_app/features/history/domain/entities/history_entry.dart';
@@ -9,6 +11,35 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const driverId = MockCashLedger.senderId;
+
+  test(
+    'a highlight clears itself after one second and changes no data',
+    () async {
+      expect(historyHighlightDuration, const Duration(milliseconds: 1000));
+      final ledger = MockCashLedger(senderBalanceEgp: 2200)
+        ..seedDriverApprovals();
+      final bloc = HistoryBloc(
+        driverId: driverId,
+        repository: HistoryRepositoryImpl(ledger),
+      )..add(const HistoryStarted());
+      await bloc.stream.firstWhere((state) => !state.loading);
+      final entries = bloc.state.entries;
+
+      final clock = Stopwatch()..start();
+      bloc.add(const HistoryEntryHighlighted('DSB-2025-0441'));
+      await bloc.stream.firstWhere(
+        (state) => state.highlightedId == 'DSB-2025-0441',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      expect(bloc.state.highlightedId, 'DSB-2025-0441');
+
+      await bloc.stream.firstWhere((state) => state.highlightedId == null);
+      expect(clock.elapsedMilliseconds, greaterThanOrEqualTo(1000));
+      expect(clock.elapsedMilliseconds, lessThan(1500));
+      expect(bloc.state.entries, entries);
+      await bloc.close();
+    },
+  );
 
   test('history reads the shared ledger and does not move money', () async {
     final ledger = MockCashLedger(senderBalanceEgp: 2200)
@@ -177,6 +208,131 @@ void main() {
     expect(bloc.state.entries, isNotEmpty);
     expect(_balances(ledger), before);
   });
+
+  test(
+    'approving a vault receipt updates the same incoming history row',
+    () async {
+      final ledger = MockCashLedger(senderBalanceEgp: 2200)
+        ..seedDriverApprovals();
+      ledger.approveVaultReceipt(
+        'DSB-2025-0441',
+        finalizedAt: DateTime(2026, 10, 21, 12),
+      );
+
+      final entries = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+      final rows = entries.where((entry) => entry.id == 'DSB-2025-0441');
+      expect(rows, hasLength(1));
+      expect(rows.single.kind, HistoryKind.vault);
+      expect(rows.single.credit, isTrue);
+      expect(rows.single.status, HistoryDisplayStatus.approved);
+      expect(rows.single.amountEgp, 2000);
+      expect(
+        () => ledger.approveVaultReceipt('DSB-2025-0441'),
+        throwsA(isA<ApprovalAlreadyFinalizedException>()),
+      );
+      final again = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+      expect(again.where((entry) => entry.id == 'DSB-2025-0441'), hasLength(1));
+      expect(ledger.balanceOf(driverId), 4200);
+    },
+  );
+
+  test('approving an incoming transfer updates the same history row', () async {
+    final ledger = MockCashLedger(senderBalanceEgp: 2200)
+      ..seedDriverApprovals();
+    ledger.approve('TRF-2025-0123', finalizedAt: DateTime(2026, 10, 21, 12));
+
+    final entries = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+    final rows = entries.where((entry) => entry.id == 'TRF-2025-0123');
+    expect(rows, hasLength(1));
+    expect(rows.single.kind, HistoryKind.incoming);
+    expect(rows.single.credit, isTrue);
+    expect(rows.single.status, HistoryDisplayStatus.approved);
+    expect(rows.single.amountEgp, 500);
+    expect(
+      () => ledger.approve('TRF-2025-0123'),
+      throwsA(isA<TransferAlreadyFinalizedException>()),
+    );
+    final again = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+    expect(again.where((entry) => entry.id == 'TRF-2025-0123'), hasLength(1));
+    expect(ledger.balanceOf(driverId), 2700);
+  });
+
+  test('rejecting an incoming transfer updates the same history row', () async {
+    final ledger = MockCashLedger(senderBalanceEgp: 2200)
+      ..seedDriverApprovals();
+    final before = _balances(ledger);
+    ledger.reject('TRF-2025-0123', finalizedAt: DateTime(2026, 10, 21, 12));
+
+    final entries = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+    final rows = entries.where((entry) => entry.id == 'TRF-2025-0123');
+    expect(rows, hasLength(1));
+    expect(rows.single.status, HistoryDisplayStatus.rejected);
+    expect(rows.single.kind, HistoryKind.incoming);
+    expect(ledger.balanceOf(driverId), before[driverId]);
+    expect(ledger.balanceOf('DR-003'), before['DR-003']! + 500);
+    final again = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+    expect(again.where((entry) => entry.id == 'TRF-2025-0123'), hasLength(1));
+  });
+
+  test(
+    'confirming a road expense adds one history row and does not move money',
+    () async {
+      final ledger = MockCashLedger(senderBalanceEgp: 2200)
+        ..seedDriverApprovals();
+      final before = _balances(ledger);
+      final beforeIds = (await HistoryRepositoryImpl(
+        ledger,
+      ).getHistory(driverId)).map((entry) => entry.id);
+      expect(beforeIds, isNot(contains('RE-2026-1041')));
+
+      ledger.confirmRoadExpense(
+        'RE-2026-1041',
+        finalizedAt: DateTime(2026, 10, 21, 12),
+      );
+      expect(_balances(ledger), before);
+
+      final entries = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+      final rows = entries.where((entry) => entry.id == 'RE-2026-1041');
+      expect(rows, hasLength(1));
+      expect(rows.single.kind, HistoryKind.roadExpense);
+      expect(rows.single.status, HistoryDisplayStatus.approved);
+      expect(rows.single.amountEgp, 300);
+      expect(rows.single.credit, isFalse);
+      expect(rows.single.matches(HistoryFilter.expenses), isTrue);
+      expect(
+        () => ledger.confirmRoadExpense('RE-2026-1041'),
+        throwsA(isA<ApprovalAlreadyFinalizedException>()),
+      );
+      final again = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+      expect(again.where((entry) => entry.id == 'RE-2026-1041'), hasLength(1));
+      expect(_balances(ledger), before);
+    },
+  );
+
+  test(
+    'rejecting a road expense records the rejection without moving money',
+    () async {
+      final ledger = MockCashLedger(senderBalanceEgp: 2200)
+        ..seedDriverApprovals();
+      final before = _balances(ledger);
+      ledger.rejectRoadExpense(
+        'RE-2026-1041',
+        finalizedAt: DateTime(2026, 10, 21, 12),
+      );
+
+      final entries = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+      final rows = entries.where((entry) => entry.id == 'RE-2026-1041');
+      expect(rows, hasLength(1));
+      expect(rows.single.status, HistoryDisplayStatus.rejected);
+      expect(_balances(ledger), before);
+      expect(
+        () => ledger.rejectRoadExpense('RE-2026-1041'),
+        throwsA(isA<ApprovalAlreadyFinalizedException>()),
+      );
+      final again = await HistoryRepositoryImpl(ledger).getHistory(driverId);
+      expect(again.where((entry) => entry.id == 'RE-2026-1041'), hasLength(1));
+    },
+  );
 }
 
 List<String> _ids(List<HistoryEntry> entries, HistoryFilter filter) {

@@ -76,6 +76,11 @@ class _DriverMaterialApp extends StatelessWidget {
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           initialRoute: AppRoute.login,
+          // Without this, '/login' also builds a '/' route beneath it, which
+          // is unknown and shows Page Not Found when navigated back to.
+          onGenerateInitialRoutes: (initialRoute) => [
+            AppRoute.onGenerateRoute(RouteSettings(name: initialRoute)),
+          ],
           onGenerateRoute: AppRoute.onGenerateRoute,
           theme: AppTheme.light,
         );

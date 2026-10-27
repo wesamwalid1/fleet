@@ -13,6 +13,12 @@ final class ApprovalsStarted extends ApprovalsEvent {
   const ApprovalsStarted();
 }
 
+/// The session ledger changed; reload items and balance without touching
+/// [ApprovalsState.busy] or [ApprovalsState.revision].
+final class ApprovalsRefreshed extends ApprovalsEvent {
+  const ApprovalsRefreshed();
+}
+
 final class ApprovalsFilterSelected extends ApprovalsEvent {
   final ApprovalFilter filter;
 

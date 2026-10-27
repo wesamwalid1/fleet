@@ -1,6 +1,8 @@
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/entities/assigned_trip.dart';
+import '../../domain/entities/expense_trip_scope.dart';
 import '../../domain/failures/expense_exception.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../../domain/usecases/record_expense.dart';
@@ -12,10 +14,19 @@ class RecordExpenseBloc extends Bloc<RecordExpenseEvent, RecordExpenseState> {
   final RecordExpense recordExpense;
   final ExpenseRepository repository;
 
+  /// Trip chosen before the flow opened. Applied once trips load, and only
+  /// if [tripScope] allows it; otherwise the driver selects a trip as usual.
+  final String? initialTripId;
+
+  /// Which trips may be selected and recorded against.
+  final ExpenseTripScope tripScope;
+
   RecordExpenseBloc({
     required this.driverId,
     required this.recordExpense,
     required this.repository,
+    this.initialTripId,
+    this.tripScope = ExpenseTripScope.activeTrip,
   }) : super(const RecordExpenseState()) {
     on<RecordExpenseStarted>(_onStarted);
     on<RecordExpenseTripQueryChanged>(_onTripQueryChanged);
@@ -38,11 +49,16 @@ class RecordExpenseBloc extends Bloc<RecordExpenseEvent, RecordExpenseState> {
     try {
       final trips = await repository.getAssignedTrips(driverId);
       final balance = await repository.getAvailableBalance(driverId);
+      final initial = [
+        for (final trip in trips)
+          if (trip.id == initialTripId && tripScope.allows(trip)) trip.id,
+      ].firstOrNull;
       emit(
         state.copyWith(
           loading: false,
           trips: trips,
           balanceEgp: balance,
+          tripId: initial,
           clearError: true,
         ),
       );
@@ -64,6 +80,11 @@ class RecordExpenseBloc extends Bloc<RecordExpenseEvent, RecordExpenseState> {
     RecordExpenseTripSelected event,
     Emitter<RecordExpenseState> emit,
   ) {
+    final trip = _trip(event.tripId);
+    if (trip == null || !tripScope.allows(trip)) {
+      emit(state.copyWith(error: RecordExpenseError.ineligibleTrip));
+      return;
+    }
     emit(state.copyWith(tripId: event.tripId, clearError: true));
   }
 
@@ -171,6 +192,7 @@ class RecordExpenseBloc extends Bloc<RecordExpenseEvent, RecordExpenseState> {
         amountEgp: state.amountEgp,
         notes: notes.isEmpty ? null : notes,
         attachments: state.attachments,
+        tripScope: tripScope,
       );
       emit(
         state.copyWith(
@@ -239,8 +261,19 @@ class RecordExpenseBloc extends Bloc<RecordExpenseEvent, RecordExpenseState> {
     }
   }
 
+  AssignedTrip? _trip(String tripId) {
+    for (final trip in state.trips) {
+      if (trip.id == tripId) return trip;
+    }
+    return null;
+  }
+
   RecordExpenseError? _validationError(RecordExpenseState state) {
     if (state.tripId == null) return RecordExpenseError.selectTrip;
+    final trip = state.selectedTrip;
+    if (trip == null || !tripScope.allows(trip)) {
+      return RecordExpenseError.ineligibleTrip;
+    }
     if (state.settlementType == null) {
       return RecordExpenseError.selectSettlement;
     }

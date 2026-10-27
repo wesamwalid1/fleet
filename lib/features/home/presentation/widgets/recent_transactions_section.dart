@@ -117,7 +117,8 @@ class RecentTransactionsSection extends StatelessWidget {
                   for (final entry in latest)
                     HistoryEntryTile(
                       entry: entry,
-                      tileKey: Key('recent-entry-${entry.id}'),
+                      showDivider: true,
+                      keyPrefix: 'recent-entry',
                       when: recentWhenLabel(
                         l10n,
                         entry.occurredAt,

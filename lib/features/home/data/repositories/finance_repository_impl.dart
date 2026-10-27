@@ -8,6 +8,10 @@ class FinanceRepositoryImpl implements FinanceRepository {
 
   const FinanceRepositoryImpl(this._dataSource);
 
+  /// The static mock account never changes.
+  @override
+  Stream<void> get changes => const Stream.empty();
+
   @override
   Future<FinancialSummary> getFinancialSummary() async {
     final account = await _dataSource.loadAccount();

@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
+
+/// Single-choice filter pill used above lists.
+class AppFilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const AppFilterChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      selected: selected,
+      showCheckmark: false,
+      onSelected: (_) => onSelected(),
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : AppColors.title,
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+      ),
+      selectedColor: AppColors.primary,
+      backgroundColor: Colors.white,
+      side: BorderSide(color: selected ? AppColors.primary : AppColors.border),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}

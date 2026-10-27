@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -18,6 +20,11 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
   final DeclineIncomingTransfer declineIncomingTransfer;
   final ConfirmRoadExpense confirmRoadExpense;
   final RejectRoadExpense rejectRoadExpense;
+  late final StreamSubscription<void> _ledgerChanges;
+
+  /// Numbers each load so a slower, older load never overwrites newer data.
+  /// Refreshes run side by side and only the newest one emits.
+  int _loads = 0;
 
   ApprovalsBloc({
     required this.driverId,
@@ -29,8 +36,12 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     required this.rejectRoadExpense,
   }) : super(const ApprovalsState()) {
     on<ApprovalsStarted>(_onStarted);
+    on<ApprovalsRefreshed>(_onRefreshed);
     on<ApprovalsFilterSelected>(_onFilterSelected);
     on<ApprovalActionRequested>(_onAction, transformer: droppable());
+    _ledgerChanges = repository.changes.listen(
+      (_) => add(const ApprovalsRefreshed()),
+    );
   }
 
   Future<void> _onStarted(
@@ -38,6 +49,21 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     Emitter<ApprovalsState> emit,
   ) async {
     await _reload(emit, revision: state.revision);
+  }
+
+  Future<void> _onRefreshed(
+    ApprovalsRefreshed event,
+    Emitter<ApprovalsState> emit,
+  ) async {
+    final load = ++_loads;
+    try {
+      final items = await repository.getApprovals(driverId);
+      final balance = await repository.getAvailableBalance(driverId);
+      if (load != _loads) return;
+      emit(state.copyWith(loading: false, balanceEgp: balance, items: items));
+    } catch (_) {
+      // Keep the current state; the next ledger change reloads again.
+    }
   }
 
   void _onFilterSelected(
@@ -82,9 +108,22 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     Emitter<ApprovalsState> emit, {
     required int revision,
   }) async {
+    final load = ++_loads;
     try {
       final items = await repository.getApprovals(driverId);
       final balance = await repository.getAvailableBalance(driverId);
+      if (load != _loads) {
+        // A newer load already holds fresher data; only settle this one.
+        emit(
+          state.copyWith(
+            loading: false,
+            busy: false,
+            failed: false,
+            revision: revision,
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(
           loading: false,
@@ -98,5 +137,11 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     } catch (_) {
       emit(state.copyWith(loading: false, busy: false, failed: true));
     }
+  }
+
+  @override
+  Future<void> close() async {
+    await _ledgerChanges.cancel();
+    return super.close();
   }
 }

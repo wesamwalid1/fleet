@@ -117,6 +117,7 @@ class TripPickerSheet extends StatelessWidget {
                 child: BlocBuilder<RecordExpenseBloc, RecordExpenseState>(
                   builder: (context, state) {
                     final trips = state.visibleTrips;
+                    final scope = context.read<RecordExpenseBloc>().tripScope;
                     if (trips.isEmpty) {
                       return Center(
                         child: Text(
@@ -131,14 +132,18 @@ class TripPickerSheet extends StatelessWidget {
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final trip = trips[index];
+                        final selectable = scope.allows(trip);
                         return _TripCard(
                           trip: trip,
-                          onTap: () {
-                            context.read<RecordExpenseBloc>().add(
-                              RecordExpenseTripSelected(trip.id),
-                            );
-                            Navigator.pop(context);
-                          },
+                          selectable: selectable,
+                          onTap: selectable
+                              ? () {
+                                  context.read<RecordExpenseBloc>().add(
+                                    RecordExpenseTripSelected(trip.id),
+                                  );
+                                  Navigator.pop(context);
+                                }
+                              : null,
                         );
                       },
                     );
@@ -155,18 +160,25 @@ class TripPickerSheet extends StatelessWidget {
 
 class _TripCard extends StatelessWidget {
   final AssignedTrip trip;
-  final VoidCallback onTap;
+  final bool selectable;
+  final VoidCallback? onTap;
 
-  const _TripCard({required this.trip, required this.onTap});
+  const _TripCard({
+    required this.trip,
+    required this.selectable,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final active = trip.status == TripStatus.active;
+    final titleColor = selectable ? AppColors.title : AppColors.muted;
+    final detailColor = selectable ? AppColors.muted : AppColors.hint;
 
     return Material(
-      color: Colors.white,
+      color: selectable ? Colors.white : AppColors.neutralBackground,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         key: Key('expense-trip-${trip.id}'),
@@ -176,15 +188,19 @@ class _TripCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: selectable ? AppColors.border : AppColors.hint,
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _IconBadge(
+              _IconBadge(
                 icon: Icons.local_shipping_outlined,
-                color: AppColors.muted,
-                background: AppColors.neutralBackground,
+                color: selectable ? AppColors.muted : AppColors.hint,
+                background: selectable
+                    ? AppColors.neutralBackground
+                    : Colors.white,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -196,8 +212,8 @@ class _TripCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             trip.code,
-                            style: const TextStyle(
-                              color: AppColors.title,
+                            style: TextStyle(
+                              color: titleColor,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -215,10 +231,7 @@ class _TripCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       tripRoute(trip),
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: detailColor, fontSize: 13),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -231,13 +244,20 @@ class _TripCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 8, top: 2),
-                child: Icon(
-                  Icons.visibility_outlined,
-                  color: AppColors.hint,
-                  size: 18,
-                ),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 8, top: 2),
+                child: selectable
+                    ? const Icon(
+                        Icons.visibility_outlined,
+                        color: AppColors.hint,
+                        size: 18,
+                      )
+                    : Icon(
+                        Icons.lock_outline,
+                        key: Key('expense-trip-locked-${trip.id}'),
+                        color: AppColors.muted,
+                        size: 18,
+                      ),
               ),
             ],
           ),

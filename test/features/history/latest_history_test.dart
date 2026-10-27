@@ -39,7 +39,10 @@ HistoryEntry _entry(
     id: id,
     kind: kind,
     amountEgp: 10,
-    credit: kind != HistoryKind.expense && kind != HistoryKind.outgoing,
+    credit:
+        kind != HistoryKind.expense &&
+        kind != HistoryKind.roadExpense &&
+        kind != HistoryKind.outgoing,
     occurredAt: occurredAt,
     status: HistoryDisplayStatus.approved,
   );

@@ -12,6 +12,9 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
   const ApprovalRepositoryImpl(this._ledger);
 
   @override
+  Stream<void> get changes => _ledger.changes;
+
+  @override
   Future<List<ApprovalItem>> getApprovals(String driverId) async {
     final items = <ApprovalItem>[
       for (final receipt in _ledger.custodyReceipts)

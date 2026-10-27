@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -28,8 +31,16 @@ import '../../features/home/domain/repositories/finance_repository.dart';
 import '../../features/home/domain/summarize_transactions.dart';
 import '../../features/home/domain/usecases/get_current_driver.dart';
 import '../../features/home/domain/usecases/get_financial_summary.dart';
+import '../../features/home/domain/usecases/watch_finance_changes.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
 import '../../features/home/presentation/bloc/home_event.dart';
+import '../../features/notifications/data/datasources/mock_notification_seed.dart';
+import '../../features/notifications/data/datasources/notification_local_data_source.dart';
+import '../../features/notifications/data/ledger_notification_bridge.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
+import '../../features/notifications/presentation/bloc/notifications_event.dart';
 import '../navigation/portal_shell.dart';
 
 class HomeScope extends StatelessWidget {
@@ -38,6 +49,11 @@ class HomeScope extends StatelessWidget {
   final DateTime Function()? now;
   final bool seedApprovals;
   final void Function(MockCashLedger ledger)? configureLedger;
+  final NotificationRepository? notificationRepository;
+
+  /// Temporary test aid, honored in debug builds only: when this signed-in
+  /// session starts, the demo notifications are put back to unread.
+  final bool resetDemoNotifications;
 
   const HomeScope({
     super.key,
@@ -46,6 +62,8 @@ class HomeScope extends StatelessWidget {
     this.now,
     this.seedApprovals = true,
     this.configureLedger,
+    this.notificationRepository,
+    this.resetDemoNotifications = false,
   });
 
   @override
@@ -76,45 +94,87 @@ class HomeScope extends StatelessWidget {
               create: (_) => ApprovalRepositoryImpl(ledger),
               child: RepositoryProvider<HistoryRepository>(
                 create: (_) => HistoryRepositoryImpl(ledger),
-                child: Builder(
-                  builder: (context) {
-                    final approvals = context.read<ApprovalRepository>();
-                    final history = context.read<HistoryRepository>();
-                    return MultiBlocProvider(
-                      providers: [
-                        BlocProvider(
-                          create: (context) => HomeBloc(
-                            GetCurrentDriver(context.read<DriverRepository>()),
-                            GetFinancialSummary(
-                              context.read<FinanceRepository>(),
-                            ),
-                          )..add(const HomeStarted()),
-                        ),
-                        BlocProvider(
-                          create: (_) => ApprovalsBloc(
-                            driverId: MockCashLedger.senderId,
-                            repository: approvals,
-                            approveVaultReceipt: ApproveVaultReceipt(approvals),
-                            approveIncomingTransfer: ApproveIncomingTransfer(
-                              approvals,
-                            ),
-                            declineIncomingTransfer: DeclineIncomingTransfer(
-                              approvals,
-                            ),
-                            confirmRoadExpense: ConfirmRoadExpense(approvals),
-                            rejectRoadExpense: RejectRoadExpense(approvals),
-                          )..add(const ApprovalsStarted()),
-                        ),
-                        BlocProvider(
-                          create: (_) => HistoryBloc(
-                            driverId: MockCashLedger.senderId,
-                            repository: history,
-                          )..add(const HistoryStarted()),
-                        ),
-                      ],
-                      child: PortalShell(now: now ?? DateTime.now),
-                    );
+                child: RepositoryProvider<NotificationRepository>(
+                  create: (_) =>
+                      notificationRepository ??
+                      NotificationRepositoryImpl(
+                        SharedPreferencesNotificationDataSource(),
+                        seedFor: seedApprovals
+                            ? MockNotificationSeed.forDriver
+                            : MockNotificationSeed.none,
+                      ),
+                  dispose: (repository) {
+                    if (repository is NotificationRepositoryImpl &&
+                        notificationRepository == null) {
+                      repository.dispose();
+                    }
                   },
+                  child: RepositoryProvider<LedgerNotificationBridge>(
+                    lazy: false,
+                    create: (context) => LedgerNotificationBridge(
+                      ledger,
+                      context.read<NotificationRepository>(),
+                    )..attach(),
+                    dispose: (bridge) => bridge.detach(),
+                    child: Builder(
+                      builder: (context) {
+                        final approvals = context.read<ApprovalRepository>();
+                        final history = context.read<HistoryRepository>();
+                        final notifications = context
+                            .read<NotificationRepository>();
+                        return MultiBlocProvider(
+                          providers: [
+                            BlocProvider(
+                              create: (context) => HomeBloc(
+                                GetCurrentDriver(
+                                  context.read<DriverRepository>(),
+                                ),
+                                GetFinancialSummary(
+                                  context.read<FinanceRepository>(),
+                                ),
+                                watchFinanceChanges: WatchFinanceChanges(
+                                  context.read<FinanceRepository>(),
+                                ),
+                              )..add(const HomeStarted()),
+                            ),
+                            BlocProvider(
+                              create: (_) => ApprovalsBloc(
+                                driverId: MockCashLedger.senderId,
+                                repository: approvals,
+                                approveVaultReceipt: ApproveVaultReceipt(
+                                  approvals,
+                                ),
+                                approveIncomingTransfer:
+                                    ApproveIncomingTransfer(approvals),
+                                declineIncomingTransfer:
+                                    DeclineIncomingTransfer(approvals),
+                                confirmRoadExpense: ConfirmRoadExpense(
+                                  approvals,
+                                ),
+                                rejectRoadExpense: RejectRoadExpense(approvals),
+                              )..add(const ApprovalsStarted()),
+                            ),
+                            BlocProvider(
+                              create: (_) => HistoryBloc(
+                                driverId: MockCashLedger.senderId,
+                                repository: history,
+                              )..add(const HistoryStarted()),
+                            ),
+                            BlocProvider(
+                              create: (_) => NotificationsBloc(
+                                driverId: MockCashLedger.senderId,
+                                repository: notifications,
+                              )..add(const NotificationsStarted()),
+                            ),
+                          ],
+                          child: _DevNotificationReset(
+                            enabled: kDebugMode && resetDemoNotifications,
+                            child: PortalShell(now: now ?? DateTime.now),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -123,4 +183,34 @@ class HomeScope extends StatelessWidget {
       ),
     );
   }
+}
+
+/// When [enabled], puts the demo notifications back to their initial content,
+/// all unread, as the signed-in session starts, so notification scenarios can
+/// be tested again after each login. The state is created once per
+/// [HomeScope], which each login creates anew; rebuilds and tab changes keep
+/// it, so the reset runs exactly once per session.
+class _DevNotificationReset extends StatefulWidget {
+  final bool enabled;
+  final Widget child;
+
+  const _DevNotificationReset({required this.enabled, required this.child});
+
+  @override
+  State<_DevNotificationReset> createState() => _DevNotificationResetState();
+}
+
+class _DevNotificationResetState extends State<_DevNotificationReset> {
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.enabled) return;
+    final repository = context.read<NotificationRepository>();
+    if (repository is NotificationRepositoryImpl) {
+      unawaited(repository.resetSeedFixtures(MockCashLedger.senderId));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../notifications/presentation/bloc/notifications_bloc.dart';
+import '../../../notifications/presentation/bloc/notifications_state.dart';
 
 class HomeHeader extends StatelessWidget {
   final String greeting;
   final String fullName;
   final String initials;
+  final VoidCallback? onNotifications;
+  final VoidCallback? onProfile;
 
   const HomeHeader({
     super.key,
     required this.greeting,
     required this.fullName,
     required this.initials,
+    this.onNotifications,
+    this.onProfile,
   });
 
   @override
@@ -55,11 +62,26 @@ class HomeHeader extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Semantics(
+            button: true,
             label: l10n.notifications,
-            child: const _NotificationBell(),
+            child: InkWell(
+              key: const Key('home-notifications'),
+              onTap: onNotifications,
+              customBorder: const CircleBorder(),
+              child: const _NotificationBell(),
+            ),
           ),
           const SizedBox(width: 12),
-          _InitialsAvatar(initials: initials),
+          Semantics(
+            button: true,
+            label: l10n.navProfile,
+            child: InkWell(
+              key: const Key('home-avatar'),
+              onTap: onProfile,
+              customBorder: const CircleBorder(),
+              child: _InitialsAvatar(initials: initials),
+            ),
+          ),
         ],
       ),
     );
@@ -71,13 +93,13 @@ class _NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       width: 32,
       height: 32,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Align(
+          const Align(
             alignment: Alignment.center,
             child: Icon(
               Icons.notifications_none_rounded,
@@ -85,16 +107,27 @@ class _NotificationBell extends StatelessWidget {
               size: 26,
             ),
           ),
-          PositionedDirectional(
-            top: 2,
-            end: 2,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox(width: 8, height: 8),
-            ),
+          BlocBuilder<NotificationsBloc, NotificationsState>(
+            buildWhen: (previous, current) =>
+                previous.hasUnread != current.hasUnread,
+            builder: (context, state) {
+              if (!state.hasUnread) return const SizedBox.shrink();
+              return const PositionedDirectional(
+                top: 2,
+                end: 2,
+                child: SizedBox(
+                  key: Key('home-notification-dot'),
+                  width: 8,
+                  height: 8,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

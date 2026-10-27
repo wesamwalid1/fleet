@@ -43,6 +43,24 @@ String approvalPeriod(DateTime start, DateTime end, String locale) {
   return '${format.format(start)} – ${format.format(end)}';
 }
 
+String approvalTitle(AppLocalizations l10n, ApprovalItem item) {
+  return switch (item.kind) {
+    ApprovalKind.vault => l10n.receivedFromVault,
+    ApprovalKind.driver => l10n.receivedFromDriver(item.counterpartyName),
+    ApprovalKind.roadExpense => l10n.roadExpenseApproval,
+  };
+}
+
+/// Where the request came from: the vault, the sending driver, or the
+/// road-expense reference.
+String approvalSource(AppLocalizations l10n, ApprovalItem item) {
+  return switch (item.kind) {
+    ApprovalKind.vault => l10n.driversVault,
+    ApprovalKind.driver => item.counterpartyId,
+    ApprovalKind.roadExpense => item.reference,
+  };
+}
+
 String cardRecency(AppLocalizations l10n, ApprovalItem item) {
   return switch (item.recency) {
     ApprovalRecency.justNow => l10n.justNow,

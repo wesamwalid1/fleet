@@ -1,21 +1,39 @@
+import 'dart:async';
+
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/entities/driver.dart';
+import '../../domain/entities/financial_summary.dart';
 import '../../domain/usecases/get_current_driver.dart';
 import '../../domain/usecases/get_financial_summary.dart';
+import '../../domain/usecases/watch_finance_changes.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetCurrentDriver _getCurrentDriver;
   final GetFinancialSummary _getFinancialSummary;
+  StreamSubscription<void>? _financeChanges;
 
-  HomeBloc(this._getCurrentDriver, this._getFinancialSummary)
-    : super(const HomeInitial()) {
+  /// Numbers each summary load so a slower, older one never overwrites
+  /// newer figures. Refreshes run side by side and only the newest emits.
+  int _loads = 0;
+
+  /// A change arrived while the summary was loading; refresh once it lands.
+  bool _refreshWhenReady = false;
+
+  HomeBloc(
+    this._getCurrentDriver,
+    this._getFinancialSummary, {
+    WatchFinanceChanges? watchFinanceChanges,
+  }) : super(const HomeInitial()) {
     on<HomeStarted>(_onStarted);
     on<HomeFinanceRetried>(_onFinanceRetried, transformer: droppable());
     on<HomeSummaryRefreshed>(_onSummaryRefreshed);
+    _financeChanges = watchFinanceChanges?.call().listen(
+      (_) => add(const HomeSummaryRefreshed()),
+    );
   }
 
   Future<void> _onStarted(HomeStarted event, Emitter<HomeState> emit) async {
@@ -37,25 +55,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         financeStatus: HomeFinanceStatus.loading,
       ),
     );
-
-    try {
-      final summary = await _getFinancialSummary();
-      emit(
-        HomeReady(
-          driver: driver,
-          summary: summary,
-          financeStatus: HomeFinanceStatus.ready,
-        ),
-      );
-    } catch (_) {
-      emit(
-        HomeReady(
-          driver: driver,
-          summary: null,
-          financeStatus: HomeFinanceStatus.failed,
-        ),
-      );
-    }
+    await _loadSummary(emit, driver);
   }
 
   Future<void> _onFinanceRetried(
@@ -75,25 +75,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         financeStatus: HomeFinanceStatus.loading,
       ),
     );
-
-    try {
-      final summary = await _getFinancialSummary();
-      emit(
-        HomeReady(
-          driver: current.driver,
-          summary: summary,
-          financeStatus: HomeFinanceStatus.ready,
-        ),
-      );
-    } catch (_) {
-      emit(
-        HomeReady(
-          driver: current.driver,
-          summary: null,
-          financeStatus: HomeFinanceStatus.failed,
-        ),
-      );
-    }
+    await _loadSummary(emit, current.driver);
   }
 
   Future<void> _onSummaryRefreshed(
@@ -101,21 +83,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) async {
     final current = state;
-    if (current is! HomeReady ||
-        current.financeStatus == HomeFinanceStatus.loading) {
+    if (current is! HomeReady) return;
+    if (current.financeStatus == HomeFinanceStatus.loading) {
+      _refreshWhenReady = true;
       return;
     }
 
+    final load = ++_loads;
+    final FinancialSummary summary;
     try {
-      final summary = await _getFinancialSummary();
-      emit(
-        HomeReady(
-          driver: current.driver,
-          summary: summary,
-          financeStatus: HomeFinanceStatus.ready,
-        ),
-      );
+      summary = await _getFinancialSummary();
     } catch (_) {
+      if (load != _loads) return;
       emit(
         HomeReady(
           driver: current.driver,
@@ -123,6 +102,50 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           financeStatus: HomeFinanceStatus.failed,
         ),
       );
+      return;
     }
+    if (load != _loads) return;
+    emit(
+      HomeReady(
+        driver: current.driver,
+        summary: summary,
+        financeStatus: HomeFinanceStatus.ready,
+      ),
+    );
+  }
+
+  Future<void> _loadSummary(Emitter<HomeState> emit, Driver driver) async {
+    final load = ++_loads;
+    _refreshWhenReady = false;
+    try {
+      final summary = await _getFinancialSummary();
+      if (load != _loads) return;
+      emit(
+        HomeReady(
+          driver: driver,
+          summary: summary,
+          financeStatus: HomeFinanceStatus.ready,
+        ),
+      );
+    } catch (_) {
+      if (load != _loads) return;
+      emit(
+        HomeReady(
+          driver: driver,
+          summary: null,
+          financeStatus: HomeFinanceStatus.failed,
+        ),
+      );
+    }
+    if (_refreshWhenReady) {
+      _refreshWhenReady = false;
+      add(const HomeSummaryRefreshed());
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _financeChanges?.cancel();
+    return super.close();
   }
 }

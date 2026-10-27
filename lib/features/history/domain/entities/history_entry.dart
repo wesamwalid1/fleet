@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../finance/domain/entities/settlement_type.dart';
 
-enum HistoryKind { expense, vault, incoming, outgoing }
+enum HistoryKind { expense, roadExpense, vault, incoming, outgoing }
 
 enum HistoryFilter { all, expenses, vault, drivers, sent, pending }
 
@@ -47,7 +47,8 @@ class HistoryEntry extends Equatable {
   bool matches(HistoryFilter filter) {
     return switch (filter) {
       HistoryFilter.all => true,
-      HistoryFilter.expenses => kind == HistoryKind.expense,
+      HistoryFilter.expenses =>
+        kind == HistoryKind.expense || kind == HistoryKind.roadExpense,
       HistoryFilter.vault => kind == HistoryKind.vault,
       HistoryFilter.drivers => kind == HistoryKind.incoming,
       HistoryFilter.sent => kind == HistoryKind.outgoing,

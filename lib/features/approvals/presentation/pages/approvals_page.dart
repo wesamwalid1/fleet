@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/section_title.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
@@ -29,57 +34,62 @@ class ApprovalsPage extends StatelessWidget {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(l10n.approvalFailed)));
         },
-        child: SafeArea(
-          bottom: false,
-          child: BlocBuilder<ApprovalsBloc, ApprovalsState>(
-            builder: (context, state) {
-              if (state.loading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                children: [
-                  _Header(count: state.pendingCount),
-                  const SizedBox(height: 16),
-                  _Filters(selected: state.filter),
-                  const SizedBox(height: 20),
-                  if (state.visiblePending.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 28),
-                      child: Text(
-                        l10n.noPendingApprovals,
+        child: ColoredBox(
+          color: Colors.white,
+          child: SafeArea(
+            bottom: false,
+            child: BlocBuilder<ApprovalsBloc, ApprovalsState>(
+              builder: (context, state) {
+                if (state.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    12,
+                    20,
+                    32 + MediaQuery.paddingOf(context).bottom,
+                  ),
+                  children: [
+                    _Header(count: state.pendingCount),
+                    const SizedBox(height: 18),
+                    _Filters(selected: state.filter),
+                    const SizedBox(height: 24),
+                    if (state.visiblePending.isEmpty)
+                      EmptyState(
                         key: const Key('approvals-empty'),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                        icon: Icons.check_rounded,
+                        iconColor: AppColors.success,
+                        iconBackground: AppColors.successBackground,
+                        title: l10n.noPendingApprovals,
+                      )
+                    else ...[
+                      SectionTitle(
+                        title: l10n.actionRequired,
+                        leading: const _Dot(),
+                      ),
+                      const SizedBox(height: 12),
+                      for (final item in state.visiblePending) ...[
+                        ApprovalCard(
+                          item: item,
+                          onOpen: () => openApprovalRequest(context, item),
                         ),
-                      ),
-                    )
-                  else ...[
-                    _SectionTitle(title: l10n.actionRequired, marked: true),
-                    const SizedBox(height: 10),
-                    for (final item in state.visiblePending) ...[
-                      ApprovalCard(
-                        item: item,
-                        onOpen: () => openApprovalRequest(context, item),
-                      ),
-                      const SizedBox(height: 10),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                    if (state.visibleCompleted.isNotEmpty) ...[
+                      const SizedBox(height: 22),
+                      SectionTitle(title: l10n.completed),
+                      const SizedBox(height: 12),
+                      for (final item in state.visibleCompleted) ...[
+                        ApprovalCard(item: item),
+                        const SizedBox(height: 10),
+                      ],
                     ],
                   ],
-                  if (state.visibleCompleted.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _SectionTitle(title: l10n.completed),
-                    const SizedBox(height: 10),
-                    for (final item in state.visibleCompleted) ...[
-                      ApprovalCard(item: item),
-                      const SizedBox(height: 10),
-                    ],
-                  ],
-                ],
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -100,29 +110,15 @@ class _Header extends StatelessWidget {
         Expanded(
           child: Text(
             l10n.approvals,
-            style: const TextStyle(
-              color: AppColors.title,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.pageTitle,
           ),
         ),
         if (count > 0)
-          Container(
+          StatusBadge.pending(
             key: const Key('pending-count'),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.error,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              l10n.pendingCount(count),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            label: l10n.pendingCount(count),
           ),
       ],
     );
@@ -150,36 +146,19 @@ class _Filters extends StatelessWidget {
         itemCount: filters.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final filter = filters[index].$1;
-          final label = switch (filter) {
-            ApprovalFilter.all => l10n.filterAll,
-            ApprovalFilter.vault => l10n.fromVault,
-            ApprovalFilter.drivers => l10n.fromDrivers,
-            ApprovalFilter.roadExpense => l10n.roadExpenses,
-          };
-          final active = filter == selected;
-          return ChoiceChip(
-            key: Key(filters[index].$2),
-            label: Text(label),
-            selected: active,
-            showCheckmark: false,
-            onSelected: (_) => context.read<ApprovalsBloc>().add(
+          final (filter, key) = filters[index];
+          return AppFilterChip(
+            key: Key(key),
+            label: switch (filter) {
+              ApprovalFilter.all => l10n.filterAll,
+              ApprovalFilter.vault => l10n.fromVault,
+              ApprovalFilter.drivers => l10n.fromDrivers,
+              ApprovalFilter.roadExpense => l10n.roadExpenses,
+            },
+            selected: filter == selected,
+            onSelected: () => context.read<ApprovalsBloc>().add(
               ApprovalsFilterSelected(filter),
             ),
-            labelStyle: TextStyle(
-              color: active ? Colors.white : AppColors.title,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-            selectedColor: AppColors.primary,
-            backgroundColor: Colors.white,
-            side: BorderSide(
-              color: active ? AppColors.primary : AppColors.border,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            visualDensity: VisualDensity.compact,
           );
         },
       ),
@@ -187,36 +166,21 @@ class _Filters extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final bool marked;
-
-  const _SectionTitle({required this.title, this.marked = false});
+/// Marks the section that needs the driver's action.
+class _Dot extends StatelessWidget {
+  const _Dot();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        if (marked) ...[
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: AppColors.error,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-        Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.title,
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
+    return const SizedBox(
+      width: 8,
+      height: 8,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          shape: BoxShape.circle,
         ),
-      ],
+      ),
     );
   }
 }

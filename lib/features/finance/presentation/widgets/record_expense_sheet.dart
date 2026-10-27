@@ -10,6 +10,8 @@ import '../../../home/presentation/bloc/home_event.dart';
 import '../../data/device_expense_attachment_picker.dart';
 import '../../domain/entities/assigned_trip.dart';
 import '../../domain/entities/expense_attachment.dart';
+import '../../domain/entities/expense_trip_scope.dart';
+import '../../domain/entities/record_expense_result.dart';
 import '../../domain/entities/settlement_type.dart';
 import '../../domain/expense_attachment_picker.dart';
 import '../../domain/failures/expense_exception.dart';
@@ -23,9 +25,14 @@ import 'attachment_thumbnail.dart';
 import 'settlement_picker_sheet.dart';
 import 'trip_picker_sheet.dart';
 
+/// With [tripId], the expense is for that trip: it is preselected and the
+/// trip field is hidden. Without it, the driver selects the trip from those
+/// [tripScope] allows.
 Future<void> showRecordExpenseSheet(
   BuildContext context, {
   required String driverId,
+  String? tripId,
+  ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   ExpenseAttachmentPicker? picker,
 }) {
   final expenses = context.read<ExpenseRepository>();
@@ -48,6 +55,8 @@ Future<void> showRecordExpenseSheet(
             driverId: driverId,
             recordExpense: RecordExpense(expenses),
             repository: expenses,
+            initialTripId: tripId,
+            tripScope: tripScope,
           )..add(const RecordExpenseStarted()),
           child: BlocListener<RecordExpenseBloc, RecordExpenseState>(
             listenWhen: (previous, current) =>
@@ -55,6 +64,7 @@ Future<void> showRecordExpenseSheet(
             listener: (_, _) => homeBloc.add(const HomeSummaryRefreshed()),
             child: RecordExpenseSheet(
               picker: picker ?? DeviceExpenseAttachmentPicker(),
+              tripId: tripId,
             ),
           ),
         ),
@@ -65,8 +75,9 @@ Future<void> showRecordExpenseSheet(
 
 class RecordExpenseSheet extends StatefulWidget {
   final ExpenseAttachmentPicker picker;
+  final String? tripId;
 
-  const RecordExpenseSheet({super.key, required this.picker});
+  const RecordExpenseSheet({super.key, required this.picker, this.tripId});
 
   @override
   State<RecordExpenseSheet> createState() => _RecordExpenseSheetState();
@@ -101,32 +112,50 @@ class _RecordExpenseSheetState extends State<RecordExpenseSheet> {
       },
       child: Padding(
         padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        child: SizedBox(
-          height: media.size.height * 0.88,
-          child: SafeArea(
-            child: BlocBuilder<RecordExpenseBloc, RecordExpenseState>(
-              builder: (context, state) {
-                return PopScope(
-                  canPop: !state.submitting,
-                  child: switch (state.stage) {
-                    RecordExpenseStage.confirm => _ConfirmExpense(state: state),
-                    RecordExpenseStage.recorded => _ExpenseRecorded(
-                      state: state,
-                    ),
-                    RecordExpenseStage.form => SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-                      child: _ExpenseForm(
-                        state: state,
-                        l10n: l10n,
-                        amountController: _amountController,
-                        notesController: _notesController,
-                        onPick: (kind) => _pick(context, kind),
+        child: BlocListener<RecordExpenseBloc, RecordExpenseState>(
+          listenWhen: (previous, current) =>
+              previous.stage != RecordExpenseStage.recorded &&
+              current.stage == RecordExpenseStage.recorded,
+          listener: (context, state) {
+            final navigator = Navigator.of(context);
+            final result = state.result!;
+            final tripCode = state.selectedTrip?.code;
+            navigator.pop();
+            navigator.push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ExpenseRecordedPage(result: result, tripCode: tripCode),
+              ),
+            );
+          },
+          child: BlocBuilder<RecordExpenseBloc, RecordExpenseState>(
+            builder: (context, state) {
+              return PopScope(
+                canPop: !state.submitting,
+                child: switch (state.stage) {
+                  RecordExpenseStage.confirm => _ConfirmExpense(state: state),
+                  RecordExpenseStage.recorded => const SizedBox.shrink(),
+                  RecordExpenseStage.form => SizedBox(
+                    height: media.size.height * 0.88,
+                    child: SafeArea(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                        child: _ExpenseForm(
+                          state: state,
+                          l10n: l10n,
+                          tripFixed:
+                              widget.tripId != null &&
+                              state.tripId == widget.tripId,
+                          amountController: _amountController,
+                          notesController: _notesController,
+                          onPick: (kind) => _pick(context, kind),
+                        ),
                       ),
                     ),
-                  },
-                );
-              },
-            ),
+                  ),
+                },
+              );
+            },
           ),
         ),
       ),
@@ -158,6 +187,7 @@ enum _AttachmentSource { camera, gallery, file }
 class _ExpenseForm extends StatelessWidget {
   final RecordExpenseState state;
   final AppLocalizations l10n;
+  final bool tripFixed;
   final TextEditingController amountController;
   final TextEditingController notesController;
   final ValueChanged<_AttachmentSource> onPick;
@@ -165,6 +195,7 @@ class _ExpenseForm extends StatelessWidget {
   const _ExpenseForm({
     required this.state,
     required this.l10n,
+    required this.tripFixed,
     required this.amountController,
     required this.notesController,
     required this.onPick,
@@ -235,17 +266,19 @@ class _ExpenseForm extends StatelessWidget {
             amount: _money(state.balanceEgp, locale, l10n.egp),
           ),
           const SizedBox(height: 16),
-          _FieldLabel(l10n.selectTripTitle),
-          const SizedBox(height: 8),
-          if (trip == null)
-            _SelectorButton(
-              key: const Key('expense-trip'),
-              hint: l10n.selectTripHint,
-              onTap: () => showTripPicker(context),
-            )
-          else
-            _SelectedTrip(trip: trip, onTap: () => showTripPicker(context)),
-          const SizedBox(height: 14),
+          if (!tripFixed) ...[
+            _FieldLabel(l10n.selectTripTitle),
+            const SizedBox(height: 8),
+            if (trip == null)
+              _SelectorButton(
+                key: const Key('expense-trip'),
+                hint: l10n.selectTripHint,
+                onTap: () => showTripPicker(context),
+              )
+            else
+              _SelectedTrip(trip: trip, onTap: () => showTripPicker(context)),
+            const SizedBox(height: 14),
+          ],
           _FieldLabel(l10n.settlementType),
           const SizedBox(height: 8),
           if (settlement == null)
@@ -405,10 +438,18 @@ class _ConfirmExpense extends StatelessWidget {
     final settlement = state.settlementType;
     final after = state.balanceEgp - state.amountEgp;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.fromLTRB(
+          20,
+          18,
+          20,
+          28 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           Text(
             l10n.confirmExpense,
@@ -562,111 +603,132 @@ class _ConfirmExpense extends StatelessWidget {
   }
 }
 
-class _ExpenseRecorded extends StatelessWidget {
-  final RecordExpenseState state;
+class ExpenseRecordedPage extends StatelessWidget {
+  final RecordExpenseResult result;
+  final String? tripCode;
 
-  const _ExpenseRecorded({required this.state});
+  const ExpenseRecordedPage({super.key, required this.result, this.tripCode});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final result = state.result!;
     final expense = result.expense;
     final settlement = settlementTitle(l10n, expense.settlementType);
-    final trip = state.selectedTrip;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: AppColors.dangerBackground,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: AppColors.error,
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.expenseRecorded,
-            style: const TextStyle(
-              color: AppColors.title,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            l10n.expenseDeducted(settlement),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, fontSize: 14),
-          ),
-          const SizedBox(height: 18),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.dangerBackground,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  l10n.amountDeducted,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 13),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 44,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '−${_money(expense.amountEgp, locale, l10n.egp)}',
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: AppColors.dangerBackground,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.error,
+                        size: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.expenseRecorded,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.title,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.expenseDeducted(settlement),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerBackground,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            l10n.amountDeducted,
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '−${_money(expense.amountEgp, locale, l10n.egp)}',
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _SummaryCard(
+                      children: [
+                        _SummaryRow(
+                          label: l10n.newBalance,
+                          value: _money(result.balanceEgp, locale, l10n.egp),
+                          valueColor: AppColors.primary,
+                        ),
+                        _SummaryRow(
+                          label: l10n.tripCode,
+                          value: tripCode ?? expense.tripId,
+                        ),
+                        _SummaryRow(label: l10n.reference, value: expense.id),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        key: const Key('expense-done'),
+                        onPressed: () => Navigator.pop(context),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(l10n.done),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          _SummaryCard(
-            children: [
-              _SummaryRow(
-                label: l10n.newBalance,
-                value: _money(result.balanceEgp, locale, l10n.egp),
-                valueColor: AppColors.primary,
               ),
-              _SummaryRow(
-                label: l10n.tripCode,
-                value: trip?.code ?? expense.tripId,
-              ),
-              _SummaryRow(label: l10n.reference, value: expense.id),
-            ],
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              key: const Key('expense-done'),
-              onPressed: () => Navigator.pop(context),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Text(l10n.done),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

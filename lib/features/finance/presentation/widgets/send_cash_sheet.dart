@@ -8,6 +8,7 @@ import '../../../home/presentation/amount_format.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
 import '../../domain/entities/finance_driver.dart';
+import '../../domain/entities/send_cash_result.dart';
 import '../../domain/repositories/cash_transfer_repository.dart';
 import '../../domain/usecases/send_cash.dart';
 import '../bloc/send_cash_bloc.dart';
@@ -19,6 +20,7 @@ const sendCashQuickAmounts = [500, 1000, 1500, 2000];
 Future<void> showSendCashSheet(
   BuildContext context, {
   required String senderId,
+  void Function(String transferId)? onViewTransaction,
 }) {
   final transfers = context.read<CashTransferRepository>();
   final homeBloc = context.read<HomeBloc>();
@@ -46,7 +48,7 @@ Future<void> showSendCashSheet(
             listenWhen: (previous, current) =>
                 previous.result == null && current.result != null,
             listener: (_, _) => homeBloc.add(const HomeSummaryRefreshed()),
-            child: const SendCashSheet(),
+            child: SendCashSheet(onViewTransaction: onViewTransaction),
           ),
         ),
       );
@@ -55,7 +57,9 @@ Future<void> showSendCashSheet(
 }
 
 class SendCashSheet extends StatefulWidget {
-  const SendCashSheet({super.key});
+  final void Function(String transferId)? onViewTransaction;
+
+  const SendCashSheet({super.key, this.onViewTransaction});
 
   @override
   State<SendCashSheet> createState() => _SendCashSheetState();
@@ -79,38 +83,59 @@ class _SendCashSheetState extends State<SendCashSheet> {
 
     return BlocListener<SendCashBloc, SendCashState>(
       listenWhen: (previous, current) =>
-          previous.amountEgp != current.amountEgp,
+          previous.result == null && current.result != null,
       listener: (context, state) {
-        final text = state.amountEgp == 0 ? '' : '${state.amountEgp}';
-        if (_amountController.text == text) return;
-        _amountController.value = TextEditingValue(
-          text: text,
-          selection: TextSelection.collapsed(offset: text.length),
+        final navigator = Navigator.of(context);
+        final result = state.result!;
+        final recipient = state.selectedRecipient;
+        final onViewTransaction = widget.onViewTransaction;
+        navigator.pop();
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => RequestSentPage(
+              result: result,
+              recipientName: recipient?.fullName ?? result.transfer.recipientId,
+              recipientGivenName:
+                  recipient?.givenName ??
+                  recipient?.fullName ??
+                  result.transfer.recipientId,
+              onViewTransaction: onViewTransaction,
+            ),
+          ),
         );
       },
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottom),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: media.size.height * 0.92),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-              child: BlocBuilder<SendCashBloc, SendCashState>(
-                builder: (context, state) {
-                  if (state.result != null) {
-                    return _RequestSent(state: state);
-                  }
-                  return _SendCashForm(
-                    state: state,
-                    l10n: l10n,
-                    amountController: _amountController,
-                    driversOpen: _driversOpen,
-                    onToggleDrivers: () =>
-                        setState(() => _driversOpen = !_driversOpen),
-                    onDriverSelected: () =>
-                        setState(() => _driversOpen = false),
-                  );
-                },
+      child: BlocListener<SendCashBloc, SendCashState>(
+        listenWhen: (previous, current) =>
+            previous.amountEgp != current.amountEgp,
+        listener: (context, state) {
+          final text = state.amountEgp == 0 ? '' : '${state.amountEgp}';
+          if (_amountController.text == text) return;
+          _amountController.value = TextEditingValue(
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
+          );
+        },
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: media.size.height * 0.92),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                child: BlocBuilder<SendCashBloc, SendCashState>(
+                  builder: (context, state) {
+                    return _SendCashForm(
+                      state: state,
+                      l10n: l10n,
+                      amountController: _amountController,
+                      driversOpen: _driversOpen,
+                      onToggleDrivers: () =>
+                          setState(() => _driversOpen = !_driversOpen),
+                      onDriverSelected: () =>
+                          setState(() => _driversOpen = false),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -287,7 +312,9 @@ class _SendCashForm extends StatelessWidget {
                     alpha: 0.4,
                   ),
                   foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(52),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 52),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -301,18 +328,16 @@ class _SendCashForm extends StatelessWidget {
                           color: Colors.white,
                         ),
                       )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              l10n.sendRequest,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.arrow_forward, size: 18),
-                        ],
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l10n.sendRequest),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.arrow_forward, size: 18),
+                          ],
+                        ),
                       ),
               ),
             ),
@@ -336,115 +361,170 @@ class _SendCashForm extends StatelessWidget {
   }
 }
 
-class _RequestSent extends StatelessWidget {
-  final SendCashState state;
+class RequestSentPage extends StatelessWidget {
+  final SendCashResult result;
+  final String recipientName;
+  final String recipientGivenName;
+  final void Function(String transferId)? onViewTransaction;
 
-  const _RequestSent({required this.state});
+  const RequestSentPage({
+    super.key,
+    required this.result,
+    required this.recipientName,
+    required this.recipientGivenName,
+    this.onViewTransaction,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final result = state.result!;
-    final recipient = state.selectedRecipient;
-    final name = recipient?.fullName ?? result.transfer.recipientId;
-    final given = recipient?.givenName ?? name;
     final amount = _money(result.transfer.amountEgp, locale, l10n.egp);
     final balance = _money(result.senderBalanceEgp, locale, l10n.egp);
 
-    return Column(
-      children: [
-        const SizedBox(height: 28),
-        const Icon(Icons.outbox_rounded, color: AppColors.primary, size: 56),
-        const SizedBox(height: 16),
-        Text(
-          l10n.requestSent,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.title,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          l10n.requestSentDetail(amount, name),
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.muted, fontSize: 14),
-        ),
-        const SizedBox(height: 16),
-        _WarningBanner(text: l10n.waitingForApproval(given)),
-        const SizedBox(height: 16),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            child: Column(
-              children: [
-                Text(
-                  l10n.currentBalance,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 13),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 44,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  balance,
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.outbox_rounded,
+                      color: AppColors.primary,
+                      size: 56,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.requestSent,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.title,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.requestSentDetail(amount, recipientName),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _WarningBanner(
+                      text: l10n.waitingForApproval(recipientGivenName),
+                    ),
+                    const SizedBox(height: 16),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 18,
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              l10n.currentBalance,
+                              style: const TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              balance,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      l10n.pendingConfirm,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.warningText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          result.transfer.id,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        key: const Key('send-cash-home'),
+                        onPressed: () => Navigator.pop(context),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(l10n.goHome),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        key: const Key('send-cash-view'),
+                        onPressed: () {
+                          final transferId = result.transfer.id;
+                          Navigator.pop(context);
+                          onViewTransaction?.call(transferId);
+                        },
+                        style: _outlineStyle(),
+                        child: Text(l10n.viewTransaction),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Text(
-              result.transfer.id,
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-          ),
-        ),
-        const SizedBox(height: 22),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                key: const Key('send-cash-close'),
-                onPressed: () => Navigator.pop(context),
-                style: _outlineStyle(),
-                child: Text(l10n.close),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                key: const Key('send-cash-home'),
-                onPressed: () => Navigator.pop(context),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(l10n.goHome),
-              ),
-            ),
-          ],
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 }

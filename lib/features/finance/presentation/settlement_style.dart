@@ -66,18 +66,6 @@ String settlementName(AppLocalizations l10n, SettlementType type) {
   };
 }
 
-String settlementGloss(AppLocalizations l10n, SettlementType type) {
-  return switch (type) {
-    SettlementType.fuel => l10n.settlementFuelGloss,
-    SettlementType.licensing => l10n.settlementLicensingGloss,
-    SettlementType.permits => l10n.settlementPermitsGloss,
-    _ => '',
-  };
-}
-
 String settlementTitle(AppLocalizations l10n, SettlementType type) {
-  final name = settlementName(l10n, type);
-  final gloss = settlementGloss(l10n, type);
-  if (gloss.isEmpty) return name;
-  return '$name · $gloss';
+  return settlementName(l10n, type);
 }

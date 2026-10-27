@@ -2,6 +2,7 @@ import '../../../finance/data/datasources/mock_cash_ledger.dart';
 import '../../../finance/domain/entities/cash_transfer.dart';
 import '../../../finance/domain/entities/custody_receipt.dart';
 import '../../../finance/domain/entities/expense_request.dart';
+import '../../../finance/domain/entities/road_expense_approval.dart';
 import '../../domain/entities/history_entry.dart';
 import '../../domain/repositories/history_repository.dart';
 
@@ -9,6 +10,9 @@ class HistoryRepositoryImpl implements HistoryRepository {
   final MockCashLedger _ledger;
 
   const HistoryRepositoryImpl(this._ledger);
+
+  @override
+  Stream<void> get changes => _ledger.changes;
 
   @override
   Future<List<HistoryEntry>> getHistory(String driverId) async {
@@ -22,6 +26,10 @@ class HistoryRepositoryImpl implements HistoryRepository {
           _incoming(transfer)
         else if (transfer.senderId == driverId)
           _outgoing(transfer),
+      for (final approval in _ledger.roadExpenseApprovals)
+        if (approval.driverId == driverId &&
+            approval.status != RoadExpenseStatus.pending)
+          _roadExpense(approval),
     ];
     entries.sort((a, b) {
       final byTime = b.occurredAt.compareTo(a.occurredAt);
@@ -67,6 +75,20 @@ class HistoryRepositoryImpl implements HistoryRepository {
       status: _transferStatus(transfer.status, incoming: true),
       counterpartyName: _ledger.nameOf(transfer.senderId),
       counterpartyId: transfer.senderId,
+    );
+  }
+
+  HistoryEntry _roadExpense(RoadExpenseApproval approval) {
+    return HistoryEntry(
+      id: approval.id,
+      kind: HistoryKind.roadExpense,
+      amountEgp: approval.amountEgp,
+      credit: false,
+      occurredAt: approval.submittedAt,
+      status: approval.status == RoadExpenseStatus.rejected
+          ? HistoryDisplayStatus.rejected
+          : HistoryDisplayStatus.approved,
+      tripCode: approval.id,
     );
   }
 

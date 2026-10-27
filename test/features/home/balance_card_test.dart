@@ -157,6 +157,9 @@ Widget _app({
 class _PendingFinanceRepository implements FinanceRepository {
   final Completer<FinancialSummary> _completer = Completer<FinancialSummary>();
 
+  @override
+  Stream<void> get changes => const Stream.empty();
+
   void complete(FinancialSummary summary) {
     _completer.complete(summary);
   }
@@ -167,6 +170,9 @@ class _PendingFinanceRepository implements FinanceRepository {
 
 class _FailingFinanceRepository implements FinanceRepository {
   int calls = 0;
+
+  @override
+  Stream<void> get changes => const Stream.empty();
 
   @override
   Future<FinancialSummary> getFinancialSummary() async {

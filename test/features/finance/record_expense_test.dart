@@ -4,6 +4,7 @@ import 'package:driver_portal_app/features/finance/data/repositories/expense_rep
 import 'package:driver_portal_app/features/finance/domain/entities/assigned_trip.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_attachment.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_request.dart';
+import 'package:driver_portal_app/features/finance/domain/entities/expense_trip_scope.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/finance/domain/failures/expense_exception.dart';
 import 'package:driver_portal_app/features/finance/domain/repositories/expense_repository.dart';
@@ -53,24 +54,46 @@ void main() {
     );
   });
 
-  test('active and completed trips are eligible', () async {
+  test('completed trips stay listed but cannot be recorded', () async {
     final harness = _Harness();
     final trips = await harness.repository.getAssignedTrips(
       MockCashLedger.senderId,
     );
 
     expect(trips, hasLength(6));
+    expect(trips.map((trip) => trip.id), contains('trip-2026-0927'));
+    expect(trips.map((trip) => trip.id), contains('trip-2026-0904'));
     expect(trips.map((trip) => trip.id), isNot(contains('trip-2026-0600')));
     expect(trips.map((trip) => trip.id), isNot(contains('trip-2026-0700')));
-
-    await harness.record(
-      driverId: MockCashLedger.senderId,
-      tripId: 'trip-2026-0904',
-      settlementType: SettlementType.roadFeesClient,
-      amountEgp: 100,
-      createdAt: createdAt,
+    expect(
+      trips.every(
+        (trip) =>
+            trip.status == TripStatus.active ||
+            trip.status == TripStatus.completed,
+      ),
+      isTrue,
     );
-    expect(harness.ledger.balanceOf('DR-001'), 2100);
+    expect(
+      trips.singleWhere((trip) => trip.id == 'trip-2026-0927').isEligible,
+      isTrue,
+    );
+    expect(
+      trips.singleWhere((trip) => trip.id == 'trip-2026-0904').isEligible,
+      isFalse,
+    );
+
+    expect(
+      () => harness.record(
+        driverId: MockCashLedger.senderId,
+        tripId: 'trip-2026-0904',
+        settlementType: SettlementType.roadFeesClient,
+        amountEgp: 100,
+        createdAt: createdAt,
+      ),
+      throwsA(isA<IneligibleTripException>()),
+    );
+    expect(harness.ledger.balanceOf('DR-001'), 2200);
+    expect(harness.ledger.expenses, isEmpty);
   });
 
   test('zero and negative amounts are rejected without an expense', () async {
@@ -152,6 +175,47 @@ void main() {
     );
     expect(harness.ledger.balanceOf('DR-001'), 2200);
     expect(harness.ledger.expenses, isEmpty);
+  });
+
+  test('the any-trip scope records a completed trip as Recorded', () async {
+    final harness = _Harness();
+
+    final result = await harness.record(
+      driverId: MockCashLedger.senderId,
+      tripId: 'trip-2026-0904',
+      settlementType: SettlementType.roadFeesClient,
+      amountEgp: 100,
+      createdAt: createdAt,
+      tripScope: ExpenseTripScope.anyTrip,
+    );
+
+    expect(result.expense.tripId, 'trip-2026-0904');
+    expect(result.expense.status, ExpenseStatus.recorded);
+    expect(result.balanceEgp, 2100);
+    expect(harness.ledger.balanceOf('DR-001'), 2100);
+    expect(
+      () => harness.record(
+        driverId: MockCashLedger.senderId,
+        tripId: 'trip-2026-0600',
+        settlementType: SettlementType.fuel,
+        amountEgp: 100,
+        createdAt: createdAt,
+        tripScope: ExpenseTripScope.anyTrip,
+      ),
+      throwsA(isA<IneligibleTripException>()),
+    );
+    expect(
+      () => harness.record(
+        driverId: MockCashLedger.senderId,
+        tripId: 'trip-2026-0700',
+        settlementType: SettlementType.fuel,
+        amountEgp: 100,
+        createdAt: createdAt,
+        tripScope: ExpenseTripScope.anyTrip,
+      ),
+      throwsA(isA<TripAssignedToAnotherDriverException>()),
+    );
+    expect(harness.ledger.expenses, hasLength(1));
   });
 
   test('an ineligible trip and another driver trip are rejected', () async {
@@ -299,6 +363,7 @@ class _ThrowingRepository implements ExpenseRepository {
     required String? notes,
     required List<ExpenseAttachment> attachments,
     required DateTime createdAt,
+    ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   }) async {
     createCalls += 1;
     throw StateError('create should not be called');

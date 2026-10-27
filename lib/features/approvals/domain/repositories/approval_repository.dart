@@ -5,6 +5,9 @@ abstract class ApprovalRepository {
 
   Future<int> getAvailableBalance(String driverId);
 
+  /// Fires whenever approvals or the available balance may have changed.
+  Stream<void> get changes;
+
   Future<void> approveVaultReceipt({
     required String driverId,
     required String receiptId,

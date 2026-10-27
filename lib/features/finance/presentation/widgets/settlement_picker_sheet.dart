@@ -83,7 +83,6 @@ class SettlementPickerSheet extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final type = SettlementType.values[index];
                   final visual = settlementVisual(type);
-                  final gloss = settlementGloss(l10n, type);
                   return Material(
                     color: AppColors.background,
                     borderRadius: BorderRadius.circular(16),
@@ -128,14 +127,6 @@ class SettlementPickerSheet extends StatelessWidget {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  if (gloss.isNotEmpty)
-                                    Text(
-                                      gloss,
-                                      style: const TextStyle(
-                                        color: AppColors.muted,
-                                        fontSize: 12,
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),

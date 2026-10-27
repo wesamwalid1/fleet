@@ -190,6 +190,9 @@ class _FakeFinanceRepository implements FinanceRepository {
   _FakeFinanceRepository({required this.onGet});
 
   @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
   Future<FinancialSummary> getFinancialSummary() {
     calls += 1;
     return onGet();

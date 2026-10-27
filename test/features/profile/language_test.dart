@@ -41,7 +41,7 @@ void main() {
       expect(find.text('العربية'), findsOneWidget);
       expect(find.text('اللغة'), findsOneWidget);
       expect(find.text('رصيدي'), findsOneWidget);
-      expect(find.text('الرئيسية'), findsOneWidget);
+      expect(find.byTooltip('الرئيسية'), findsOneWidget);
       expect(repository.saved, const Locale('ar'));
       expect(
         Directionality.of(

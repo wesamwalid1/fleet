@@ -1,155 +1,131 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/assets/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/activity_row.dart';
+import '../../../../core/widgets/type_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../finance/presentation/settlement_style.dart';
 import '../../domain/entities/history_entry.dart';
 import '../history_format.dart';
 
+/// A ledger row, shared by History and Home's recent transactions. Keys are
+/// `'$keyPrefix-<id>'` for the row and `'$keyPrefix-details-<id>'` and
+/// `'$keyPrefix-values-<id>'` for its two columns.
 class HistoryEntryTile extends StatelessWidget {
   final HistoryEntry entry;
   final String when;
   final VoidCallback? onTap;
-  final Key? tileKey;
+  final String keyPrefix;
+  final bool showDivider;
+  final bool highlighted;
 
   const HistoryEntryTile({
     super.key,
     required this.entry,
     required this.when,
     this.onTap,
-    this.tileKey,
+    this.keyPrefix = 'history-entry',
+    this.showDivider = false,
+    this.highlighted = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final style = _tileStyle(entry);
-    final statusColor = switch (entry.status) {
-      HistoryDisplayStatus.pendingConfirm => AppColors.warningText,
-      HistoryDisplayStatus.awaitingApproval => AppColors.muted,
-      HistoryDisplayStatus.rejected => AppColors.error,
-      _ => AppColors.success,
-    };
+    final id = entry.id;
     final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: style.background,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(style.icon, color: style.foreground, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  historyTitle(l10n, entry),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.title,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  historySubtitle(l10n, entry),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  signedHistoryAmount(
-                    entry,
-                    locale: locale,
-                    currency: l10n.egp,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: entry.credit ? AppColors.success : AppColors.error,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  when,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.hint, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
+      child: ActivityRow(
+        avatar: historyAvatar(entry),
+        title: historyTitle(l10n, entry),
+        subtitle: historySubtitle(l10n, entry),
+        subtitleColor: historyStatusColor(entry.status),
+        amount: signedHistoryAmount(entry, locale: locale, currency: l10n.egp),
+        amountColor: entry.credit ? AppColors.creditText : AppColors.title,
+        when: when,
+        detailsKey: Key('$keyPrefix-details-$id'),
+        valuesKey: Key('$keyPrefix-values-$id'),
       ),
     );
-    if (onTap == null) return KeyedSubtree(key: tileKey, child: row);
-    return InkWell(key: tileKey, onTap: onTap, child: row);
+    final decorated = DecoratedBox(
+      key: highlighted ? Key('history-highlight-$id') : null,
+      decoration: BoxDecoration(
+        color: highlighted
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: row,
+    );
+    final tileKey = Key('$keyPrefix-$id');
+    final tile = onTap == null
+        ? KeyedSubtree(key: tileKey, child: decorated)
+        : InkWell(
+            key: tileKey,
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: decorated,
+          );
+    if (!showDivider) return tile;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [tile, const HistoryEntryDivider()],
+    );
   }
 }
 
-class _TileStyle {
-  final IconData icon;
-  final Color foreground;
-  final Color background;
+class HistoryEntryDivider extends StatelessWidget {
+  const HistoryEntryDivider({super.key});
 
-  const _TileStyle(this.icon, this.foreground, this.background);
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: AppColors.title.withValues(alpha: 0.08),
+    );
+  }
 }
 
-_TileStyle _tileStyle(HistoryEntry entry) {
-  if (entry.kind == HistoryKind.expense) {
-    final visual = settlementVisual(entry.settlementType!);
-    return _TileStyle(visual.icon, visual.color, visual.background);
-  }
-  if (entry.kind == HistoryKind.vault) {
-    return const _TileStyle(
-      Icons.account_balance_outlined,
-      AppColors.success,
-      AppColors.successBackground,
-    );
-  }
-  if (entry.kind == HistoryKind.outgoing) {
-    return const _TileStyle(
-      Icons.person_outline,
-      AppColors.pink,
-      AppColors.pinkBackground,
-    );
-  }
-  if (entry.isPending) {
-    return const _TileStyle(
-      Icons.hourglass_empty,
-      AppColors.muted,
-      AppColors.neutralBackground,
-    );
-  }
-  return const _TileStyle(
-    Icons.person_outline,
-    AppColors.success,
-    AppColors.successBackground,
-  );
+Color historyStatusColor(HistoryDisplayStatus status) {
+  return switch (status) {
+    HistoryDisplayStatus.pendingConfirm ||
+    HistoryDisplayStatus.awaitingApproval => AppColors.pendingText,
+    HistoryDisplayStatus.rejected => AppColors.rejectedText,
+    _ => AppColors.creditText,
+  };
+}
+
+TypeAvatar historyAvatar(HistoryEntry entry) {
+  return switch (entry.kind) {
+    HistoryKind.expense => TypeAvatar.asset(
+      AppIcons.money,
+      tint: AppColors.successBackground,
+    ),
+    HistoryKind.vault => TypeAvatar.asset(
+      AppIcons.vault,
+      tint: AppColors.warningBackground,
+    ),
+    HistoryKind.outgoing => TypeAvatar.asset(
+      AppIcons.send,
+      tint: AppColors.pinkBackground,
+    ),
+    HistoryKind.incoming when entry.isPending => TypeAvatar.asset(
+      AppIcons.pending,
+      tint: AppColors.warningBackground,
+    ),
+    HistoryKind.incoming => TypeAvatar.asset(
+      AppIcons.person,
+      tint: AppColors.successBackground,
+    ),
+    HistoryKind.roadExpense => const TypeAvatar(
+      tint: AppColors.primarySurface,
+      child: Icon(
+        Icons.description_outlined,
+        size: 24,
+        color: AppColors.primary,
+      ),
+    ),
+  };
 }

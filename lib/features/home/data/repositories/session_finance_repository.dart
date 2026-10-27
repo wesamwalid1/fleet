@@ -13,6 +13,9 @@ class SessionFinanceRepository implements FinanceRepository {
   const SessionFinanceRepository(this._dataSource, this._ledger);
 
   @override
+  Stream<void> get changes => _ledger.changes;
+
+  @override
   Future<FinancialSummary> getFinancialSummary() async {
     final account = await _dataSource.loadAccount();
     final base = summarizeTransactions(

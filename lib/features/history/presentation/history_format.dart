@@ -59,6 +59,7 @@ String historyDayHeader(
 String historyTitle(AppLocalizations l10n, HistoryEntry entry) {
   return switch (entry.kind) {
     HistoryKind.expense => settlementName(l10n, entry.settlementType!),
+    HistoryKind.roadExpense => l10n.roadExpenseApproval,
     HistoryKind.vault => l10n.receivedFromVault,
     HistoryKind.incoming when entry.isPending => l10n.pendingFrom(
       entry.counterpartyName,
@@ -92,7 +93,7 @@ String historySubtitle(AppLocalizations l10n, HistoryEntry entry) {
     return marked;
   }
   final reference = switch (entry.kind) {
-    HistoryKind.expense => entry.tripCode,
+    HistoryKind.expense || HistoryKind.roadExpense => entry.tripCode,
     HistoryKind.vault => l10n.driversVault,
     HistoryKind.incoming || HistoryKind.outgoing => entry.counterpartyId,
   };

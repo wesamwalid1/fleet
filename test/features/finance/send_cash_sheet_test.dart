@@ -1,4 +1,6 @@
 import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/features/finance/presentation/widgets/send_cash_sheet.dart';
+import 'package:driver_portal_app/features/history/presentation/bloc/history_bloc.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -41,7 +43,7 @@ void main() {
     expect(find.text('1,700 EGP'), findsWidgets);
     expect(find.textContaining('TRF-'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('send-cash-close')));
+    await tester.tap(find.byKey(const Key('send-cash-home')));
     await tester.pumpAndSettle();
 
     expect(find.text('1,700 EGP'), findsOneWidget);
@@ -53,6 +55,81 @@ void main() {
     expect(
       find.byKey(const Key('approval-action-TRF-2026-0124')),
       findsNothing,
+    );
+  });
+
+  testWidgets('send request label stays fully visible on a narrow width', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('send-cash')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await _selectKhaled(tester);
+    await tester.ensureVisible(find.byKey(const Key('send-cash-chip-500')));
+    await tester.tap(find.byKey(const Key('send-cash-chip-500')));
+    await tester.pump();
+
+    final button = find.byKey(const Key('send-cash-submit'));
+    await tester.ensureVisible(button);
+    final label = find.descendant(
+      of: button,
+      matching: find.text('Send Request'),
+    );
+    expect(label, findsOneWidget);
+    final buttonBox = tester.getRect(button);
+    final labelBox = tester.getRect(label);
+    expect(labelBox.left, greaterThanOrEqualTo(buttonBox.left));
+    expect(labelBox.right, lessThanOrEqualTo(buttonBox.right + 0.5));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('view transaction opens history and highlights the new row', (
+    tester,
+  ) async {
+    await _openForm(tester);
+    await _selectKhaled(tester);
+    await tester.ensureVisible(find.byKey(const Key('send-cash-chip-500')));
+    await tester.tap(find.byKey(const Key('send-cash-chip-500')));
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('send-cash-submit')));
+    await tester.tap(find.byKey(const Key('send-cash-submit')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Request Sent!'), findsOneWidget);
+    expect(find.byType(RequestSentPage), findsOneWidget);
+    expect(find.byKey(const Key('send-cash-home')), findsOneWidget);
+    expect(find.byKey(const Key('send-cash-view')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('send-cash-view')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('history-title')), findsOneWidget);
+    expect(
+      find.byKey(const Key('history-highlight-TRF-2026-0124')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('history-entry-TRF-2026-0124')),
+      findsOneWidget,
+    );
+
+    await tester.pump(historyHighlightDuration);
+    await tester.pump();
+
+    expect(
+      find.byKey(const Key('history-highlight-TRF-2026-0124')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('history-entry-TRF-2026-0124')),
+      findsOneWidget,
     );
   });
 }

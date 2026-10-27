@@ -156,6 +156,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get goHome => 'العودة للرئيسية';
 
   @override
+  String get viewTransaction => 'عرض الحركة';
+
+  @override
   String get selectDriverError => 'اختر سائقاً';
 
   @override
@@ -589,6 +592,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get languageArabic => 'العربية';
 
   @override
+  String get profileQuickAccess => 'وصول سريع';
+
+  @override
+  String get profileSettings => 'الإعدادات';
+
+  @override
+  String get profileAccount => 'الحساب';
+
+  @override
+  String get darkMode => 'الوضع الداكن';
+
+  @override
   String profileBalance(String amount) {
     return 'الرصيد: $amount';
   }
@@ -600,4 +615,132 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get approvalFailed => 'تعذر تحديث هذه الموافقة.';
+
+  @override
+  String get homeAvailableBalance => 'الرصيد المتاح';
+
+  @override
+  String homeLimitUsed(String percent) {
+    return 'تم استخدام $percent% من الحد';
+  }
+
+  @override
+  String get homeRemainingLimit => 'الحد المتبقي';
+
+  @override
+  String get homeActiveTrip => 'الرحلة النشطة';
+
+  @override
+  String get homeNoActiveTrip => 'لا توجد رحلة نشطة';
+
+  @override
+  String get homeNoActiveTripHint => 'يمكن تسجيل المصروفات عند وجود رحلة نشطة.';
+
+  @override
+  String get homeActions => 'الإجراءات';
+
+  @override
+  String get homeViewAllApprovals => 'عرض كل الموافقات';
+
+  @override
+  String get homeAllCaughtUp => 'لا توجد طلبات بانتظارك';
+
+  @override
+  String get homeRecentTransactions => 'أحدث الحركات';
+
+  @override
+  String get notificationsFilterUnread => 'غير المقروءة';
+
+  @override
+  String get notificationsEmpty => 'لا توجد إشعارات بعد';
+
+  @override
+  String get notificationsEmptyHint =>
+      'ستظهر هنا التحديثات الخاصة بالنقدية والموافقات والمصروفات.';
+
+  @override
+  String get notificationsNoUnread => 'لا توجد إشعارات غير مقروءة';
+
+  @override
+  String get notificationsNoUnreadHint => 'لا يوجد ما يحتاج إلى متابعتك.';
+
+  @override
+  String get notificationsLoadError => 'تعذر تحميل الإشعارات.';
+
+  @override
+  String get notificationUnread => 'غير مقروء';
+
+  @override
+  String get notificationVaultPendingTitle =>
+      'نقدية من الخزينة بانتظار موافقتك';
+
+  @override
+  String notificationIncomingTitle(String name) {
+    return 'نقدية من $name بانتظار موافقتك';
+  }
+
+  @override
+  String notificationSentApprovedTitle(String name, String amount) {
+    return 'أكد $name تحويلك بقيمة $amount';
+  }
+
+  @override
+  String notificationSentRejectedTitle(String name, String amount) {
+    return 'رفض $name تحويلك بقيمة $amount';
+  }
+
+  @override
+  String notificationTransferSentTitle(String amount, String name) {
+    return 'أرسلت $amount إلى $name';
+  }
+
+  @override
+  String notificationTransferSentBody(String reference) {
+    return 'بانتظار التأكيد · $reference';
+  }
+
+  @override
+  String notificationTransferConfirmedBody(String reference) {
+    return 'تم التأكيد · $reference';
+  }
+
+  @override
+  String get notificationsSearchHint => 'ابحث في الإشعارات';
+
+  @override
+  String get notificationsClearSearch => 'مسح البحث';
+
+  @override
+  String get notificationsNoResults => 'لا توجد إشعارات مطابقة';
+
+  @override
+  String get notificationsNoResultsHint => 'جرّب كلمة أخرى أو امسح البحث.';
+
+  @override
+  String get notificationRoadPendingTitle => 'مصروف طريق يحتاج إلى تأكيدك';
+
+  @override
+  String get notificationExpenseRecordedTitle => 'تم تسجيل المصروف';
+
+  @override
+  String notificationAmountReference(String amount, String reference) {
+    return '$amount · $reference';
+  }
+
+  @override
+  String notificationRefundedBody(String amount, String reference) {
+    return 'تمت إعادة $amount إلى رصيدك · $reference';
+  }
+
+  @override
+  String notificationDeductedBody(String amount, String reference) {
+    return 'تم خصم $amount · $reference';
+  }
+
+  @override
+  String get notificationRequestHandled =>
+      'تمت معالجة هذا الطلب بالفعل. يتم عرض حالته الحالية.';
+
+  @override
+  String get notificationTargetUnavailable => 'هذا العنصر لم يعد متاحاً.';
 }

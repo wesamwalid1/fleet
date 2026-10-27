@@ -3,6 +3,7 @@ import 'package:driver_portal_app/features/auth/presentation/bloc/login_bloc.dar
 import 'package:driver_portal_app/features/auth/presentation/pages/login_page.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,7 +27,7 @@ abstract final class AppRoute {
       case home:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => const HomeScope(),
+          builder: (_) => const HomeScope(resetDemoNotifications: kDebugMode),
         );
 
       default:

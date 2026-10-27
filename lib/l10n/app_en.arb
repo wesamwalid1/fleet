@@ -70,6 +70,10 @@
   "currentBalance": "Current balance",
   "close": "Close",
   "goHome": "Go Home",
+  "viewTransaction": "View Transaction",
+  "@viewTransaction": {
+    "description": "Opens Transaction History focused on the request that was just sent."
+  },
   "selectDriverError": "Select a driver",
   "invalidAmountError": "Enter an amount greater than zero",
   "insufficientBalanceError": "Amount exceeds your available balance",
@@ -287,6 +291,10 @@
   "chooseLanguage": "Choose Language",
   "languageEnglish": "English",
   "languageArabic": "العربية",
+  "profileQuickAccess": "Quick Access",
+  "profileSettings": "Settings",
+  "profileAccount": "Account",
+  "darkMode": "Dark Mode",
   "profileBalance": "Balance: {amount}",
   "@profileBalance": {
     "placeholders": {
@@ -300,5 +308,96 @@
       "vault": {"type": "String"}
     }
   },
-  "approvalFailed": "Could not update this approval."
+  "approvalFailed": "Could not update this approval.",
+  "homeAvailableBalance": "Available Balance",
+  "homeLimitUsed": "{percent}% of limit used",
+  "@homeLimitUsed": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "homeRemainingLimit": "Remaining Limit",
+  "homeActiveTrip": "Active Trip",
+  "homeNoActiveTrip": "No Active Trip",
+  "homeNoActiveTripHint": "Expenses can be recorded once a trip is active.",
+  "homeActions": "Actions",
+  "homeViewAllApprovals": "View All Approvals",
+  "homeAllCaughtUp": "You're all caught up",
+  "homeRecentTransactions": "Recent Transactions",
+  "notificationsFilterUnread": "Unread",
+  "notificationsEmpty": "No notifications yet",
+  "notificationsEmptyHint": "Updates about cash, approvals, and expenses will appear here.",
+  "notificationsNoUnread": "No unread notifications",
+  "notificationsNoUnreadHint": "You're all caught up.",
+  "notificationsLoadError": "Unable to load notifications.",
+  "notificationUnread": "Unread",
+  "notificationVaultPendingTitle": "Vault cash awaiting your approval",
+  "notificationIncomingTitle": "Cash from {name} awaiting your approval",
+  "@notificationIncomingTitle": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "notificationSentApprovedTitle": "{name} confirmed your transfer of {amount}",
+  "@notificationSentApprovedTitle": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+  "notificationSentRejectedTitle": "{name} rejected your transfer of {amount}",
+  "@notificationSentRejectedTitle": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+  "notificationTransferSentTitle": "You sent {amount} to {name}",
+  "@notificationTransferSentTitle": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "name": {"type": "String"}
+    }
+  },
+  "notificationTransferSentBody": "Waiting for confirmation · {reference}",
+  "@notificationTransferSentBody": {
+    "placeholders": {
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationTransferConfirmedBody": "Confirmed · {reference}",
+  "@notificationTransferConfirmedBody": {
+    "placeholders": {
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationsSearchHint": "Search notifications",
+  "notificationsClearSearch": "Clear search",
+  "notificationsNoResults": "No matching notifications",
+  "notificationsNoResultsHint": "Try a different word or clear the search.",
+  "notificationRoadPendingTitle": "Road expense needs your confirmation",
+  "notificationExpenseRecordedTitle": "Expense recorded",
+  "notificationAmountReference": "{amount} · {reference}",
+  "@notificationAmountReference": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationRefundedBody": "{amount} returned to your balance · {reference}",
+  "@notificationRefundedBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationDeductedBody": "{amount} deducted · {reference}",
+  "@notificationDeductedBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationRequestHandled": "This request was already handled. Showing its current status.",
+  "notificationTargetUnavailable": "This item is no longer available."
 }

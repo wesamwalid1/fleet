@@ -1,10 +1,13 @@
 import 'package:driver_portal_app/features/finance/domain/entities/expense_attachment.dart';
+import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/finance/domain/expense_attachment_picker.dart';
+import 'package:driver_portal_app/features/finance/presentation/bloc/record_expense_bloc.dart';
 import 'package:driver_portal_app/features/finance/presentation/widgets/record_expense_sheet.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/home/presentation/pages/home_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -81,6 +84,46 @@ void main() {
     );
   });
 
+  testWidgets('confirm expense sheet is shorter than the entry sheet', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('record-expense')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final entryHeight = tester.getSize(find.byType(RecordExpenseSheet)).height;
+    expect(entryHeight, greaterThan(1000));
+
+    await _selectTrip(tester, 'trip-2026-0927');
+    await _selectSettlement(tester, 'fuel');
+    await tester.ensureVisible(find.byKey(const Key('expense-amount')));
+    await tester.enterText(find.byKey(const Key('expense-amount')), '300');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('expense-submit')));
+    await tester.tap(find.byKey(const Key('expense-submit')));
+    await tester.pump();
+
+    expect(find.text('Confirm Expense'), findsOneWidget);
+    expect(find.byKey(const Key('expense-back')), findsOneWidget);
+    expect(find.byKey(const Key('expense-confirm')), findsOneWidget);
+
+    final sheet = tester.getRect(find.byType(RecordExpenseSheet));
+    final confirmButton = tester.getRect(
+      find.byKey(const Key('expense-confirm')),
+    );
+    expect(sheet.height, lessThan(entryHeight));
+    final gap = sheet.bottom - confirmButton.bottom;
+    expect(gap, greaterThanOrEqualTo(24));
+    expect(gap, lessThan(48));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('confirm expense shows added attachments', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -116,6 +159,116 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Expense Recorded'), findsNothing);
+  });
+
+  testWidgets('completed trips stay visible but cannot be selected', (
+    tester,
+  ) async {
+    await _openForm(tester);
+    await tester.tap(find.byKey(const Key('expense-trip')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('TR-2026-0927'), findsOneWidget);
+    expect(find.text('Active'), findsWidgets);
+    expect(
+      find.byKey(const Key('expense-trip-locked-trip-2026-0904')),
+      findsOneWidget,
+    );
+    expect(find.text('Completed'), findsWidgets);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('expense-trip-trip-2026-0904')),
+    );
+    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0904')));
+    await tester.pump();
+    expect(find.text('Select Trip'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('expense-trip-search')),
+      'Suez',
+    );
+    await tester.pump();
+    expect(find.text('TR-2026-0927'), findsOneWidget);
+    expect(find.text('TR-2026-0904'), findsOneWidget);
+    expect(
+      find.byKey(const Key('expense-trip-locked-trip-2026-0904')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('expense-trip-search')),
+      '0904',
+    );
+    await tester.pump();
+    expect(find.text('TR-2026-0904'), findsOneWidget);
+    expect(find.text('TR-2026-0927'), findsNothing);
+    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0904')));
+    await tester.pump();
+    expect(find.text('Select Trip'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('expense-trip-search')),
+      '0927',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0927')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Select Trip'), findsNothing);
+    expect(find.text('TR-2026-0927'), findsOneWidget);
+    expect(find.text('Select trip...'), findsNothing);
+  });
+
+  testWidgets('english settlement labels do not include arabic', (
+    tester,
+  ) async {
+    await _openSettlementPicker(tester);
+    expect(find.text('Fuel'), findsOneWidget);
+    expect(find.text('Road Fees — Client'), findsOneWidget);
+    expect(find.text('تموين'), findsNothing);
+    expect(find.text('تراخيص'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('expense-settlement-fuel')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Fuel'), findsOneWidget);
+    expect(find.textContaining('تموين'), findsNothing);
+    expect(
+      tester
+          .element(find.byKey(const Key('expense-settlement')))
+          .read<RecordExpenseBloc>()
+          .state
+          .settlementType,
+      SettlementType.fuel,
+    );
+  });
+
+  testWidgets('arabic settlement labels do not include english', (
+    tester,
+  ) async {
+    await _openSettlementPicker(tester, const Locale('ar'));
+    expect(find.text('تموين'), findsOneWidget);
+    expect(find.text('رسوم الطريق — العميل'), findsOneWidget);
+    expect(find.text('Fuel'), findsNothing);
+    expect(find.text('Licensing'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('expense-settlement-fuel')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('تموين'), findsOneWidget);
+    expect(find.text('Fuel'), findsNothing);
+    expect(
+      tester
+          .element(find.byKey(const Key('expense-settlement')))
+          .read<RecordExpenseBloc>()
+          .state
+          .settlementType,
+      SettlementType.fuel,
+    );
   });
 }
 
@@ -170,10 +323,29 @@ Future<void> _selectSettlement(WidgetTester tester, String name) async {
   await tester.pump(const Duration(milliseconds: 300));
 }
 
-Widget _app() {
-  return const MaterialApp(
-    locale: Locale('en'),
-    localizationsDelegates: [
+Future<void> _openSettlementPicker(
+  WidgetTester tester, [
+  Locale locale = const Locale('en'),
+]) async {
+  tester.view.physicalSize = const Size(400, 1200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  await tester.pumpWidget(_app(locale));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('record-expense')));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+  await tester.ensureVisible(find.byKey(const Key('expense-settlement')));
+  await tester.tap(find.byKey(const Key('expense-settlement')));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
+Widget _app([Locale locale = const Locale('en')]) {
+  return MaterialApp(
+    locale: locale,
+    localizationsDelegates: const [
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,

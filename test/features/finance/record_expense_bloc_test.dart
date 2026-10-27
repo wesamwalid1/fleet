@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:driver_portal_app/features/finance/domain/entities/assigned_trip.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_attachment.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_request.dart';
+import 'package:driver_portal_app/features/finance/domain/entities/expense_trip_scope.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/finance/domain/repositories/expense_repository.dart';
 import 'package:driver_portal_app/features/finance/domain/usecases/record_expense.dart';
@@ -39,6 +40,52 @@ void main() {
     await bloc.close();
   });
 
+  test('a preselected eligible trip is applied once trips load', () async {
+    final bloc = _bloc(_FakeExpenses(), initialTripId: 'trip-2026-0927');
+    bloc.add(const RecordExpenseStarted());
+    final loaded = await bloc.stream.firstWhere((state) => !state.loading);
+
+    expect(loaded.tripId, 'trip-2026-0927');
+    expect(loaded.selectedTrip?.code, 'TR-2026-0927');
+    expect(loaded.error, isNull);
+    await bloc.close();
+  });
+
+  test('a preselected trip that is not eligible is not applied', () async {
+    for (final id in ['trip-2026-0904', 'trip-unknown']) {
+      final bloc = _bloc(_FakeExpenses(), initialTripId: id);
+      bloc.add(const RecordExpenseStarted());
+      final loaded = await bloc.stream.firstWhere((state) => !state.loading);
+
+      expect(loaded.tripId, isNull);
+      await bloc.close();
+    }
+  });
+
+  test('the any-trip scope selects and submits a completed trip', () async {
+    final repository = _FakeExpenses();
+    final bloc = _bloc(repository, tripScope: ExpenseTripScope.anyTrip);
+    bloc.add(const RecordExpenseStarted());
+    await bloc.stream.firstWhere((state) => !state.loading);
+
+    bloc
+      ..add(const RecordExpenseTripSelected('trip-2026-0904'))
+      ..add(const RecordExpenseSettlementSelected(SettlementType.fuel))
+      ..add(const RecordExpenseAmountChanged(300))
+      ..add(const RecordExpenseReviewRequested());
+    final review = await bloc.stream.firstWhere(
+      (state) => state.stage == RecordExpenseStage.confirm,
+    );
+    expect(review.tripId, 'trip-2026-0904');
+    expect(review.error, isNull);
+
+    bloc.add(const RecordExpenseSubmitted());
+    final done = await bloc.stream.firstWhere((state) => state.result != null);
+    expect(done.result!.expense.tripId, 'trip-2026-0904');
+    expect(repository.lastTripScope, ExpenseTripScope.anyTrip);
+    await bloc.close();
+  });
+
   test('search filters by code and route', () async {
     final bloc = _bloc(_FakeExpenses());
     bloc.add(const RecordExpenseStarted());
@@ -66,18 +113,44 @@ void main() {
     await bloc.close();
   });
 
-  test('active and completed trips can be selected', () async {
+  test('a completed trip stays searchable but cannot be selected', () async {
     final bloc = _bloc(_FakeExpenses());
     bloc.add(const RecordExpenseStarted());
     await bloc.stream.firstWhere((state) => !state.loading);
 
-    bloc.add(const RecordExpenseTripSelected('trip-2026-0927'));
+    bloc.add(const RecordExpenseTripQueryChanged('0904'));
+    await expectLater(
+      bloc.stream,
+      emits(
+        predicate<RecordExpenseState>(
+          (state) =>
+              state.visibleTrips.single.id == 'trip-2026-0904' &&
+              !state.visibleTrips.single.isEligible,
+        ),
+      ),
+    );
+
     bloc.add(const RecordExpenseTripSelected('trip-2026-0904'));
     await expectLater(
       bloc.stream,
-      emitsThrough(
+      emits(
         predicate<RecordExpenseState>(
-          (state) => state.tripId == 'trip-2026-0904',
+          (state) =>
+              state.tripId == null &&
+              state.error == RecordExpenseError.ineligibleTrip,
+        ),
+      ),
+    );
+
+    bloc.add(const RecordExpenseTripSelected('trip-2026-0927'));
+    await expectLater(
+      bloc.stream,
+      emits(
+        predicate<RecordExpenseState>(
+          (state) =>
+              state.tripId == 'trip-2026-0927' &&
+              state.selectedTrip!.isEligible &&
+              state.error == null,
         ),
       ),
     );
@@ -227,17 +300,24 @@ void main() {
   });
 }
 
-RecordExpenseBloc _bloc(_FakeExpenses repository) {
+RecordExpenseBloc _bloc(
+  _FakeExpenses repository, {
+  String? initialTripId,
+  ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
+}) {
   return RecordExpenseBloc(
     driverId: 'DR-001',
     recordExpense: RecordExpense(repository),
     repository: repository,
+    initialTripId: initialTripId,
+    tripScope: tripScope,
   );
 }
 
 class _FakeExpenses implements ExpenseRepository {
   final Completer<ExpenseRequest>? pending;
   int createCalls = 0;
+  ExpenseTripScope? lastTripScope;
   int balance = 2200;
   late final ExpenseRequest recorded = ExpenseRequest(
     id: 'EXP-412138',
@@ -291,8 +371,10 @@ class _FakeExpenses implements ExpenseRepository {
     required String? notes,
     required List<ExpenseAttachment> attachments,
     required DateTime createdAt,
+    ExpenseTripScope tripScope = ExpenseTripScope.activeTrip,
   }) {
     createCalls += 1;
+    lastTripScope = tripScope;
     if (pending != null) return pending!.future;
     balance -= amountEgp;
     return Future.value(
