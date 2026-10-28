@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_surfaces.dart';
 import '../theme/app_text_styles.dart';
 
 /// One money row: type avatar, a title over a status line, and the amount
@@ -52,7 +53,9 @@ class ActivityRow extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.rowTitle,
+                    style: AppTextStyles.rowTitle.copyWith(
+                      color: AppSurfaces.of(context).title,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(

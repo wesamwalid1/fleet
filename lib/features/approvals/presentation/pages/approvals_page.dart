@@ -1,24 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_event.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
+import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_filter_chip.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/filter_bottom_sheet.dart';
+import '../../../../core/widgets/search_filter_bar.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
 import '../../domain/entities/approval_item.dart';
+import '../approval_format.dart';
 import '../bloc/approvals_bloc.dart';
 import '../bloc/approvals_event.dart';
 import '../bloc/approvals_state.dart';
 import '../widgets/approval_card.dart';
 import '../widgets/approval_sheets.dart';
 
-class ApprovalsPage extends StatelessWidget {
+class ApprovalsPage extends StatefulWidget {
   const ApprovalsPage({super.key});
+
+  @override
+  State<ApprovalsPage> createState() => _ApprovalsPageState();
+}
+
+class _ApprovalsPageState extends State<ApprovalsPage> {
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    context.read<ApprovalsBloc>().add(ApprovalsSearchChanged(value));
+  }
+
+  void _clearSearch() {
+    _search.clear();
+    _onSearchChanged('');
+  }
+
+  Future<void> _openFilterSheet(ApprovalsState state) async {
+    final l10n = AppLocalizations.of(context);
+    final selected = await showFilterBottomSheet<ApprovalFilter>(
+      context: context,
+      title: l10n.filter,
+      initial: state.filter,
+      defaults: ApprovalFilter.all,
+      resetKey: const Key('approvals-filter-reset'),
+      applyKey: const Key('approvals-filter-apply'),
+      bodyBuilder: (context, draft, onChanged) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final entry in const [
+              (ApprovalFilter.all, 'approval-filter-all'),
+              (ApprovalFilter.vault, 'approval-filter-vault'),
+              (ApprovalFilter.drivers, 'approval-filter-drivers'),
+              (ApprovalFilter.roadExpense, 'approval-filter-road'),
+            ]) ...[
+              FilterOptionTile(
+                optionKey: Key(entry.$2),
+                label: switch (entry.$1) {
+                  ApprovalFilter.all => l10n.filterAll,
+                  ApprovalFilter.vault => l10n.fromVault,
+                  ApprovalFilter.drivers => l10n.fromDrivers,
+                  ApprovalFilter.roadExpense => l10n.roadExpenses,
+                },
+                selected: draft == entry.$1,
+                onTap: () => onChanged(entry.$1),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ],
+        );
+      },
+    );
+    if (!mounted || selected == null) return;
+    context.read<ApprovalsBloc>().add(ApprovalsFilterSelected(selected));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,58 +104,123 @@ class ApprovalsPage extends StatelessWidget {
               .showSnackBar(SnackBar(content: Text(l10n.approvalFailed)));
         },
         child: ColoredBox(
-          color: Colors.white,
+          color: AppSurfaces.of(context).scaffold,
           child: SafeArea(
             bottom: false,
-            child: BlocBuilder<ApprovalsBloc, ApprovalsState>(
-              builder: (context, state) {
-                if (state.loading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    20,
-                    12,
-                    20,
-                    32 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  children: [
-                    _Header(count: state.pendingCount),
-                    const SizedBox(height: 18),
-                    _Filters(selected: state.filter),
-                    const SizedBox(height: 24),
-                    if (state.visiblePending.isEmpty)
-                      EmptyState(
-                        key: const Key('approvals-empty'),
-                        icon: Icons.check_rounded,
-                        iconColor: AppColors.success,
-                        iconBackground: AppColors.successBackground,
-                        title: l10n.noPendingApprovals,
-                      )
-                    else ...[
-                      SectionTitle(
-                        title: l10n.actionRequired,
-                        leading: const _Dot(),
+            child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
+              buildWhen: (previous, current) =>
+                  previous.status != current.status,
+              builder: (context, connectivity) {
+                if (connectivity.isUnavailable) {
+                  return Center(
+                    child: OfflineUnavailable(
+                      title: l10n.offlineUnavailableTitle,
+                      hint: l10n.offlineUnavailableHint,
+                      retryLabel: l10n.offlineRetry,
+                      onRetry: () => context.read<ConnectivityBloc>().add(
+                        const ConnectivityRetryRequested(),
                       ),
-                      const SizedBox(height: 12),
-                      for (final item in state.visiblePending) ...[
-                        ApprovalCard(
-                          item: item,
-                          onOpen: () => openApprovalRequest(context, item),
+                    ),
+                  );
+                }
+                // Keep the list during a brief probe; only disable actions.
+                final actionsLocked = connectivity.blocksOnlineWork;
+                return BlocBuilder<ApprovalsBloc, ApprovalsState>(
+                  builder: (context, state) {
+                    if (state.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final pending = [
+                      for (final item in state.visiblePending)
+                        if (approvalMatches(l10n, item, state.query)) item,
+                    ];
+                    final completed = [
+                      for (final item in state.visibleCompleted)
+                        if (approvalMatches(l10n, item, state.query)) item,
+                    ];
+                    final noSearchHits =
+                        state.query.trim().isNotEmpty &&
+                        pending.isEmpty &&
+                        completed.isEmpty;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: _Header(count: state.pendingCount),
                         ),
-                        const SizedBox(height: 10),
+                        SearchFilterBar(
+                          controller: _search,
+                          searchHint: l10n.approvalsSearchHint,
+                          clearTooltip: l10n.clearSearch,
+                          filterLabel: l10n.filter,
+                          onChanged: _onSearchChanged,
+                          onClear: _clearSearch,
+                          showClear: state.query.isNotEmpty,
+                          filterActive: state.hasActiveFilter,
+                          onFilterTap: () => _openFilterSheet(state),
+                          searchKey: const Key('approvals-search'),
+                          clearKey: const Key('approvals-search-clear'),
+                          filterKey: const Key('approvals-filter-button'),
+                        ),
+                        Expanded(
+                          child: ListView(
+                            padding: EdgeInsets.fromLTRB(
+                              20,
+                              4,
+                              20,
+                              32 + MediaQuery.paddingOf(context).bottom,
+                            ),
+                            children: [
+                              if (noSearchHits)
+                                EmptyState(
+                                  key: const Key('approvals-no-results'),
+                                  icon: Icons.search_off_rounded,
+                                  title: l10n.approvalsNoResults,
+                                  hint: l10n.approvalsNoResultsHint,
+                                )
+                              else if (pending.isEmpty)
+                                EmptyState(
+                                  key: const Key('approvals-empty'),
+                                  icon: Icons.check_rounded,
+                                  iconColor: AppColors.success,
+                                  iconBackground: AppColors.successBackground,
+                                  title: l10n.noPendingApprovals,
+                                )
+                              else ...[
+                                SectionTitle(
+                                  title: l10n.actionRequired,
+                                  leading: const _Dot(),
+                                ),
+                                const SizedBox(height: 12),
+                                for (final item in pending) ...[
+                                  ApprovalCard(
+                                    item: item,
+                                    onOpen: actionsLocked
+                                        ? null
+                                        : () => openApprovalRequest(
+                                            context,
+                                            item,
+                                          ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                ],
+                              ],
+                              if (completed.isNotEmpty) ...[
+                                const SizedBox(height: 22),
+                                SectionTitle(title: l10n.completed),
+                                const SizedBox(height: 12),
+                                for (final item in completed) ...[
+                                  ApprovalCard(item: item),
+                                  const SizedBox(height: 10),
+                                ],
+                              ],
+                            ],
+                          ),
+                        ),
                       ],
-                    ],
-                    if (state.visibleCompleted.isNotEmpty) ...[
-                      const SizedBox(height: 22),
-                      SectionTitle(title: l10n.completed),
-                      const SizedBox(height: 12),
-                      for (final item in state.visibleCompleted) ...[
-                        ApprovalCard(item: item),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                  ],
+                    );
+                  },
                 );
               },
             ),
@@ -112,7 +246,9 @@ class _Header extends StatelessWidget {
             l10n.approvals,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.pageTitle,
+            style: AppTextStyles.pageTitle.copyWith(
+              color: AppSurfaces.of(context).title,
+            ),
           ),
         ),
         if (count > 0)
@@ -121,47 +257,6 @@ class _Header extends StatelessWidget {
             label: l10n.pendingCount(count),
           ),
       ],
-    );
-  }
-}
-
-class _Filters extends StatelessWidget {
-  final ApprovalFilter selected;
-
-  const _Filters({required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    const filters = [
-      (ApprovalFilter.all, 'approval-filter-all'),
-      (ApprovalFilter.vault, 'approval-filter-vault'),
-      (ApprovalFilter.drivers, 'approval-filter-drivers'),
-      (ApprovalFilter.roadExpense, 'approval-filter-road'),
-    ];
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final (filter, key) = filters[index];
-          return AppFilterChip(
-            key: Key(key),
-            label: switch (filter) {
-              ApprovalFilter.all => l10n.filterAll,
-              ApprovalFilter.vault => l10n.fromVault,
-              ApprovalFilter.drivers => l10n.fromDrivers,
-              ApprovalFilter.roadExpense => l10n.roadExpenses,
-            },
-            selected: filter == selected,
-            onSelected: () => context.read<ApprovalsBloc>().add(
-              ApprovalsFilterSelected(filter),
-            ),
-          );
-        },
-      ),
     );
   }
 }

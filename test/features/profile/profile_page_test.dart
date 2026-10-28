@@ -2,10 +2,11 @@ import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
-import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/fake_connectivity.dart';
 
 void main() {
   testWidgets(
@@ -86,9 +87,7 @@ void main() {
     );
   });
 
-  testWidgets('dark mode is an off placeholder that never toggles', (
-    tester,
-  ) async {
+  testWidgets('dark mode toggles and stays usable', (tester) async {
     await _openProfile(tester);
 
     Switch control() => tester.widget<Switch>(
@@ -103,20 +102,11 @@ void main() {
       findsOneWidget,
     );
     expect(control().value, isFalse);
-    expect(control().onChanged, isNull);
+    expect(control().onChanged, isNotNull);
 
-    await tester.tap(find.byKey(const Key('profile-dark-mode')));
-    await tester.tap(
-      find.byKey(const Key('profile-dark-mode-switch')),
-      warnIfMissed: false,
-    );
+    await tester.tap(find.byKey(const Key('profile-dark-mode-switch')));
     await tester.pumpAndSettle();
-    expect(control().value, isFalse);
-    expect(
-      Theme.of(tester.element(find.byKey(const Key('profile-name'))))
-          .brightness,
-      Brightness.light,
-    );
+    expect(control().value, isTrue);
   });
 
   testWidgets('profile rows open the existing screens', (tester) async {
@@ -163,7 +153,7 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(400, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
     await _login(tester);
 

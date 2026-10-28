@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/app_notification.dart';
 
-enum NotificationFilter { all, unread }
+enum NotificationFilter { all, unread, read }
 
 class NotificationsState extends Equatable {
   final bool loading;
@@ -26,12 +26,18 @@ class NotificationsState extends Equatable {
 
   bool get hasUnread => items.any((item) => !item.read);
 
+  bool get hasActiveFilter => filter != NotificationFilter.all;
+
   /// Items of the selected filter, before search.
   List<AppNotification> get visible => switch (filter) {
     NotificationFilter.all => items,
     NotificationFilter.unread => [
       for (final item in items)
         if (!item.read) item,
+    ],
+    NotificationFilter.read => [
+      for (final item in items)
+        if (item.read) item,
     ],
   };
 

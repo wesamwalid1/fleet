@@ -136,29 +136,23 @@ void main() {
     _expectSelected(tester, const Key('nav-home'));
   });
 
-  testWidgets('a horizontal filter drag does not change the tab', (
+  testWidgets('opening the approvals filter sheet does not change the tab', (
     tester,
   ) async {
     await _pump(tester, const Locale('en'), const Size(320, 700));
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
 
-    final filter = _filterScrollable(tester);
-    final before = filter.position.pixels;
-    await tester.drag(
-      find.byKey(const Key('approval-filter-all')),
-      const Offset(-80, 0),
-    );
-    await tester.pumpAndSettle();
-
-    expect(filter.position.pixels, greaterThan(before));
-    expect(find.byKey(const Key('approval-filter-all')), findsOneWidget);
-    expect(find.byKey(const Key('history-title')), findsNothing);
-    _expectSelected(tester, const Key('nav-approvals'));
-
-    await tester.tap(find.byKey(const Key('approval-filter-vault')));
+    expect(find.byKey(const Key('approvals-search')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('approvals-filter-button')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('approval-filter-vault')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('approvals-filter-apply')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('approvals-search')), findsOneWidget);
+    expect(find.byKey(const Key('history-title')), findsNothing);
+    _expectSelected(tester, const Key('nav-approvals'));
   });
 
   testWidgets('send cash blocks tab swipes until the sheet closes', (
@@ -346,7 +340,7 @@ void main() {
       (Locale('en'), 1.6),
       (Locale('ar'), 1.3),
     ]) {
-      await _pump(tester, locale, const Size(320, 700), true, scale, true);
+      await _pump(tester, locale, const Size(320, 700), true, scale);
       final bar = tester.getRect(find.byKey(const Key('portal-bottom-nav')));
       expect(bar.left, greaterThanOrEqualTo(0));
       expect(bar.right, lessThanOrEqualTo(320));
@@ -400,7 +394,6 @@ Future<void> _pump(
   Size size = const Size(400, 900),
   bool seedApprovals = true,
   double textScale = 1,
-  bool previewHome = false,
 ]) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -424,7 +417,6 @@ Future<void> _pump(
       home: HomeScope(
         now: () => DateTime(2026, 10, 20, 9),
         seedApprovals: seedApprovals,
-        previewHome: previewHome,
       ),
     ),
   );
@@ -451,17 +443,6 @@ ScrollableState _tabScrollable(WidgetTester tester) {
         (state) =>
             state.position.axis == Axis.horizontal &&
             state.position.maxScrollExtent >= state.position.viewportDimension,
-      );
-}
-
-ScrollableState _filterScrollable(WidgetTester tester) {
-  return tester
-      .stateList<ScrollableState>(find.byType(Scrollable))
-      .firstWhere(
-        (state) =>
-            state.position.axis == Axis.horizontal &&
-            state.position.maxScrollExtent <
-                state.position.viewportDimension * 2,
       );
 }
 

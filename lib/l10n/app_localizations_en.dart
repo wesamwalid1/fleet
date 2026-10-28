@@ -751,4 +751,130 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notificationTargetUnavailable =>
       'This item is no longer available.';
+
+  @override
+  String get offlineBannerTitle => 'You\'re offline';
+
+  @override
+  String get offlineBannerHint =>
+      'Connect to the Internet to refresh your data.';
+
+  @override
+  String get offlineRetry => 'Retry';
+
+  @override
+  String get offlineUnavailableTitle => 'Unavailable offline';
+
+  @override
+  String get offlineUnavailableHint =>
+      'Connect to the Internet to load this information.';
+
+  @override
+  String get offlineActionRequiresInternet =>
+      'An Internet connection is required for this action.';
+
+  @override
+  String get loginRequiresInternet => 'Connect to the Internet to sign in.';
+
+  @override
+  String get offlineSectionUnavailable => 'Unavailable while offline';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get approvalsSearchHint => 'Search approvals';
+
+  @override
+  String get historySearchHint => 'Search transactions';
+
+  @override
+  String get notificationsFilterRead => 'Read';
+
+  @override
+  String get notificationsNoRead => 'No read notifications';
+
+  @override
+  String get notificationsNoReadHint => 'Read notifications will appear here.';
+
+  @override
+  String get filterCashTransfers => 'Cash Transfers';
+
+  @override
+  String get filterVaultTransactions => 'Vault Transactions';
+
+  @override
+  String get filterAllTransactions => 'All Transactions';
+
+  @override
+  String get dateFilterAll => 'All Dates';
+
+  @override
+  String get dateFilterDay => 'Specific Day';
+
+  @override
+  String get dateFilterRange => 'Date Range';
+
+  @override
+  String get startDate => 'Start date';
+
+  @override
+  String get endDate => 'End date';
+
+  @override
+  String get selectDate => 'Select date';
+
+  @override
+  String get tripFilterAll => 'All Trips';
+
+  @override
+  String get tripFilterSpecific => 'Specific Trip';
+
+  @override
+  String get selectTrip => 'Select trip';
+
+  @override
+  String get invalidDateRange =>
+      'Start date must be on or before the end date.';
+
+  @override
+  String get tripRequired => 'Select a trip to apply this filter.';
+
+  @override
+  String get historyNoResults => 'No matching transactions';
+
+  @override
+  String get historyNoResultsHint =>
+      'Try a different search or reset the filters.';
+
+  @override
+  String get clearFilters => 'Clear filters';
+
+  @override
+  String get approvalsNoResults => 'No matching approvals';
+
+  @override
+  String get approvalsNoResultsHint =>
+      'Try a different search or reset the filters.';
+
+  @override
+  String get filterTransactionType => 'Transaction type';
+
+  @override
+  String get filterDate => 'Date';
+
+  @override
+  String get filterTrip => 'Trip';
+
+  @override
+  String get filterReadStatus => 'Read status';
 }

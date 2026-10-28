@@ -41,7 +41,13 @@ import '../../features/notifications/data/repositories/notification_repository_i
 import '../../features/notifications/domain/repositories/notification_repository.dart';
 import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
 import '../../features/notifications/presentation/bloc/notifications_event.dart';
+import '../connectivity/data/always_online_connectivity.dart';
+import '../connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../connectivity/presentation/bloc/connectivity_event.dart';
 import '../navigation/portal_shell.dart';
+import '../theme/data/theme_repository_impl.dart';
+import '../theme/presentation/bloc/theme_bloc.dart';
+import '../theme/presentation/bloc/theme_event.dart';
 
 class HomeScope extends StatelessWidget {
   final DriverRepository? repository;
@@ -169,7 +175,9 @@ class HomeScope extends StatelessWidget {
                           ],
                           child: _DevNotificationReset(
                             enabled: kDebugMode && resetDemoNotifications,
-                            child: PortalShell(now: now ?? DateTime.now),
+                            child: _EnsureAppLevelBlocs(
+                              child: PortalShell(now: now ?? DateTime.now),
+                            ),
                           ),
                         );
                       },
@@ -182,6 +190,48 @@ class HomeScope extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Supplies [ConnectivityBloc] / [ThemeBloc] when the tree was pumped without
+/// [DriverPortalApp] (HomeScope-only tests). Production already provides both
+/// above the session, so this is a no-op there.
+class _EnsureAppLevelBlocs extends StatelessWidget {
+  final Widget child;
+
+  const _EnsureAppLevelBlocs({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tree = child;
+    if (!_hasBloc<ThemeBloc>(context)) {
+      tree = BlocProvider(
+        create: (_) =>
+            ThemeBloc(const ThemeRepositoryImpl())..add(const ThemeStarted()),
+        child: tree,
+      );
+    }
+    if (!_hasBloc<ConnectivityBloc>(context)) {
+      tree = BlocProvider(
+        create: (_) => ConnectivityBloc(
+          monitor: const AlwaysOnlineNetworkMonitor(),
+          reachability: const AlwaysReachableInternet(),
+        )..add(const ConnectivityStarted()),
+        child: tree,
+      );
+    }
+    return tree;
+  }
+
+  static bool _hasBloc<T extends StateStreamableSource<Object?>>(
+    BuildContext context,
+  ) {
+    try {
+      context.read<T>();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

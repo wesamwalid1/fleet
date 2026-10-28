@@ -51,6 +51,19 @@ String approvalTitle(AppLocalizations l10n, ApprovalItem item) {
   };
 }
 
+/// Whether [item] matches [query] against visible name, reference, id, or type.
+bool approvalMatches(AppLocalizations l10n, ApprovalItem item, String query) {
+  final needle = query.trim().toLowerCase();
+  if (needle.isEmpty) return true;
+  bool hit(String value) => value.toLowerCase().contains(needle);
+  return hit(item.counterpartyName) ||
+      hit(item.counterpartyId) ||
+      hit(item.reference) ||
+      hit(item.id) ||
+      hit(approvalTitle(l10n, item)) ||
+      hit(approvalSource(l10n, item));
+}
+
 /// Where the request came from: the vault, the sending driver, or the
 /// road-expense reference.
 String approvalSource(AppLocalizations l10n, ApprovalItem item) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../finance/presentation/settlement_style.dart';
 import '../../domain/entities/history_entry.dart';
@@ -15,7 +16,7 @@ Future<void> showExpenseDetailSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -32,6 +33,7 @@ class _ExpenseDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final surfaces = AppSurfaces.of(context);
     final locale = Localizations.localeOf(context).toString();
     final visual = settlementVisual(entry.settlementType!);
     final when = DateFormat('d MMM y', locale).format(entry.occurredAt);
@@ -47,7 +49,7 @@ class _ExpenseDetailSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: surfaces.border,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -61,18 +63,15 @@ class _ExpenseDetailSheet extends StatelessWidget {
                     children: [
                       Text(
                         l10n.expenseDetails,
-                        style: const TextStyle(
-                          color: AppColors.title,
+                        style: TextStyle(
+                          color: surfaces.title,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(
                         entry.id,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: surfaces.body, fontSize: 13),
                       ),
                     ],
                   ),
@@ -80,7 +79,7 @@ class _ExpenseDetailSheet extends StatelessWidget {
                 IconButton(
                   key: const Key('history-expense-dismiss'),
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: AppColors.muted),
+                  icon: Icon(Icons.close, color: surfaces.muted),
                 ),
               ],
             ),
@@ -154,8 +153,8 @@ class _ExpenseDetailSheet extends StatelessWidget {
                 key: const Key('history-expense-close'),
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.title,
-                  side: const BorderSide(color: AppColors.border),
+                  foregroundColor: surfaces.title,
+                  side: BorderSide(color: surfaces.border),
                   minimumSize: const Size.fromHeight(50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -205,23 +204,21 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.hint),
+          Icon(icon, size: 16, color: surfaces.muted),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 14),
-          ),
+          Text(label, style: TextStyle(color: surfaces.body, fontSize: 14)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
               style: TextStyle(
-                color: valueColor ?? AppColors.title,
+                color: valueColor ?? surfaces.title,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),

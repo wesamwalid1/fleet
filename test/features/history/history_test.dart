@@ -7,6 +7,7 @@ import 'package:driver_portal_app/features/history/data/repositories/history_rep
 import 'package:driver_portal_app/features/history/domain/entities/history_entry.dart';
 import 'package:driver_portal_app/features/history/presentation/bloc/history_bloc.dart';
 import 'package:driver_portal_app/features/history/presentation/bloc/history_event.dart';
+import 'package:driver_portal_app/features/history/presentation/bloc/history_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -38,6 +39,60 @@ void main() {
       expect(clock.elapsedMilliseconds, lessThan(1500));
       expect(bloc.state.entries, entries);
       await bloc.close();
+    },
+  );
+
+  test(
+    'highlight clears conflicting filters and query so the target is visible',
+    () async {
+      final ledger = MockCashLedger(senderBalanceEgp: 2200)
+        ..seedDriverApprovals();
+      final bloc = HistoryBloc(
+        driverId: driverId,
+        repository: HistoryRepositoryImpl(ledger),
+      )..add(const HistoryStarted());
+      addTearDown(bloc.close);
+      await bloc.stream.firstWhere((state) => !state.loading);
+
+      bloc.add(
+        HistoryFiltersApplied(
+          HistoryFilterDraft(
+            filter: HistoryFilter.expenses,
+            dateMode: HistoryDateMode.day,
+            startDate: DateTime(2099, 1, 1),
+            tripMode: HistoryTripMode.specific,
+            tripId: 'trip-missing',
+          ),
+        ),
+      );
+      bloc.add(const HistorySearchChanged('zzz-no-match'));
+      await bloc.stream.firstWhere(
+        (state) =>
+            state.filter == HistoryFilter.expenses &&
+            state.query == 'zzz-no-match',
+      );
+
+      expect(
+        bloc.state.visible.any((entry) => entry.id == 'DSB-2025-0441'),
+        isFalse,
+      );
+
+      bloc.add(const HistoryEntryHighlighted('DSB-2025-0441'));
+      await bloc.stream.firstWhere(
+        (state) => state.highlightedId == 'DSB-2025-0441',
+      );
+
+      expect(bloc.state.filter, HistoryFilter.all);
+      expect(bloc.state.query, isEmpty);
+      expect(bloc.state.dateMode, HistoryDateMode.all);
+      expect(bloc.state.startDate, isNull);
+      expect(bloc.state.endDate, isNull);
+      expect(bloc.state.tripMode, HistoryTripMode.all);
+      expect(bloc.state.tripId, isNull);
+      expect(
+        bloc.state.visible.any((entry) => entry.id == 'DSB-2025-0441'),
+        isTrue,
+      );
     },
   );
 
@@ -102,6 +157,19 @@ void main() {
         'TRF-2026-0124',
         'TRF-2026-0125',
       ]);
+      expect(
+        _ids(entries, HistoryFilter.cashTransfers),
+        containsAll([
+          'TRF-2025-0123',
+          'TRF-2025-0090',
+          'TRF-2026-0124',
+          'TRF-2026-0125',
+        ]),
+      );
+      expect(
+        _ids(entries, HistoryFilter.cashTransfers),
+        isNot(contains('DSB-2025-0441')),
+      );
       expect(
         _ids(entries, HistoryFilter.pending),
         containsAll(['DSB-2025-0441', 'TRF-2025-0123', 'TRF-2026-0124']),
@@ -333,6 +401,83 @@ void main() {
       expect(again.where((entry) => entry.id == 'RE-2026-1041'), hasLength(1));
     },
   );
+
+  test('date and trip matching follow inclusive calendar boundaries', () {
+    final expense = HistoryEntry(
+      id: 'e1',
+      kind: HistoryKind.expense,
+      amountEgp: 10,
+      credit: false,
+      occurredAt: DateTime(2026, 10, 20, 23, 59),
+      status: HistoryDisplayStatus.recorded,
+      tripId: 'trip-a',
+      tripCode: 'TR-A',
+    );
+    final transfer = HistoryEntry(
+      id: 't1',
+      kind: HistoryKind.outgoing,
+      amountEgp: 10,
+      credit: false,
+      occurredAt: DateTime(2026, 10, 20, 12),
+      status: HistoryDisplayStatus.confirmed,
+    );
+
+    expect(
+      expense.matchesDate(
+        mode: HistoryDateMode.day,
+        startDate: DateTime(2026, 10, 20),
+      ),
+      isTrue,
+    );
+    expect(
+      expense.matchesDate(
+        mode: HistoryDateMode.range,
+        startDate: DateTime(2026, 10, 19),
+        endDate: DateTime(2026, 10, 20),
+      ),
+      isTrue,
+    );
+    expect(
+      expense.matchesDate(
+        mode: HistoryDateMode.range,
+        startDate: DateTime(2026, 10, 21),
+        endDate: DateTime(2026, 10, 22),
+      ),
+      isFalse,
+    );
+    expect(
+      expense.matchesTrip(
+        filter: HistoryFilter.expenses,
+        tripMode: HistoryTripMode.specific,
+        tripId: 'trip-a',
+      ),
+      isTrue,
+    );
+    expect(
+      expense.matchesTrip(
+        filter: HistoryFilter.expenses,
+        tripMode: HistoryTripMode.specific,
+        tripId: 'trip-b',
+      ),
+      isFalse,
+    );
+    expect(
+      transfer.matchesTrip(
+        filter: HistoryFilter.cashTransfers,
+        tripMode: HistoryTripMode.specific,
+        tripId: 'trip-a',
+      ),
+      isTrue,
+    );
+    expect(
+      transfer.matchesTrip(
+        filter: HistoryFilter.all,
+        tripMode: HistoryTripMode.specific,
+        tripId: 'trip-a',
+      ),
+      isTrue,
+    );
+  });
 }
 
 List<String> _ids(List<HistoryEntry> entries, HistoryFilter filter) {

@@ -1,4 +1,5 @@
 import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/core/theme/app_text_styles.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -17,9 +18,7 @@ void main() {
     expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.text('Received from Sami Hassan'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('approval-filter-vault')));
-    await tester.tap(find.byKey(const Key('approval-filter-vault')));
-    await tester.pump();
+    await _selectApprovalFilter(tester, const Key('approval-filter-vault'));
 
     expect(find.text('3 pending'), findsOneWidget);
     expect(find.text('Received from Khaled Ramadan'), findsNothing);
@@ -27,11 +26,7 @@ void main() {
     expect(find.text('Received from Vault'), findsWidgets);
     expect(find.text('Received from Sami Hassan'), findsOneWidget);
 
-    await tester.ensureVisible(
-      find.byKey(const Key('approval-filter-drivers')),
-    );
-    await tester.tap(find.byKey(const Key('approval-filter-drivers')));
-    await tester.pump();
+    await _selectApprovalFilter(tester, const Key('approval-filter-drivers'));
 
     expect(find.text('Received from Khaled Ramadan'), findsOneWidget);
     expect(
@@ -41,14 +36,44 @@ void main() {
     expect(find.text('Received from Sami Hassan'), findsOneWidget);
     expect(find.text('3 pending'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('approval-filter-road')));
-    await tester.tap(find.byKey(const Key('approval-filter-road')));
-    await tester.pump();
+    await _selectApprovalFilter(tester, const Key('approval-filter-road'));
 
     expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.text('Received from Khaled Ramadan'), findsNothing);
     expect(find.text('Received from Vault'), findsOneWidget);
     expect(find.text('3 pending'), findsOneWidget);
+  });
+
+  testWidgets('search matches approvals and combines with filters', (
+    tester,
+  ) async {
+    await _openApprovals(tester);
+
+    await tester.enterText(find.byKey(const Key('approvals-search')), 'Khaled');
+    await tester.pumpAndSettle();
+    expect(find.text('Received from Khaled Ramadan'), findsOneWidget);
+    expect(find.text('Road Expense Approval'), findsNothing);
+    expect(
+      find.byKey(const Key('approval-action-DSB-2025-0441')),
+      findsNothing,
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('approvals-search')),
+      'no-such-approval',
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('approvals-no-results')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('approvals-search-clear')));
+    await tester.pumpAndSettle();
+    expect(find.text('Received from Khaled Ramadan'), findsOneWidget);
+
+    await _selectApprovalFilter(tester, const Key('approval-filter-vault'));
+    await tester.enterText(find.byKey(const Key('approvals-search')), 'Khaled');
+    await tester.pumpAndSettle();
+    expect(find.text('Received from Khaled Ramadan'), findsNothing);
+    expect(find.byKey(const Key('approvals-no-results')), findsOneWidget);
   });
 
   testWidgets('empty approvals show no pending approvals', (tester) async {
@@ -87,7 +112,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('2,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -121,7 +146,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
     expect(find.text('4,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -184,7 +209,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
     expect(find.text('2,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -236,7 +261,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
     expect(find.text('2,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -279,7 +304,7 @@ void main() {
     final action = tester.getRect(find.byKey(const Key('approval-action-$id')));
 
     expect(values.left - details.right, closeTo(12, 1));
-    expect(values.right, closeTo(cardRect.right - 10, 1));
+    expect(values.right, closeTo(cardRect.right - _cardInset, 1));
     expect(title.left, closeTo(details.left, 1));
     expect(support.left, closeTo(title.left, 1));
     expect(support.top, greaterThan(title.bottom - 1));
@@ -309,8 +334,8 @@ void main() {
     final actionStyle = tester
         .widget<Text>(find.descendant(of: card, matching: find.text('Approve')))
         .style!;
-    expect(titleStyle.fontSize, 14);
-    expect(amountStyle.fontSize, 14);
+    expect(titleStyle.fontSize, AppTextStyles.rowTitle.fontSize);
+    expect(amountStyle.fontSize, AppTextStyles.amount.fontSize);
     expect(supportStyle.fontSize, lessThan(titleStyle.fontSize!));
     expect(actionStyle.fontSize, 13);
     expect(tester.takeException(), isNull);
@@ -330,7 +355,7 @@ void main() {
     final action = tester.getRect(find.byKey(const Key('approval-action-$id')));
 
     expect(details.left - values.right, closeTo(12, 1));
-    expect(values.left, closeTo(cardRect.left + 10, 1));
+    expect(values.left, closeTo(cardRect.left + _cardInset, 1));
     expect(action.left, closeTo(values.left, 1));
     expect(tester.takeException(), isNull);
   });
@@ -376,6 +401,18 @@ void main() {
     expect(longTitle.right, lessThanOrEqualTo(longAmount.left + 1));
     expect(tester.takeException(), isNull);
   });
+}
+
+/// Card padding (14) plus its border (1), from the card's edge to the row.
+const _cardInset = 15.0;
+
+Future<void> _selectApprovalFilter(WidgetTester tester, Key optionKey) async {
+  await tester.tap(find.byKey(const Key('approvals-filter-button')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(optionKey));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('approvals-filter-apply')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openApprovals(

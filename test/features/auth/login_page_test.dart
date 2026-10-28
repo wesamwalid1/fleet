@@ -1,13 +1,14 @@
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
-import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/fake_connectivity.dart';
 
 void main() {
   testWidgets('shows validation messages and does not leave login', (
     tester,
   ) async {
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('login-submit')));
@@ -28,7 +29,7 @@ void main() {
   testWidgets('shows invalid credentials for the wrong password', (
     tester,
   ) async {
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -46,7 +47,7 @@ void main() {
   });
 
   testWidgets('successful login opens the home route', (tester) async {
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -63,11 +64,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ahmed Ali'), findsOneWidget);
-    expect(find.text('Welcome back!'), findsNothing);
+    expect(find.byKey(const Key('home-page')), findsOneWidget);
+    expect(find.byKey(const Key('login-email')), findsNothing);
+    expect(find.byKey(const Key('login-password')), findsNothing);
+    expect(find.byKey(const Key('login-submit')), findsNothing);
   });
 
   testWidgets('arabic login layout is right to left', (tester) async {
-    await tester.pumpWidget(const DriverPortalApp(locale: Locale('ar')));
+    await tester.pumpWidget(testPortalApp(locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
     expect(find.text('مرحباً بعودتك!'), findsOneWidget);

@@ -9,56 +9,95 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('shows the header and the calculated balance card', (
+  testWidgets('shows the header and the calculated wallet figures', (
     tester,
   ) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    expect(find.text('Good morning 👋'), findsOneWidget);
+    expect(find.text('Welcome back!'), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('AA'), findsOneWidget);
-    expect(find.text('Balance'), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
-    expect(find.text('3,200 EGP'), findsNothing);
+    expect(find.text('Available Balance'), findsOneWidget);
+    expect(_text(tester, 'home-balance'), '2,200 EGP');
     expect(find.text('Charge'), findsOneWidget);
-    expect(find.text('5,000 EGP'), findsOneWidget);
+    expect(_text(tester, 'home-charge'), '3,200 EGP');
+    expect(find.text('Remaining Limit'), findsOneWidget);
+    expect(_text(tester, 'home-remaining'), '1,800 EGP');
     expect(find.text('Max Limit'), findsOneWidget);
+    expect(_text(tester, 'home-max-limit'), '5,000 EGP');
     expect(find.text('Send Cash'), findsOneWidget);
-    expect(find.text('Record Expense'), findsOneWidget);
+    expect(find.text('Record Expense'), findsNWidgets(2));
     expect(find.text('Pending Approvals'), findsOneWidget);
     expect(find.text('3 pending'), findsOneWidget);
-    expect(find.text('Received from Vault'), findsNWidgets(2));
-    expect(find.text('Received from Khaled Ramadan'), findsOneWidget);
-    expect(find.text('Road Expense Approval'), findsOneWidget);
-    expect(find.text('Received from Sami Hassan'), findsOneWidget);
-    expect(find.text('Recent'), findsOneWidget);
+    expect(find.text('Recent Transactions'), findsOneWidget);
+
+    final pending = find.byKey(const Key('home-pending-card'));
     expect(
-      tester.getCenter(find.text('Charge')).dx,
+      find.descendant(of: pending, matching: find.text('Received from Vault')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: pending,
+        matching: find.text('Received from Khaled Ramadan'),
+      ),
+      findsOneWidget,
+    );
+    // Home shows only the two newest pending rows; road expense is third.
+    expect(
+      find.descendant(
+        of: pending,
+        matching: find.text('Road Expense Approval'),
+      ),
+      findsNothing,
+    );
+
+    final recent = find.byKey(const Key('home-recent-card'));
+    expect(
+      find.descendant(
+        of: recent,
+        matching: find.text('Drivers Vault · Awaiting your approval'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: recent,
+        matching: find.textContaining('DR-004 · Approved'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: recent, matching: find.text('Road Expense Approval')),
+      findsNothing,
+    );
+    expect(
+      tester.getCenter(find.text('Remaining Limit')).dx,
       lessThan(tester.getCenter(find.text('Max Limit')).dx),
     );
   });
 
-  testWidgets('arabic balance card is right to left', (tester) async {
+  testWidgets('arabic wallet figures are right to left', (tester) async {
     await tester.pumpWidget(_app(locale: const Locale('ar')));
     await tester.pumpAndSettle();
 
-    expect(find.text('الرصيد'), findsOneWidget);
+    expect(find.text('الرصيد المتاح'), findsOneWidget);
     expect(find.text('العهدة'), findsOneWidget);
+    expect(find.text('الحد المتبقي'), findsOneWidget);
     expect(find.text('الحد الأقصى'), findsOneWidget);
-    expect(find.text('ج.م'), findsNothing);
-    expect(find.textContaining('ج.م'), findsNWidgets(8));
+    expect(_text(tester, 'home-balance'), contains('ج.م'));
     expect(find.text('Send Cash'), findsNothing);
     expect(find.text('Record Expense'), findsNothing);
     expect(
-      Directionality.of(tester.element(find.text('الرصيد'))),
+      Directionality.of(tester.element(find.text('الرصيد المتاح'))),
       TextDirection.rtl,
     );
     expect(
-      tester.getCenter(find.text('العهدة')).dx,
+      tester.getCenter(find.text('الحد المتبقي')).dx,
       greaterThan(tester.getCenter(find.text('الحد الأقصى')).dx),
     );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('keeps the header and shows a placeholder while balance loads', (
@@ -70,8 +109,8 @@ void main() {
 
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.byKey(const Key('balance-loading')), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsNothing);
-    expect(find.text('Balance'), findsNothing);
+    expect(find.byKey(const Key('home-balance')), findsNothing);
+    expect(find.text('Available Balance'), findsNothing);
 
     finance.complete(
       const FinancialSummary(
@@ -82,7 +121,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(_text(tester, 'home-balance'), '2,200 EGP');
     expect(find.byKey(const Key('balance-loading')), findsNothing);
   });
 
@@ -96,15 +135,15 @@ void main() {
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('Unable to load your balance.'), findsOneWidget);
     expect(find.text('Unable to load your profile.'), findsNothing);
-    expect(find.text('2,200 EGP'), findsNothing);
-    expect(find.text('3,200'), findsNothing);
-    expect(find.text('5,000 EGP'), findsNothing);
+    expect(find.byKey(const Key('home-balance')), findsNothing);
+    expect(find.byKey(const Key('home-charge')), findsNothing);
+    expect(find.byKey(const Key('home-max-limit')), findsNothing);
 
     await tester.tap(find.byKey(const Key('balance-retry')));
     await tester.pumpAndSettle();
 
     expect(finance.calls, 2);
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(_text(tester, 'home-balance'), '2,200 EGP');
     expect(find.text('Ahmed Ali'), findsOneWidget);
   });
 
@@ -127,9 +166,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(_text(tester, 'home-balance'), '2,200 EGP');
     expect(tester.takeException(), isNull);
   });
+}
+
+String _text(WidgetTester tester, String key) {
+  final text = tester.widget<Text>(find.byKey(Key(key)));
+  return text.data ?? text.textSpan!.toPlainText();
 }
 
 Widget _app({

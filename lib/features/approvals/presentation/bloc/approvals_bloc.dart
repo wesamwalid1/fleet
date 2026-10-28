@@ -38,6 +38,7 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     on<ApprovalsStarted>(_onStarted);
     on<ApprovalsRefreshed>(_onRefreshed);
     on<ApprovalsFilterSelected>(_onFilterSelected);
+    on<ApprovalsSearchChanged>(_onSearchChanged);
     on<ApprovalActionRequested>(_onAction, transformer: droppable());
     _ledgerChanges = repository.changes.listen(
       (_) => add(const ApprovalsRefreshed()),
@@ -71,6 +72,13 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     Emitter<ApprovalsState> emit,
   ) {
     emit(state.copyWith(filter: event.filter, failed: false));
+  }
+
+  void _onSearchChanged(
+    ApprovalsSearchChanged event,
+    Emitter<ApprovalsState> emit,
+  ) {
+    emit(state.copyWith(query: event.query, failed: false));
   }
 
   Future<void> _onAction(

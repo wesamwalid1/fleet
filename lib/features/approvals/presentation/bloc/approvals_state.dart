@@ -9,6 +9,7 @@ class ApprovalsState extends Equatable {
   final int revision;
   final int balanceEgp;
   final ApprovalFilter filter;
+  final String query;
   final List<ApprovalItem> items;
 
   const ApprovalsState({
@@ -18,16 +19,21 @@ class ApprovalsState extends Equatable {
     this.revision = 0,
     this.balanceEgp = 0,
     this.filter = ApprovalFilter.all,
+    this.query = '',
     this.items = const [],
   });
 
   int get pendingCount => items.where((item) => item.isPending).length;
 
+  bool get hasActiveFilter => filter != ApprovalFilter.all;
+
+  /// Pending items for the selected kind filter, before search.
   List<ApprovalItem> get visiblePending => [
     for (final item in items)
       if (item.isPending && item.matches(filter)) item,
   ];
 
+  /// Completed items (kind filter does not apply), before search.
   List<ApprovalItem> get visibleCompleted => [
     for (final item in items)
       if (!item.isPending) item,
@@ -40,6 +46,7 @@ class ApprovalsState extends Equatable {
     int? revision,
     int? balanceEgp,
     ApprovalFilter? filter,
+    String? query,
     List<ApprovalItem>? items,
   }) {
     return ApprovalsState(
@@ -49,6 +56,7 @@ class ApprovalsState extends Equatable {
       revision: revision ?? this.revision,
       balanceEgp: balanceEgp ?? this.balanceEgp,
       filter: filter ?? this.filter,
+      query: query ?? this.query,
       items: items ?? this.items,
     );
   }
@@ -61,6 +69,7 @@ class ApprovalsState extends Equatable {
     revision,
     balanceEgp,
     filter,
+    query,
     items,
   ];
 }

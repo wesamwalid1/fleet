@@ -49,6 +49,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
       status: HistoryDisplayStatus.recorded,
       settlementType: expense.settlementType,
       tripCode: _ledger.codeForTrip(expense.tripId),
+      tripId: expense.tripId,
     );
   }
 

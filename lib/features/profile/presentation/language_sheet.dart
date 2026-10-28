@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/locale/presentation/bloc/locale_bloc.dart';
 import '../../../core/locale/presentation/bloc/locale_event.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_surfaces.dart';
 import '../../../l10n/app_localizations.dart';
 
 Future<void> showLanguageSheet(BuildContext context) {
@@ -11,7 +12,7 @@ Future<void> showLanguageSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -26,6 +27,7 @@ class _LanguageSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final surfaces = AppSurfaces.of(context);
     final selected = Localizations.localeOf(context).languageCode;
     return SafeArea(
       top: false,
@@ -37,8 +39,8 @@ class _LanguageSheet extends StatelessWidget {
           children: [
             Text(
               l10n.chooseLanguage,
-              style: const TextStyle(
-                color: AppColors.title,
+              style: TextStyle(
+                color: surfaces.title,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
@@ -84,11 +86,12 @@ class _Option extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : AppColors.title;
+    final surfaces = AppSurfaces.of(context);
+    final color = selected ? AppColors.primary : surfaces.title;
     return Material(
       color: selected
           ? AppColors.primary.withValues(alpha: 0.08)
-          : Colors.white,
+          : surfaces.card,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         key: optionKey,
@@ -99,7 +102,7 @@ class _Option extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? AppColors.primary : AppColors.border,
+              color: selected ? AppColors.primary : surfaces.border,
             ),
           ),
           child: Row(

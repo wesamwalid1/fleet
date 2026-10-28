@@ -20,7 +20,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Good morning 👋'), findsOneWidget);
+    expect(find.text('Welcome back!'), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('AA'), findsOneWidget);
   });

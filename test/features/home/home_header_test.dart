@@ -52,13 +52,11 @@ void main() {
     });
   });
 
-  testWidgets('header shows the morning greeting, name, and initials', (
-    tester,
-  ) async {
+  testWidgets('header shows the welcome, name, and initials', (tester) async {
     await tester.pumpWidget(_app(now: () => DateTime(2026, 10, 20, 9)));
     await tester.pumpAndSettle();
 
-    expect(find.text('Good morning 👋'), findsOneWidget);
+    expect(find.text('Welcome back!'), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('AA'), findsOneWidget);
     expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
@@ -93,9 +91,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('home-notification-dot')), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('nav-approvals')));
+    await tester.pumpAndSettle();
     await _finalize(tester, 'DSB-2025-0441', 'approval-approve');
     await _finalize(tester, 'TRF-2025-0123', 'approval-approve');
     await _finalize(tester, 'RE-2026-1041', 'approval-confirm');
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('nav-approvals-dot')), findsNothing);
     expect(find.byKey(const Key('home-notification-dot')), findsOneWidget);
 
@@ -140,14 +142,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('header follows the afternoon and evening', (tester) async {
-    await tester.pumpWidget(_app(now: () => DateTime(2026, 10, 20, 14)));
-    await tester.pumpAndSettle();
-    expect(find.text('Good afternoon 👋'), findsOneWidget);
-
-    await tester.pumpWidget(_app(now: () => DateTime(2026, 10, 20, 19)));
-    await tester.pumpAndSettle();
-    expect(find.text('Good evening 👋'), findsOneWidget);
+  testWidgets('the welcome does not change with the time of day', (
+    tester,
+  ) async {
+    for (final hour in const [9, 14, 19]) {
+      await tester.pumpWidget(_app(now: () => DateTime(2026, 10, 20, hour)));
+      await tester.pumpAndSettle();
+      expect(find.text('Welcome back!'), findsOneWidget, reason: '$hour:00');
+      expect(find.textContaining('Good '), findsNothing, reason: '$hour:00');
+    }
   });
 
   testWidgets('arabic header is right to left', (tester) async {
@@ -156,24 +159,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('صباح الخير 👋'), findsOneWidget);
+    expect(find.text('مرحباً بعودتك!'), findsOneWidget);
     expect(
       Directionality.of(tester.element(find.text('Ahmed Ali'))),
       TextDirection.rtl,
     );
     expect(
       tester.getCenter(find.text('AA')).dx,
-      lessThan(tester.getCenter(find.text('Ahmed Ali')).dx),
+      greaterThan(tester.getCenter(find.text('Ahmed Ali')).dx),
     );
   });
 
-  testWidgets('english header keeps the avatar on the right', (tester) async {
+  testWidgets('english header puts the avatar before the name', (tester) async {
     await tester.pumpWidget(_app(now: () => DateTime(2026, 10, 20, 9)));
     await tester.pumpAndSettle();
 
     expect(
       tester.getCenter(find.text('AA')).dx,
-      greaterThan(tester.getCenter(find.text('Ahmed Ali')).dx),
+      lessThan(tester.getCenter(find.text('Ahmed Ali')).dx),
     );
   });
 }
@@ -183,11 +186,17 @@ void _expectEqualActionButtons(
   String sendLabel,
   String expenseLabel,
 ) {
-  final send = tester.getSize(find.byKey(const Key('send-cash')));
-  final expense = tester.getSize(find.byKey(const Key('record-expense')));
-  expect(send.width, expense.width);
-  expect(find.text(sendLabel), findsOneWidget);
-  expect(find.text(expenseLabel), findsOneWidget);
+  final sendButton = find.byKey(const Key('send-cash'));
+  final expenseButton = find.byKey(const Key('record-expense'));
+  expect(tester.getSize(sendButton).width, tester.getSize(expenseButton).width);
+  expect(
+    find.descendant(of: sendButton, matching: find.text(sendLabel)),
+    findsOneWidget,
+  );
+  expect(
+    find.descendant(of: expenseButton, matching: find.text(expenseLabel)),
+    findsOneWidget,
+  );
   expect(tester.takeException(), isNull);
 }
 

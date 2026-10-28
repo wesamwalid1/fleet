@@ -6,26 +6,28 @@ import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_le
 import 'package:driver_portal_app/features/finance/domain/entities/expense_request.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_trip_scope.dart';
 import 'package:driver_portal_app/features/finance/presentation/bloc/record_expense_bloc.dart';
+import 'package:driver_portal_app/features/history/presentation/widgets/history_entry_tile.dart';
 import 'package:driver_portal_app/features/home/domain/entities/driver.dart';
 import 'package:driver_portal_app/features/home/domain/entities/financial_summary.dart';
 import 'package:driver_portal_app/features/home/domain/repositories/driver_repository.dart';
 import 'package:driver_portal_app/features/home/domain/repositories/finance_repository.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
-import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/fake_connectivity.dart';
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('the login route shows the prototype in the Home tab', (
+  testWidgets('the login route opens the Home tab with its actions', (
     tester,
   ) async {
     _setView(tester);
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('login-email')),
@@ -40,8 +42,14 @@ void main() {
     await tester.pump(MockAuthDataSource.delay);
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('home-test-screen')), findsOneWidget);
-    expect(find.byKey(const Key('send-cash')), findsNothing);
+    expect(find.byKey(const Key('home-page')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('home-actions')),
+        matching: find.byKey(const Key('send-cash')),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('sections show the existing finance, trip, and approval data', (
@@ -49,68 +57,59 @@ void main() {
   ) async {
     await _pump(tester);
 
-    expect(_text(tester, 'home-test-balance'), '2,200 EGP');
-    expect(_text(tester, 'home-test-charge'), '3,200 EGP');
-    expect(_text(tester, 'home-test-remaining'), '1,800 EGP');
-    expect(_text(tester, 'home-test-max-limit'), '5,000 EGP');
-    expect(find.byKey(const Key('home-test-expenses')), findsNothing);
-    expect(find.byKey(const Key('home-test-sample-tag')), findsNothing);
+    expect(_text(tester, 'home-balance'), '2,200 EGP');
+    expect(_text(tester, 'home-charge'), '3,200 EGP');
+    expect(_text(tester, 'home-remaining'), '1,800 EGP');
+    expect(_text(tester, 'home-max-limit'), '5,000 EGP');
+    expect(find.byKey(const Key('home-expenses')), findsNothing);
+    expect(find.byKey(const Key('home-sample-tag')), findsNothing);
     expect(find.text('Expense Overview'), findsNothing);
     expect(find.text('Sample data'), findsNothing);
 
-    final tripSection = find.byKey(const Key('home-test-trip-card'));
+    final tripSection = find.byKey(const Key('home-trip-card'));
     final record = find.descendant(
       of: tripSection,
-      matching: find.byKey(const Key('home-test-record-expense')),
+      matching: find.byKey(const Key('trip-record-expense')),
     );
     expect(record, findsOneWidget);
     expect(tester.widget<ButtonStyleButton>(record).onPressed, isNotNull);
     expect(
       tester.getRect(record).top,
       greaterThan(
-        tester.getRect(find.byKey(const Key('home-test-trip-details'))).bottom,
+        tester.getRect(find.byKey(const Key('home-trip-details'))).bottom,
       ),
     );
     expect(
       find.descendant(
-        of: find.byKey(const Key('home-test-finance-card')),
-        matching: find.byKey(const Key('home-test-record-expense')),
+        of: find.byKey(const Key('home-finance-card')),
+        matching: find.byKey(const Key('trip-record-expense')),
       ),
       findsNothing,
     );
     final progress = tester.widget<LinearProgressIndicator>(
-      find.byKey(const Key('home-test-charge-progress')),
+      find.byKey(const Key('home-charge-progress')),
     );
     expect(progress.value, closeTo(0.64, 0.001));
     expect(progress.semanticsLabel, '64% of limit used');
 
     expect(
       find.descendant(
-        of: find.byKey(const Key('home-test-trip-code')),
+        of: find.byKey(const Key('home-trip-code')),
         matching: find.text('TR-2026-0927'),
       ),
       findsOneWidget,
     );
-    expect(_text(tester, 'home-test-trip-origin'), 'Suez');
-    expect(_text(tester, 'home-test-trip-destination'), 'Cairo');
-    expect(find.byKey(const Key('home-test-no-trip')), findsNothing);
+    expect(_text(tester, 'home-trip-origin'), 'Suez');
+    expect(_text(tester, 'home-trip-destination'), 'Cairo');
+    expect(find.byKey(const Key('home-no-trip')), findsNothing);
 
     expect(find.text('3 pending'), findsOneWidget);
-    expect(
-      find.byKey(const Key('home-test-pending-DSB-2025-0441')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('home-test-pending-TRF-2025-0123')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('home-test-pending-RE-2026-1041')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('home-pending-DSB-2025-0441')), findsOneWidget);
+    expect(find.byKey(const Key('home-pending-TRF-2025-0123')), findsOneWidget);
+    expect(find.byKey(const Key('home-pending-RE-2026-1041')), findsNothing);
 
     expect(find.text('Recent Transactions'), findsOneWidget);
-    final recent = find.byKey(const Key('home-test-recent-card'));
+    final recent = find.byKey(const Key('home-recent-card'));
     expect(
       find.descendant(of: recent, matching: find.text('+800 EGP')),
       findsOneWidget,
@@ -127,17 +126,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget.key is ValueKey<String> &&
-            (widget.key! as ValueKey<String>).value.startsWith(
-              'home-test-recent-',
-            ) &&
-            (widget.key! as ValueKey<String>).value !=
-                'home-test-recent-card' &&
-            (widget.key! as ValueKey<String>).value !=
-                'home-test-recent-see-all',
-      ),
+      find.descendant(of: recent, matching: find.byType(HistoryEntryTile)),
       findsNWidgets(3),
     );
     expect(tester.takeException(), isNull);
@@ -151,8 +140,8 @@ void main() {
 
     await tester.tap(
       find.descendant(
-        of: find.byKey(const Key('home-test-trip-card')),
-        matching: find.byKey(const Key('home-test-record-expense')),
+        of: find.byKey(const Key('home-trip-card')),
+        matching: find.byKey(const Key('trip-record-expense')),
       ),
     );
     await tester.pumpAndSettle();
@@ -187,18 +176,18 @@ void main() {
   ) async {
     late MockCashLedger ledger;
     await _pump(tester, configureLedger: (value) => ledger = value);
-    final actions = find.byKey(const Key('home-test-actions'));
+    final actions = find.byKey(const Key('home-actions'));
     expect(
       find.descendant(of: actions, matching: find.text('Actions')),
       findsOneWidget,
     );
     final record = find.descendant(
       of: actions,
-      matching: find.byKey(const Key('home-test-actions-record-expense')),
+      matching: find.byKey(const Key('record-expense')),
     );
     final send = find.descendant(
       of: actions,
-      matching: find.byKey(const Key('home-test-send-cash')),
+      matching: find.byKey(const Key('send-cash')),
     );
     expect(record, findsOneWidget);
     expect(send, findsOneWidget);
@@ -206,7 +195,7 @@ void main() {
     expect(
       tester.getRect(actions).top,
       greaterThan(
-        tester.getRect(find.byKey(const Key('home-test-trip-card'))).bottom,
+        tester.getRect(find.byKey(const Key('home-trip-card'))).bottom,
       ),
     );
 
@@ -260,12 +249,12 @@ void main() {
     tester,
   ) async {
     await _pump(tester);
-    final send = find.byKey(const Key('home-test-send-cash'));
+    final send = find.byKey(const Key('send-cash'));
 
     expect(send, findsOneWidget);
     expect(
       find.descendant(
-        of: find.byKey(const Key('home-test-trip-card')),
+        of: find.byKey(const Key('home-trip-card')),
         matching: send,
       ),
       findsNothing,
@@ -273,7 +262,7 @@ void main() {
     expect(
       tester.getRect(send).top,
       greaterThan(
-        tester.getRect(find.byKey(const Key('home-test-trip-card'))).bottom,
+        tester.getRect(find.byKey(const Key('home-trip-card'))).bottom,
       ),
     );
 
@@ -286,13 +275,13 @@ void main() {
   testWidgets('header and section links use the existing tabs', (tester) async {
     await _pump(tester);
 
-    await tester.tap(find.byKey(const Key('home-test-view-all-approvals')));
+    await tester.tap(find.byKey(const Key('home-view-all-approvals')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('pending-count')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('home-test-recent-see-all')));
+    await tester.tap(find.byKey(const Key('home-recent-see-all')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('history-title')), findsOneWidget);
 
@@ -304,7 +293,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('home-test-screen')), findsOneWidget);
+    expect(find.byKey(const Key('home-page')), findsOneWidget);
   });
 
   testWidgets('header greets the driver and keeps bell and avatar behavior', (
@@ -312,14 +301,14 @@ void main() {
   ) async {
     await _pump(tester);
 
-    expect(_text(tester, 'home-test-welcome'), 'Welcome back!');
-    expect(_text(tester, 'home-test-driver-name'), 'Ahmed Ali');
+    expect(_text(tester, 'home-welcome'), 'Welcome back!');
+    expect(_text(tester, 'home-driver-name'), 'Ahmed Ali');
     expect(find.text('Good morning 👋'), findsNothing);
     expect(find.byKey(const Key('home-notification-dot')), findsOneWidget);
 
     final avatar = tester.getRect(find.byKey(const Key('home-avatar')));
     final identity = tester.getRect(
-      find.byKey(const Key('home-test-header-identity')),
+      find.byKey(const Key('home-header-identity')),
     );
     final bell = tester.getRect(find.byKey(const Key('home-notifications')));
     expect(avatar.right, lessThanOrEqualTo(identity.left));
@@ -345,10 +334,10 @@ void main() {
       size: const Size(320, 2400),
     );
 
-    expect(_text(tester, 'home-test-welcome'), 'مرحباً بعودتك!');
+    expect(_text(tester, 'home-welcome'), 'مرحباً بعودتك!');
     final avatar = tester.getRect(find.byKey(const Key('home-avatar')));
     final identity = tester.getRect(
-      find.byKey(const Key('home-test-header-identity')),
+      find.byKey(const Key('home-header-identity')),
     );
     final bell = tester.getRect(find.byKey(const Key('home-notifications')));
     expect(avatar.left, greaterThanOrEqualTo(identity.right));
@@ -361,12 +350,12 @@ void main() {
   ) async {
     await _pump(tester, seedApprovals: false);
 
-    expect(find.byKey(const Key('home-test-pending-card')), findsOneWidget);
-    expect(find.byKey(const Key('home-test-all-caught-up')), findsOneWidget);
+    expect(find.byKey(const Key('home-pending-card')), findsOneWidget);
+    expect(find.byKey(const Key('home-all-caught-up')), findsOneWidget);
     expect(find.text("You're all caught up"), findsOneWidget);
-    expect(find.byKey(const Key('home-test-pending-count')), findsNothing);
+    expect(find.byKey(const Key('home-pending-count')), findsNothing);
     expect(find.byKey(const Key('home-notification-dot')), findsNothing);
-    expect(find.byKey(const Key('home-test-view-all-approvals')), findsNothing);
+    expect(find.byKey(const Key('home-view-all-approvals')), findsNothing);
   });
 
   testWidgets('a driver without an active trip cannot record an expense', (
@@ -374,11 +363,11 @@ void main() {
   ) async {
     await _pump(tester, repository: const _DriverWithoutTrips());
 
-    expect(find.byKey(const Key('home-test-no-trip')), findsOneWidget);
+    expect(find.byKey(const Key('home-no-trip')), findsOneWidget);
     expect(find.text('No Active Trip'), findsOneWidget);
     final record = find.descendant(
-      of: find.byKey(const Key('home-test-trip-card')),
-      matching: find.byKey(const Key('home-test-record-expense')),
+      of: find.byKey(const Key('home-trip-card')),
+      matching: find.byKey(const Key('trip-record-expense')),
     );
     expect(record, findsOneWidget);
     expect(tester.widget<ButtonStyleButton>(record).onPressed, isNull);
@@ -398,7 +387,7 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('expense-close')), findsNothing);
 
-    final general = find.byKey(const Key('home-test-actions-record-expense'));
+    final general = find.byKey(const Key('record-expense'));
     expect(tester.widget<ButtonStyleButton>(general).onPressed, isNotNull);
   });
 
@@ -413,7 +402,7 @@ void main() {
 
     expect(
       Directionality.of(
-        tester.element(find.byKey(const Key('home-test-finance-card'))),
+        tester.element(find.byKey(const Key('home-finance-card'))),
       ),
       TextDirection.rtl,
     );
@@ -424,22 +413,16 @@ void main() {
     expect(find.text('Available Balance'), findsNothing);
     expect(find.text('بيانات تجريبية'), findsNothing);
 
-    final card = tester.getRect(
-      find.byKey(const Key('home-test-finance-card')),
-    );
-    final remaining = tester.getRect(
-      find.byKey(const Key('home-test-remaining')),
-    );
-    final max = tester.getRect(find.byKey(const Key('home-test-max-limit')));
+    final card = tester.getRect(find.byKey(const Key('home-finance-card')));
+    final remaining = tester.getRect(find.byKey(const Key('home-remaining')));
+    final max = tester.getRect(find.byKey(const Key('home-max-limit')));
     expect(remaining.center.dx, greaterThan(card.center.dx));
     expect(max.center.dx, lessThan(card.center.dx));
 
-    final origin = tester.getRect(
-      find.byKey(const Key('home-test-trip-origin')),
-    );
-    final arrow = tester.getRect(find.byKey(const Key('home-test-trip-arrow')));
+    final origin = tester.getRect(find.byKey(const Key('home-trip-origin')));
+    final arrow = tester.getRect(find.byKey(const Key('home-trip-arrow')));
     final destination = tester.getRect(
-      find.byKey(const Key('home-test-trip-destination')),
+      find.byKey(const Key('home-trip-destination')),
     );
     expect(origin.left, greaterThan(arrow.right));
     expect(arrow.left, greaterThan(destination.right));
@@ -456,8 +439,8 @@ void main() {
         size: const Size(320, 3200),
         textScale: 1.6,
       );
-      expect(find.byKey(const Key('home-test-finance-card')), findsOneWidget);
-      expect(find.byKey(const Key('home-test-record-expense')), findsOneWidget);
+      expect(find.byKey(const Key('home-finance-card')), findsOneWidget);
+      expect(find.byKey(const Key('trip-record-expense')), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
   });
@@ -472,16 +455,15 @@ void main() {
         HomeScope(
           now: () => DateTime(2026, 10, 20, 9),
           financeRepository: _PendingFinance(pending.future),
-          previewHome: true,
         ),
       ),
     );
     await tester.pump();
     await tester.pump();
 
-    expect(find.byKey(const Key('home-test-screen')), findsOneWidget);
+    expect(find.byKey(const Key('home-page')), findsOneWidget);
     expect(find.byKey(const Key('balance-loading')), findsOneWidget);
-    expect(find.byKey(const Key('home-test-finance-card')), findsNothing);
+    expect(find.byKey(const Key('home-finance-card')), findsNothing);
 
     pending.complete(
       const FinancialSummary(
@@ -492,7 +474,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('balance-loading')), findsNothing);
-    expect(_text(tester, 'home-test-balance'), '2,200 EGP');
+    expect(_text(tester, 'home-balance'), '2,200 EGP');
   });
 }
 
@@ -542,7 +524,6 @@ Future<void> _pump(
         seedApprovals: seedApprovals,
         repository: repository,
         configureLedger: configureLedger,
-        previewHome: true,
       ),
       locale: locale,
       textScale: textScale,

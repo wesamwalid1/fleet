@@ -2,6 +2,7 @@ import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_le
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/core/theme/app_colors.dart';
+import 'package:driver_portal_app/core/theme/app_text_styles.dart';
 import 'package:driver_portal_app/features/history/presentation/widgets/history_entry_tile.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -22,28 +23,23 @@ void main() {
     expect(find.text('13 May 2025'), findsOneWidget);
     expect(find.textContaining('Today'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('history-filter-expenses')));
-    await tester.pump();
-    expect(find.byKey(const Key('history-empty')), findsOneWidget);
+    await _selectHistoryType(tester, const Key('history-filter-expenses'));
+    expect(find.byKey(const Key('history-no-results')), findsOneWidget);
     expect(find.text('Received from Vault'), findsNothing);
     expect(find.text('0 expenses'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('history-filter-vault')));
-    await tester.pump();
+    await _selectHistoryType(tester, const Key('history-filter-vault'));
     expect(find.text('Received from Vault'), findsWidgets);
     expect(find.text('Pending — from Khaled Ramadan'), findsNothing);
 
-    await tester.ensureVisible(find.byKey(const Key('history-filter-pending')));
-    await tester.tap(find.byKey(const Key('history-filter-pending')));
-    await tester.pump();
-    expect(find.text('Drivers Vault · Awaiting your approval'), findsOneWidget);
+    await _selectHistoryType(tester, const Key('history-filter-cash'));
     expect(find.text('Pending — from Khaled Ramadan'), findsOneWidget);
-    expect(find.textContaining('Approved'), findsNothing);
+    expect(find.text('Received from Vault'), findsNothing);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
     expect(find.text('2,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -80,18 +76,12 @@ void main() {
     expect(find.text('Sent to Mohamed Said'), findsOneWidget);
     expect(find.textContaining('DR-002 · Pending confirm'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('history-filter-sent')));
-    await tester.tap(find.byKey(const Key('history-filter-sent')));
-    await tester.pump();
+    await _selectHistoryType(tester, const Key('history-filter-cash'));
     expect(find.text('Sent to Mohamed Said'), findsOneWidget);
     expect(find.text('Cross Border'), findsNothing);
     expect(find.text('1 expense'), findsOneWidget);
 
-    await tester.ensureVisible(
-      find.byKey(const Key('history-filter-expenses')),
-    );
-    await tester.tap(find.byKey(const Key('history-filter-expenses')));
-    await tester.pump();
+    await _selectHistoryType(tester, const Key('history-filter-expenses'));
     expect(find.text('Cross Border'), findsOneWidget);
     expect(find.text('Sent to Mohamed Said'), findsNothing);
 
@@ -107,7 +97,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
     expect(find.text('1,700 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -117,7 +107,7 @@ void main() {
     await _openHistory(tester);
     expect(find.text('Drivers Vault · Awaiting your approval'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
       find.byKey(const Key('approval-action-DSB-2025-0441')),
@@ -236,7 +226,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
     expect(find.text('2,200 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
 
@@ -274,12 +264,17 @@ void main() {
 
     expect(find.text('السجل'), findsWidgets);
     expect(find.text('0 مصروفات'), findsOneWidget);
-    expect(find.text('من الخزينة'), findsWidgets);
+    expect(find.text('تصفية'), findsOneWidget);
     expect(find.text('بانتظار موافقتك'), findsWidgets);
     expect(
       Directionality.of(tester.element(find.byKey(const Key('history-title')))),
       TextDirection.rtl,
     );
+    await tester.tap(find.byKey(const Key('history-filter-button')));
+    await tester.pumpAndSettle();
+    expect(find.text('معاملات الخزينة'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('history rows use a compact trailing amount column', (
@@ -331,10 +326,11 @@ void main() {
         .widget<Text>(find.textContaining('TR-2026-0927 · Recorded'))
         .style!;
     final timeStyle = tester.widget<Text>(find.textContaining('11:37')).style!;
-    expect(titleStyle.fontSize, 14);
-    expect(amountStyle.fontSize, 14);
+    expect(titleStyle.fontSize, AppTextStyles.rowTitle.fontSize);
+    expect(amountStyle.fontSize, AppTextStyles.amount.fontSize);
     expect(referenceStyle.fontSize, lessThan(titleStyle.fontSize!));
-    expect(timeStyle.fontSize, referenceStyle.fontSize);
+    expect(timeStyle.fontSize, AppTextStyles.caption.fontSize);
+    expect(timeStyle.fontSize, lessThanOrEqualTo(referenceStyle.fontSize!));
     expect(tester.takeException(), isNull);
   });
 
@@ -409,6 +405,107 @@ void main() {
     expect(find.text('Received from Vault'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('search and trip filters combine for expenses', (tester) async {
+    await _openHistory(
+      tester,
+      now: () => DateTime(2026, 10, 21, 12),
+      configureLedger: (ledger) {
+        ledger.createRecordedExpense(
+          driverId: MockCashLedger.senderId,
+          tripId: 'trip-2026-0927',
+          settlementType: SettlementType.crossBorder,
+          amountEgp: 300,
+          notes: null,
+          attachments: const [],
+          createdAt: DateTime(2026, 10, 21, 11, 37),
+        );
+      },
+    );
+
+    await tester.enterText(find.byKey(const Key('history-search')), 'Cross');
+    await tester.pumpAndSettle();
+    expect(find.text('Cross Border'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history-filter-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-filter-expenses')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('history-trip-specific')));
+    await tester.tap(find.byKey(const Key('history-trip-specific')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('history-trip-trip-2026-0927')),
+    );
+    await tester.tap(find.byKey(const Key('history-trip-trip-2026-0927')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
+    expect(find.text('Cross Border'), findsOneWidget);
+    expect(find.byKey(const Key('history-search')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history-filter-button')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-trip-all')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('history-filter-cash')));
+    await tester.tap(find.byKey(const Key('history-filter-cash')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-trip-all')), findsNothing);
+    await tester.tap(find.byKey(const Key('history-filter-reset')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
+    expect(find.text('Cross Border'), findsOneWidget);
+  });
+
+  testWidgets('filter sheet reset restores defaults without clearing search', (
+    tester,
+  ) async {
+    await _openHistory(
+      tester,
+      now: () => DateTime(2026, 10, 21, 12),
+      configureLedger: (ledger) {
+        ledger.createRecordedExpense(
+          driverId: MockCashLedger.senderId,
+          tripId: 'trip-2026-0927',
+          settlementType: SettlementType.crossBorder,
+          amountEgp: 300,
+          notes: null,
+          attachments: const [],
+          createdAt: DateTime(2026, 10, 21, 11, 37),
+        );
+      },
+    );
+
+    await tester.enterText(find.byKey(const Key('history-search')), 'Cross');
+    await tester.pumpAndSettle();
+    await _selectHistoryType(tester, const Key('history-filter-vault'));
+    expect(find.byKey(const Key('history-no-results')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history-filter-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-filter-reset')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
+    expect(find.text('Cross Border'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('history-search')))
+          .controller!
+          .text,
+      'Cross',
+    );
+  });
+}
+
+Future<void> _selectHistoryType(WidgetTester tester, Key optionKey) async {
+  await tester.tap(find.byKey(const Key('history-filter-button')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(optionKey));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('history-filter-apply')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openHistory(

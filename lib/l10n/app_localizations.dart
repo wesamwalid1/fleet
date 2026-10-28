@@ -1405,6 +1405,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This item is no longer available.'**
   String get notificationTargetUnavailable;
+
+  /// No description provided for @offlineBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline'**
+  String get offlineBannerTitle;
+
+  /// No description provided for @offlineBannerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the Internet to refresh your data.'**
+  String get offlineBannerHint;
+
+  /// No description provided for @offlineRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get offlineRetry;
+
+  /// No description provided for @offlineUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable offline'**
+  String get offlineUnavailableTitle;
+
+  /// No description provided for @offlineUnavailableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the Internet to load this information.'**
+  String get offlineUnavailableHint;
+
+  /// No description provided for @offlineActionRequiresInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'An Internet connection is required for this action.'**
+  String get offlineActionRequiresInternet;
+
+  /// No description provided for @loginRequiresInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the Internet to sign in.'**
+  String get loginRequiresInternet;
+
+  /// No description provided for @offlineSectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable while offline'**
+  String get offlineSectionUnavailable;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter;
+
+  /// No description provided for @apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get apply;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
+
+  /// No description provided for @approvalsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search approvals'**
+  String get approvalsSearchHint;
+
+  /// No description provided for @historySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search transactions'**
+  String get historySearchHint;
+
+  /// No description provided for @notificationsFilterRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get notificationsFilterRead;
+
+  /// No description provided for @notificationsNoRead.
+  ///
+  /// In en, this message translates to:
+  /// **'No read notifications'**
+  String get notificationsNoRead;
+
+  /// No description provided for @notificationsNoReadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read notifications will appear here.'**
+  String get notificationsNoReadHint;
+
+  /// No description provided for @filterCashTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Transfers'**
+  String get filterCashTransfers;
+
+  /// No description provided for @filterVaultTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault Transactions'**
+  String get filterVaultTransactions;
+
+  /// No description provided for @filterAllTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'All Transactions'**
+  String get filterAllTransactions;
+
+  /// No description provided for @dateFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All Dates'**
+  String get dateFilterAll;
+
+  /// No description provided for @dateFilterDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific Day'**
+  String get dateFilterDay;
+
+  /// No description provided for @dateFilterRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Date Range'**
+  String get dateFilterRange;
+
+  /// No description provided for @startDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get startDate;
+
+  /// No description provided for @endDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get endDate;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get selectDate;
+
+  /// No description provided for @tripFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All Trips'**
+  String get tripFilterAll;
+
+  /// No description provided for @tripFilterSpecific.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific Trip'**
+  String get tripFilterSpecific;
+
+  /// No description provided for @selectTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Select trip'**
+  String get selectTrip;
+
+  /// No description provided for @invalidDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date must be on or before the end date.'**
+  String get invalidDateRange;
+
+  /// No description provided for @tripRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a trip to apply this filter.'**
+  String get tripRequired;
+
+  /// No description provided for @historyNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching transactions'**
+  String get historyNoResults;
+
+  /// No description provided for @historyNoResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search or reset the filters.'**
+  String get historyNoResultsHint;
+
+  /// No description provided for @clearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get clearFilters;
+
+  /// No description provided for @approvalsNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching approvals'**
+  String get approvalsNoResults;
+
+  /// No description provided for @approvalsNoResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search or reset the filters.'**
+  String get approvalsNoResultsHint;
+
+  /// No description provided for @filterTransactionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction type'**
+  String get filterTransactionType;
+
+  /// No description provided for @filterDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get filterDate;
+
+  /// No description provided for @filterTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip'**
+  String get filterTrip;
+
+  /// No description provided for @filterReadStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Read status'**
+  String get filterReadStatus;
 }
 
 class _AppLocalizationsDelegate

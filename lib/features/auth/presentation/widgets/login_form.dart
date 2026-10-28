@@ -1,4 +1,5 @@
 import 'package:driver_portal_app/core/theme/app_colors.dart';
+import 'package:driver_portal_app/core/theme/app_surfaces.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +30,7 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final surfaces = AppSurfaces.of(context);
 
     return BlocBuilder<LoginBloc, LoginState>(
       builder: (context, state) {
@@ -39,11 +41,13 @@ class _LoginFormState extends State<LoginForm> {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: surfaces.card,
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: Colors.black.withValues(
+                  alpha: surfaces.isDark ? 0.35 : 0.08,
+                ),
                 blurRadius: 24,
                 offset: const Offset(0, 10),
               ),
@@ -54,16 +58,16 @@ class _LoginFormState extends State<LoginForm> {
             children: [
               Text(
                 l10n.welcomeBack,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.title,
+                  color: surfaces.title,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 l10n.signInSubtitle,
-                style: const TextStyle(fontSize: 15, color: AppColors.muted),
+                style: TextStyle(fontSize: 15, color: surfaces.body),
               ),
               const SizedBox(height: 18),
               _LoginField(
@@ -104,6 +108,9 @@ class _LoginFormState extends State<LoginForm> {
               if (failure?.authError case final authError?) ...[
                 const SizedBox(height: 12),
                 Text(
+                  key: authError == AuthError.offline
+                      ? const Key('login-offline-notice')
+                      : null,
                   _authErrorText(l10n, authError),
                   style: const TextStyle(
                     color: AppColors.error,
@@ -197,6 +204,7 @@ class _LoginFormState extends State<LoginForm> {
     return switch (error) {
       AuthError.invalidCredentials => l10n.invalidCredentials,
       AuthError.unexpected => l10n.unexpectedError,
+      AuthError.offline => l10n.loginRequiresInternet,
     };
   }
 }
@@ -228,6 +236,7 @@ class _LoginField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasError = errorText != null;
+    final surfaces = AppSurfaces.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,18 +248,18 @@ class _LoginField extends StatelessWidget {
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
           cursorColor: AppColors.primary,
-          style: const TextStyle(fontSize: 15, color: AppColors.title),
+          style: TextStyle(fontSize: 15, color: surfaces.title),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(color: AppColors.hint, fontSize: 15),
-            prefixIcon: Icon(prefixIcon, color: AppColors.hint, size: 20),
+            hintStyle: TextStyle(color: surfaces.muted, fontSize: 15),
+            prefixIcon: Icon(prefixIcon, color: surfaces.muted, size: 20),
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: surfaces.field,
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
-            border: _border(AppColors.border),
+            border: _border(surfaces.border),
             enabledBorder: _border(
-              hasError ? AppColors.error : AppColors.border,
+              hasError ? AppColors.error : surfaces.border,
             ),
             focusedBorder: _border(
               hasError ? AppColors.error : AppColors.primary,

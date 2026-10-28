@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/settlement_type.dart';
 import '../bloc/record_expense_bloc.dart';
@@ -16,7 +17,7 @@ Future<void> showSettlementPicker(BuildContext context) {
     context: context,
     isScrollControlled: true,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),

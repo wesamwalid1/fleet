@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/amount_format.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
@@ -37,40 +39,56 @@ Future<void> showRecordExpenseSheet(
 }) {
   final expenses = context.read<ExpenseRepository>();
   final homeBloc = context.read<HomeBloc>();
+  final connectivity = context.read<ConnectivityBloc>();
   final height = MediaQuery.sizeOf(context).height;
 
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (_) {
-      return RepositoryProvider.value(
-        value: expenses,
-        child: BlocProvider(
-          create: (_) => RecordExpenseBloc(
-            driverId: driverId,
-            recordExpense: RecordExpense(expenses),
-            repository: expenses,
-            initialTripId: tripId,
-            tripScope: tripScope,
-          )..add(const RecordExpenseStarted()),
-          child: BlocListener<RecordExpenseBloc, RecordExpenseState>(
-            listenWhen: (previous, current) =>
-                previous.result == null && current.result != null,
-            listener: (_, _) => homeBloc.add(const HomeSummaryRefreshed()),
-            child: RecordExpenseSheet(
-              picker: picker ?? DeviceExpenseAttachmentPicker(),
-              tripId: tripId,
+      return BlocProvider.value(
+        value: connectivity,
+        child: RepositoryProvider.value(
+          value: expenses,
+          child: BlocProvider(
+            create: (_) => RecordExpenseBloc(
+              driverId: driverId,
+              recordExpense: RecordExpense(expenses),
+              repository: expenses,
+              initialTripId: tripId,
+              tripScope: tripScope,
+            )..add(const RecordExpenseStarted()),
+            child: BlocListener<RecordExpenseBloc, RecordExpenseState>(
+              listenWhen: (previous, current) =>
+                  previous.result == null && current.result != null,
+              listener: (_, _) => homeBloc.add(const HomeSummaryRefreshed()),
+              child: RecordExpenseSheet(
+                picker: picker ?? DeviceExpenseAttachmentPicker(),
+                tripId: tripId,
+              ),
             ),
           ),
         ),
       );
     },
   );
+}
+
+bool _blockIfOffline(BuildContext context, AppLocalizations l10n) {
+  final connectivity = context.read<ConnectivityBloc>().state;
+  if (!connectivity.blocksOnlineWork) return false;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('offline-action-notice'),
+      content: Text(l10n.offlineActionRequiresInternet),
+    ),
+  );
+  return true;
 }
 
 class RecordExpenseSheet extends StatefulWidget {
@@ -392,9 +410,12 @@ class _ExpenseForm extends StatelessWidget {
             key: const Key('expense-submit'),
             onPressed: state.submitting
                 ? null
-                : () => context.read<RecordExpenseBloc>().add(
-                    const RecordExpenseReviewRequested(),
-                  ),
+                : () {
+                    if (_blockIfOffline(context, l10n)) return;
+                    context.read<RecordExpenseBloc>().add(
+                      const RecordExpenseReviewRequested(),
+                    );
+                  },
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.error,
               disabledBackgroundColor: AppColors.error.withValues(alpha: 0.5),
@@ -569,9 +590,12 @@ class _ConfirmExpense extends StatelessWidget {
                   key: const Key('expense-confirm'),
                   onPressed: state.submitting
                       ? null
-                      : () => context.read<RecordExpenseBloc>().add(
-                          const RecordExpenseSubmitted(),
-                        ),
+                      : () {
+                          if (_blockIfOffline(context, l10n)) return;
+                          context.read<RecordExpenseBloc>().add(
+                            const RecordExpenseSubmitted(),
+                          );
+                        },
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.error,
                     foregroundColor: Colors.white,
@@ -617,7 +641,7 @@ class ExpenseRecordedPage extends StatelessWidget {
     final settlement = settlementTitle(l10n, expense.settlementType);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppSurfaces.of(context).sheet,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -867,8 +891,9 @@ class _SelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     return Material(
-      color: Colors.white,
+      color: surfaces.card,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -877,7 +902,7 @@ class _SelectorButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: surfaces.border),
           ),
           child: Row(
             children: [

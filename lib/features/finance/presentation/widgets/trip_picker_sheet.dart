@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/assigned_trip.dart';
 import '../bloc/record_expense_bloc.dart';
@@ -24,7 +25,7 @@ Future<void> showTripPicker(BuildContext context) {
     context: context,
     isScrollControlled: true,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -174,11 +175,12 @@ class _TripCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final active = trip.status == TripStatus.active;
-    final titleColor = selectable ? AppColors.title : AppColors.muted;
-    final detailColor = selectable ? AppColors.muted : AppColors.hint;
+    final surfaces = AppSurfaces.of(context);
+    final titleColor = selectable ? surfaces.title : surfaces.body;
+    final detailColor = selectable ? surfaces.body : surfaces.muted;
 
     return Material(
-      color: selectable ? Colors.white : AppColors.neutralBackground,
+      color: selectable ? surfaces.card : surfaces.neutral,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         key: Key('expense-trip-${trip.id}'),
@@ -189,7 +191,7 @@ class _TripCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selectable ? AppColors.border : AppColors.hint,
+              color: selectable ? surfaces.border : surfaces.muted,
             ),
           ),
           child: Row(
@@ -197,10 +199,8 @@ class _TripCard extends StatelessWidget {
             children: [
               _IconBadge(
                 icon: Icons.local_shipping_outlined,
-                color: selectable ? AppColors.muted : AppColors.hint,
-                background: selectable
-                    ? AppColors.neutralBackground
-                    : Colors.white,
+                color: selectable ? surfaces.body : surfaces.muted,
+                background: selectable ? surfaces.neutral : surfaces.card,
               ),
               const SizedBox(width: 10),
               Expanded(

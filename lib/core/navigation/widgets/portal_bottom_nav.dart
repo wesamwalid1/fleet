@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_surfaces.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../features/approvals/presentation/bloc/approvals_bloc.dart';
 import '../../../features/approvals/presentation/bloc/approvals_state.dart';
@@ -26,6 +27,7 @@ class PortalBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final surfaces = AppSurfaces.of(context);
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.only(bottom: 10),
@@ -40,7 +42,9 @@ class PortalBottomNav extends StatelessWidget {
                 borderRadius: BorderRadius.circular(_radius),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.title.withValues(alpha: 0.07),
+                    color: AppColors.title.withValues(
+                      alpha: surfaces.isDark ? 0.35 : 0.07,
+                    ),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
@@ -53,11 +57,11 @@ class PortalBottomNav extends StatelessWidget {
                   child: DecoratedBox(
                     key: const Key('portal-bottom-nav'),
                     decoration: BoxDecoration(
-                      color: _NavColors.glass,
+                      color: surfaces.navGlass,
                       borderRadius: BorderRadius.circular(_radius),
-                      border: Border.all(color: _NavColors.glassEdge),
+                      border: Border.all(color: surfaces.navEdge),
                     ),
-                    child: _tabs(l10n),
+                    child: _tabs(l10n, surfaces),
                   ),
                 ),
               ),
@@ -68,7 +72,7 @@ class PortalBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _tabs(AppLocalizations l10n) {
+  Widget _tabs(AppLocalizations l10n, AppSurfaces surfaces) {
     return Padding(
       padding: const EdgeInsets.all(5),
       child: Row(
@@ -78,6 +82,7 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.home_outlined,
             selectedIcon: Icons.home_rounded,
             label: l10n.navHome,
+            inactiveColor: surfaces.navIcon,
             selected: index == 0,
             onTap: () => onSelected(0),
           ),
@@ -86,6 +91,7 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.fact_check_outlined,
             selectedIcon: Icons.fact_check_rounded,
             label: l10n.approvals,
+            inactiveColor: surfaces.navIcon,
             selected: index == 1,
             showBadge: true,
             onTap: () => onSelected(1),
@@ -95,6 +101,7 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.history_rounded,
             selectedIcon: Icons.history_rounded,
             label: l10n.navHistory,
+            inactiveColor: surfaces.navIcon,
             selected: index == 2,
             onTap: () => onSelected(2),
           ),
@@ -103,6 +110,7 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.account_circle_outlined,
             selectedIcon: Icons.account_circle,
             label: l10n.navProfile,
+            inactiveColor: surfaces.navIcon,
             selected: index == 3,
             onTap: () => onSelected(3),
           ),
@@ -114,26 +122,12 @@ class PortalBottomNav extends StatelessWidget {
 
 const _radius = 28.0;
 
-/// Shades of existing [AppColors] tokens for the bar.
-abstract final class _NavColors {
-  /// Frosted white: the page behind stays visible while icons keep 11:1.
-  static final glass = Colors.white.withValues(alpha: 0.72);
-  static final glassEdge = Colors.white.withValues(alpha: 0.85);
-
-  static const active = AppColors.primary;
-
-  /// Soft backdrop behind the active icon.
-  static final activeFill = AppColors.primary.withValues(alpha: 0.12);
-
-  /// Near-black for inactive icons: 13:1 on white.
-  static final inactive = Color.lerp(AppColors.title, AppColors.muted, 0.2)!;
-}
-
 class _Item extends StatelessWidget {
   final Key itemKey;
   final IconData icon;
   final IconData selectedIcon;
   final String label;
+  final Color inactiveColor;
   final bool selected;
   final bool showBadge;
   final VoidCallback onTap;
@@ -143,6 +137,7 @@ class _Item extends StatelessWidget {
     required this.icon,
     required this.selectedIcon,
     required this.label,
+    required this.inactiveColor,
     required this.selected,
     required this.onTap,
     this.showBadge = false,
@@ -150,6 +145,7 @@ class _Item extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeFill = AppColors.primary.withValues(alpha: 0.12);
     return Expanded(
       child: Tooltip(
         message: label,
@@ -172,8 +168,8 @@ class _Item extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: selected
-                        ? _NavColors.activeFill
-                        : _NavColors.activeFill.withValues(alpha: 0),
+                        ? activeFill
+                        : activeFill.withValues(alpha: 0),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   alignment: Alignment.center,
@@ -182,9 +178,7 @@ class _Item extends StatelessWidget {
                     children: [
                       Icon(
                         selected ? selectedIcon : icon,
-                        color: selected
-                            ? _NavColors.active
-                            : _NavColors.inactive,
+                        color: selected ? AppColors.primary : inactiveColor,
                         size: 23,
                       ),
                       if (showBadge) const _PendingBadge(),

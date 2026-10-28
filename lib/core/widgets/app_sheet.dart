@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_surfaces.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
 
-/// Presents [builder] as the app's standard bottom sheet: white, rounded top
-/// corners, at most 640 wide and [maxHeightFactor] of the screen tall.
+/// Presents [builder] as the app's standard bottom sheet: themed surface,
+/// rounded top corners, at most 640 wide and [maxHeightFactor] of the screen tall.
 Future<T?> showAppSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -14,6 +14,7 @@ Future<T?> showAppSheet<T>({
   bool enableDrag = true,
 }) {
   final height = MediaQuery.sizeOf(context).height;
+  final surfaces = AppSurfaces.of(context);
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -23,7 +24,7 @@ Future<T?> showAppSheet<T>({
       maxWidth: 640,
       maxHeight: height * maxHeightFactor,
     ),
-    backgroundColor: Colors.white,
+    backgroundColor: surfaces.sheet,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
     ),
@@ -37,12 +38,13 @@ class SheetHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     return Center(
       child: Container(
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: AppColors.border,
+          color: surfaces.border,
           borderRadius: BorderRadius.circular(4),
         ),
       ),
@@ -72,6 +74,7 @@ class SheetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     final subtitle = this.subtitle;
     return Row(
       children: [
@@ -80,12 +83,18 @@ class SheetHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: AppTextStyles.sheetTitle),
+              Text(
+                title,
+                style: AppTextStyles.sheetTitle.copyWith(color: surfaces.title),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: AppTextStyles.body.copyWith(fontSize: 13.5),
+                  style: AppTextStyles.body.copyWith(
+                    fontSize: 13.5,
+                    color: surfaces.body,
+                  ),
                 ),
               ],
             ],
@@ -96,7 +105,7 @@ class SheetHeader extends StatelessWidget {
             key: closeKey,
             onPressed: onClose,
             tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            icon: const Icon(Icons.close_rounded, color: AppColors.muted),
+            icon: Icon(Icons.close_rounded, color: surfaces.muted),
           ),
       ],
     );

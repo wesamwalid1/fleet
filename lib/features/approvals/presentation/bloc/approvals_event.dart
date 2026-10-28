@@ -28,6 +28,15 @@ final class ApprovalsFilterSelected extends ApprovalsEvent {
   List<Object?> get props => [filter];
 }
 
+final class ApprovalsSearchChanged extends ApprovalsEvent {
+  final String query;
+
+  const ApprovalsSearchChanged(this.query);
+
+  @override
+  List<Object?> get props => [query];
+}
+
 enum ApprovalCommand {
   approveVault,
   approveTransfer,

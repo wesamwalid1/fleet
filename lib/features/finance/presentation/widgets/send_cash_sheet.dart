@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/amount_format.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
@@ -24,6 +26,7 @@ Future<void> showSendCashSheet(
 }) {
   final transfers = context.read<CashTransferRepository>();
   final homeBloc = context.read<HomeBloc>();
+  final connectivity = context.read<ConnectivityBloc>();
 
   final height = MediaQuery.sizeOf(context).height;
 
@@ -31,24 +34,27 @@ Future<void> showSendCashSheet(
     context: context,
     isScrollControlled: true,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (_) {
-      return RepositoryProvider.value(
-        value: transfers,
-        child: BlocProvider(
-          create: (_) => SendCashBloc(
-            senderId: senderId,
-            sendCash: SendCash(transfers),
-            repository: transfers,
-          )..add(const SendCashStarted()),
-          child: BlocListener<SendCashBloc, SendCashState>(
-            listenWhen: (previous, current) =>
-                previous.result == null && current.result != null,
-            listener: (_, _) => homeBloc.add(const HomeSummaryRefreshed()),
-            child: SendCashSheet(onViewTransaction: onViewTransaction),
+      return BlocProvider.value(
+        value: connectivity,
+        child: RepositoryProvider.value(
+          value: transfers,
+          child: BlocProvider(
+            create: (_) => SendCashBloc(
+              senderId: senderId,
+              sendCash: SendCash(transfers),
+              repository: transfers,
+            )..add(const SendCashStarted()),
+            child: BlocListener<SendCashBloc, SendCashState>(
+              listenWhen: (previous, current) =>
+                  previous.result == null && current.result != null,
+              listener: (_, _) => homeBloc.add(const HomeSummaryRefreshed()),
+              child: SendCashSheet(onViewTransaction: onViewTransaction),
+            ),
           ),
         ),
       );
@@ -302,9 +308,23 @@ class _SendCashForm extends StatelessWidget {
               child: FilledButton(
                 key: const Key('send-cash-submit'),
                 onPressed: state.canSubmit
-                    ? () => context.read<SendCashBloc>().add(
-                        const SendCashSubmitted(),
-                      )
+                    ? () {
+                        final connectivity = context
+                            .read<ConnectivityBloc>()
+                            .state;
+                        if (connectivity.blocksOnlineWork) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              key: const Key('offline-action-notice'),
+                              content: Text(l10n.offlineActionRequiresInternet),
+                            ),
+                          );
+                          return;
+                        }
+                        context.read<SendCashBloc>().add(
+                          const SendCashSubmitted(),
+                        );
+                      }
                     : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -383,7 +403,7 @@ class RequestSentPage extends StatelessWidget {
     final balance = _money(result.senderBalanceEgp, locale, l10n.egp);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppSurfaces.of(context).sheet,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -546,7 +566,7 @@ class _DriverSelector extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
 
     return Material(
-      color: Colors.white,
+      color: AppSurfaces.of(context).card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.primary, width: 1.4),
@@ -691,10 +711,14 @@ class _AmountChip extends StatelessWidget {
       onPressed: () =>
           context.read<SendCashBloc>().add(SendCashAmountChanged(amount)),
       style: OutlinedButton.styleFrom(
-        backgroundColor: selected ? AppColors.primary : Colors.white,
-        foregroundColor: selected ? Colors.white : AppColors.title,
+        backgroundColor: selected
+            ? AppColors.primary
+            : AppSurfaces.of(context).chipIdle,
+        foregroundColor: selected
+            ? Colors.white
+            : AppSurfaces.of(context).title,
         side: BorderSide(
-          color: selected ? AppColors.primary : AppColors.border,
+          color: selected ? AppColors.primary : AppSurfaces.of(context).border,
         ),
         minimumSize: const Size.fromHeight(40),
         padding: const EdgeInsets.symmetric(horizontal: 4),

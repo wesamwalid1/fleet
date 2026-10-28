@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/assets/app_icons.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/approval_item.dart';
 import '../approval_format.dart';
@@ -20,7 +22,7 @@ Future<ApprovalSheetAction?> showApprovalSheet(
   return showModalBottomSheet<ApprovalSheetAction>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.92),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -60,12 +62,13 @@ Future<bool> showRejectExpenseDialog(
   final accepted = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: AppSurfaces.of(context).sheet,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
       final l10n = AppLocalizations.of(context);
+      final surfaces = AppSurfaces.of(context);
       return SafeArea(
         top: false,
         child: Padding(
@@ -76,8 +79,8 @@ Future<bool> showRejectExpenseDialog(
             children: [
               Text(
                 l10n.rejectExpenseTitle,
-                style: const TextStyle(
-                  color: AppColors.title,
+                style: TextStyle(
+                  color: surfaces.title,
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
@@ -85,8 +88,8 @@ Future<bool> showRejectExpenseDialog(
               const SizedBox(height: 8),
               Text(
                 l10n.rejectExpenseMessage(reference),
-                style: const TextStyle(
-                  color: AppColors.muted,
+                style: TextStyle(
+                  color: surfaces.body,
                   fontSize: 14,
                   height: 1.4,
                 ),
@@ -99,8 +102,8 @@ Future<bool> showRejectExpenseDialog(
                       key: const Key('approval-reject-cancel'),
                       onPressed: () => Navigator.pop(context, false),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.title,
-                        side: const BorderSide(color: AppColors.border),
+                        foregroundColor: surfaces.title,
+                        side: BorderSide(color: surfaces.border),
                         minimumSize: const Size.fromHeight(48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -172,8 +175,8 @@ class _CashApprovalSheet extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.title,
+              style: TextStyle(
+                color: AppSurfaces.of(context).title,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
@@ -182,7 +185,10 @@ class _CashApprovalSheet extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, fontSize: 14),
+              style: TextStyle(
+                color: AppSurfaces.of(context).body,
+                fontSize: 14,
+              ),
             ),
             const SizedBox(height: 18),
             Text(
@@ -325,8 +331,8 @@ class _RoadExpenseSheet extends StatelessWidget {
             Text(
               l10n.roadExpenseApproval,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.title,
+              style: TextStyle(
+                color: AppSurfaces.of(context).title,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
@@ -406,9 +412,9 @@ class _RoadExpenseSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppSurfaces.of(context).card,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppSurfaces.of(context).border),
               ),
               child: Column(
                 children: [
@@ -684,6 +690,8 @@ Future<void> openApprovalRequest(
   BuildContext context,
   ApprovalItem item,
 ) async {
+  if (_blockApprovalIfOffline(context)) return;
+
   final bloc = context.read<ApprovalsBloc>();
   final action = await showApprovalSheet(
     context,
@@ -698,12 +706,30 @@ Future<void> openApprovalRequest(
     );
     if (!confirmed || !context.mounted) return;
   }
+  // Re-check after the sheet: connectivity may have changed mid-flow.
+  if (_blockApprovalIfOffline(context)) return;
   bloc.add(
     ApprovalActionRequested(
       id: item.id,
       command: commandFor(item.kind, action),
     ),
   );
+}
+
+/// Blocks approval actions while offline, unreachable, or probing.
+bool _blockApprovalIfOffline(BuildContext context) {
+  final connectivity = context.read<ConnectivityBloc>().state;
+  if (!connectivity.blocksOnlineWork) return false;
+  final l10n = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        key: const Key('offline-action-notice'),
+        content: Text(l10n.offlineActionRequiresInternet),
+      ),
+    );
+  return true;
 }
 
 ApprovalCommand commandFor(ApprovalKind kind, ApprovalSheetAction action) {

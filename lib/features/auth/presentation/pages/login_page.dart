@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/core/routing/app_router.dart';
 import 'package:driver_portal_app/core/theme/app_colors.dart';
+import 'package:driver_portal_app/core/theme/app_surfaces.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,7 +33,7 @@ class LoginPage extends StatelessWidget {
           statusBarBrightness: Brightness.dark,
         ),
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppSurfaces.of(context).scaffold,
           resizeToAvoidBottomInset: true,
           body: SafeArea(
             top: false,

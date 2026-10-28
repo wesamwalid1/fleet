@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
-import 'package:driver_portal_app/main.dart';
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/cash_transfer.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/custody_receipt.dart';
@@ -20,6 +19,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../support/fake_connectivity.dart';
 
 const _me = MockCashLedger.senderId;
 
@@ -70,33 +71,49 @@ void main() {
     expect(_unreadDots(), findsNWidgets(3));
   });
 
-  testWidgets('all and unread are labelled and mark all is gone', (
+  testWidgets('all unread and read filters work via the filter sheet', (
     tester,
   ) async {
     await _pump(tester);
     await _openCenter(tester);
 
-    final all = find.descendant(
-      of: find.byKey(const Key('notifications-filter-all')),
-      matching: find.text('All'),
+    expect(
+      find.byKey(const Key('notifications-filter-button')),
+      findsOneWidget,
     );
-    final unread = find.descendant(
-      of: find.byKey(const Key('notifications-filter-unread')),
-      matching: find.text('Unread'),
-    );
-    expect(all, findsOneWidget);
-    expect(unread, findsOneWidget);
-    expect(tester.getSize(all).width, greaterThan(10));
-    expect(tester.getSize(unread).width, greaterThan(10));
     expect(find.byKey(const Key('notifications-mark-all')), findsNothing);
     expect(find.text('Mark all as read'), findsNothing);
 
+    await _openFilterSheet(tester);
+    expect(find.text('All'), findsWidgets);
+    expect(find.text('Unread'), findsOneWidget);
+    expect(find.text('Read'), findsOneWidget);
     await tester.tap(find.byKey(const Key('notifications-filter-unread')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('notifications-filter-apply')));
     await tester.pumpAndSettle();
     expect(_tiles(), findsNWidgets(3));
     expect(find.byKey(Key('notification-$_vaultHandled')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('notifications-filter-all')));
+    await _selectFilter(tester, const Key('notifications-filter-read'));
+    expect(_tiles(), findsOneWidget);
+    expect(find.byKey(Key('notification-$_vaultHandled')), findsOneWidget);
+
+    await _selectFilter(tester, const Key('notifications-filter-all'));
+    expect(_tiles(), findsNWidgets(4));
+  });
+
+  testWidgets('filter sheet reset restores all', (tester) async {
+    await _pump(tester);
+    await _openCenter(tester);
+
+    await _selectFilter(tester, const Key('notifications-filter-unread'));
+    expect(_tiles(), findsNWidgets(3));
+
+    await _openFilterSheet(tester);
+    await tester.tap(find.byKey(const Key('notifications-filter-reset')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('notifications-filter-apply')));
     await tester.pumpAndSettle();
     expect(_tiles(), findsNWidgets(4));
   });
@@ -121,8 +138,7 @@ void main() {
     expect(find.byKey(Key('notification-$_vaultPending')), findsOneWidget);
     expect(find.byKey(Key('notification-$_vaultHandled')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('notifications-filter-unread')));
-    await tester.pumpAndSettle();
+    await _selectFilter(tester, const Key('notifications-filter-unread'));
     expect(_tiles(), findsOneWidget);
     expect(find.byKey(Key('notification-$_vaultPending')), findsOneWidget);
 
@@ -139,8 +155,7 @@ void main() {
     expect(_tiles(), findsNWidgets(3));
     expect(find.byKey(const Key('notifications-search-clear')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('notifications-filter-all')));
-    await tester.pumpAndSettle();
+    await _selectFilter(tester, const Key('notifications-filter-all'));
     expect(_tiles(), findsNWidgets(4));
   });
 
@@ -520,7 +535,7 @@ void main() {
     tester,
   ) async {
     _setView(tester);
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
     await _login(tester);
 
@@ -631,11 +646,9 @@ void main() {
     expect(find.byKey(const Key('home-notification-dot')), findsNothing);
     for (var reopen = 0; reopen < 2; reopen++) {
       await _openCenter(tester);
-      await tester.tap(find.byKey(const Key('notifications-filter-unread')));
-      await tester.pumpAndSettle();
+      await _selectFilter(tester, const Key('notifications-filter-unread'));
       expect(_tiles(), findsNothing);
-      await tester.tap(find.byKey(const Key('notifications-filter-all')));
-      await tester.pumpAndSettle();
+      await _selectFilter(tester, const Key('notifications-filter-all'));
       expect(_unreadDots(), findsNothing);
       await tester.pageBack();
       await tester.pumpAndSettle();
@@ -674,10 +687,15 @@ void main() {
     await _openCenter(tester);
 
     expect(find.text('الإشعارات'), findsOneWidget);
-    expect(find.text('الكل'), findsOneWidget);
-    expect(find.text('غير المقروءة'), findsOneWidget);
+    expect(find.text('تصفية'), findsOneWidget);
     expect(find.text('ابحث في الإشعارات'), findsOneWidget);
     expect(find.text('تحديد الكل كمقروء'), findsNothing);
+    await _openFilterSheet(tester);
+    expect(find.text('الكل'), findsWidgets);
+    expect(find.text('غير المقروءة'), findsOneWidget);
+    expect(find.text('مقروء'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('notifications-filter-apply')));
+    await tester.pumpAndSettle();
     expect(find.text('نقدية من الخزينة بانتظار موافقتك'), findsWidgets);
     expect(
       Directionality.of(
@@ -709,12 +727,7 @@ void main() {
       await _openCenter(tester);
       expect(
         tester
-            .getSize(
-              find.descendant(
-                of: find.byKey(const Key('notifications-filter-unread')),
-                matching: find.byType(Text),
-              ),
-            )
+            .getSize(find.byKey(const Key('notifications-filter-button')))
             .width,
         greaterThan(10),
       );
@@ -758,7 +771,7 @@ void main() {
     final demo = [_roadPending, _vaultPending, _incomingPending, _vaultHandled];
 
     _setView(tester);
-    await tester.pumpWidget(const DriverPortalApp());
+    await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
     String? firstBalance;
     for (var login = 0; login < 2; login++) {
@@ -777,8 +790,7 @@ void main() {
         ),
         TextDirection.rtl,
       );
-      await tester.tap(find.byKey(const Key('notifications-filter-unread')));
-      await tester.pumpAndSettle();
+      await _selectFilter(tester, const Key('notifications-filter-unread'));
       expect(_tiles(), findsNWidgets(demo.length));
       for (final id in demo) {
         expect(
@@ -788,8 +800,7 @@ void main() {
         );
       }
       expect(find.byKey(const Key('notification-my-event')), findsNothing);
-      await tester.tap(find.byKey(const Key('notifications-filter-all')));
-      await tester.pumpAndSettle();
+      await _selectFilter(tester, const Key('notifications-filter-all'));
       expect(_tiles(), findsNWidgets(demo.length + 1));
       // pageBack() looks for the English "Back" tooltip; this run is Arabic.
       await tester.tap(find.byType(BackButton));
@@ -898,6 +909,19 @@ Future<void> _markRead(WidgetTester tester, List<String> ids) async {
 
 Future<void> _search(WidgetTester tester, String query) async {
   await tester.enterText(find.byKey(const Key('notifications-search')), query);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openFilterSheet(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('notifications-filter-button')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _selectFilter(WidgetTester tester, Key optionKey) async {
+  await _openFilterSheet(tester);
+  await tester.tap(find.byKey(optionKey));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('notifications-filter-apply')));
   await tester.pumpAndSettle();
 }
 

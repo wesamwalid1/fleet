@@ -80,6 +80,20 @@ String historyStatusText(AppLocalizations l10n, HistoryDisplayStatus status) {
   };
 }
 
+/// Whether [entry] matches [query] against visible title, subtitle, and ids.
+bool historyMatches(AppLocalizations l10n, HistoryEntry entry, String query) {
+  final needle = query.trim().toLowerCase();
+  if (needle.isEmpty) return true;
+  bool hit(String value) => value.toLowerCase().contains(needle);
+  return hit(historyTitle(l10n, entry)) ||
+      hit(historySubtitle(l10n, entry)) ||
+      hit(entry.id) ||
+      hit(entry.tripCode) ||
+      hit(entry.tripId) ||
+      hit(entry.counterpartyName) ||
+      hit(entry.counterpartyId);
+}
+
 String historySubtitle(AppLocalizations l10n, HistoryEntry entry) {
   final status = historyStatusText(l10n, entry.status);
   final marked = switch (entry.status) {

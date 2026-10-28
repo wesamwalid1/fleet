@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/presentation/bloc/theme_bloc.dart';
+import '../../../../core/theme/presentation/bloc/theme_event.dart';
+import '../../../../core/theme/presentation/bloc/theme_state.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/type_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -42,7 +48,7 @@ class ProfilePage extends StatelessWidget {
         statusBarBrightness: Brightness.dark,
       ),
       child: ColoredBox(
-        color: AppColors.background,
+        color: AppSurfaces.of(context).scaffold,
         child: BlocBuilder<HomeBloc, HomeState>(
           builder: (context, state) {
             return switch (state) {
@@ -118,119 +124,139 @@ class _ProfileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final amount = summary == null
-        ? null
-        : formatHomeAmount(
-            summary!.balanceEgp,
-            locale: locale,
-            withCurrency: true,
-            currency: l10n.egp,
-          );
-    final balanceLabel = amount == null
-        ? (financeFailed ? l10n.balanceLoadError : null)
-        : l10n.profileBalance(amount);
+    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
+      buildWhen: (previous, current) =>
+          previous.isUnavailable != current.isUnavailable,
+      builder: (context, connectivity) {
+        final offline = connectivity.isUnavailable;
+        final amount = offline || summary == null
+            ? null
+            : formatHomeAmount(
+                summary!.balanceEgp,
+                locale: locale,
+                withCurrency: true,
+                currency: l10n.egp,
+              );
+        final balanceLabel = offline
+            ? l10n.offlineSectionUnavailable
+            : amount == null
+            ? (financeFailed ? l10n.balanceLoadError : null)
+            : l10n.profileBalance(amount);
 
-    // The shell extends its body behind the floating navigation bar and
-    // reports the bar's height as bottom padding, so the last group can
-    // scroll fully above it.
-    return ListView(
-      key: const Key('profile-scroll'),
-      padding: EdgeInsets.only(
-        bottom: 32 + MediaQuery.paddingOf(context).bottom,
-      ),
-      children: [
-        _Header(
-          initials: driver.initials,
-          name: driver.fullName,
-          title: l10n.navProfile,
-          identity: l10n.profileIdentity(driver.id, l10n.driversVault),
-          balanceLabel: balanceLabel,
-        ),
-        _SectionLabel(l10n.profileQuickAccess),
-        _MenuGroup(
-          groupKey: const Key('profile-quick-access'),
+        // The shell extends its body behind the floating navigation bar and
+        // reports the bar's height as bottom padding, so the last group can
+        // scroll fully above it.
+        return ListView(
+          key: const Key('profile-scroll'),
+          padding: EdgeInsets.only(
+            bottom: 32 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
-            _MenuRow(
-              rowKey: const Key('profile-my-balance'),
-              icon: Icons.account_balance_wallet_outlined,
-              title: l10n.myBalance,
-              onTap: onOpenHome,
-              trailing: amount == null
-                  ? null
-                  : Text(
-                      amount,
-                      key: const Key('profile-balance-amount'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.amount.copyWith(fontSize: 14),
+            _Header(
+              initials: driver.initials,
+              name: driver.fullName,
+              title: l10n.navProfile,
+              identity: l10n.profileIdentity(driver.id, l10n.driversVault),
+              balanceLabel: balanceLabel,
+            ),
+            _SectionLabel(l10n.profileQuickAccess),
+            _MenuGroup(
+              groupKey: const Key('profile-quick-access'),
+              children: [
+                _MenuRow(
+                  rowKey: const Key('profile-my-balance'),
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: l10n.myBalance,
+                  onTap: onOpenHome,
+                  trailing: amount == null
+                      ? null
+                      : Text(
+                          amount,
+                          key: const Key('profile-balance-amount'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.amount.copyWith(fontSize: 14),
+                        ),
+                ),
+                _MenuRow(
+                  rowKey: const Key('profile-pending'),
+                  icon: Icons.fact_check_outlined,
+                  title: l10n.pendingApprovals,
+                  onTap: onOpenApprovals,
+                  trailing: offline ? null : const _PendingBadge(),
+                ),
+                _MenuRow(
+                  rowKey: const Key('profile-history'),
+                  icon: Icons.history_rounded,
+                  title: l10n.transactionHistory,
+                  onTap: onOpenHistory,
+                ),
+              ],
+            ),
+            _SectionLabel(l10n.profileSettings),
+            _MenuGroup(
+              groupKey: const Key('profile-settings'),
+              children: [
+                _MenuRow(
+                  rowKey: const Key('profile-language'),
+                  icon: Icons.language_rounded,
+                  title: l10n.language,
+                  onTap: () => showLanguageSheet(context),
+                  trailing: Text(
+                    Localizations.localeOf(context).languageCode == 'ar'
+                        ? l10n.languageArabic
+                        : l10n.languageEnglish,
+                    key: const Key('profile-language-value'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+                ),
+                _MenuRow(
+                  rowKey: const Key('profile-dark-mode'),
+                  icon: Icons.dark_mode_outlined,
+                  title: l10n.darkMode,
+                  showChevron: false,
+                  trailing: BlocBuilder<ThemeBloc, ThemePreferenceState>(
+                    builder: (context, themeState) {
+                      final dark = themeState.mode == ThemeMode.dark;
+                      return Switch(
+                        key: const Key('profile-dark-mode-switch'),
+                        value: dark,
+                        onChanged: (value) {
+                          context.read<ThemeBloc>().add(
+                            ThemeModeSelected(
+                              value ? ThemeMode.dark : ThemeMode.light,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            _MenuRow(
-              rowKey: const Key('profile-pending'),
-              icon: Icons.fact_check_outlined,
-              title: l10n.pendingApprovals,
-              onTap: onOpenApprovals,
-              trailing: const _PendingBadge(),
-            ),
-            _MenuRow(
-              rowKey: const Key('profile-history'),
-              icon: Icons.history_rounded,
-              title: l10n.transactionHistory,
-              onTap: onOpenHistory,
-            ),
-          ],
-        ),
-        _SectionLabel(l10n.profileSettings),
-        _MenuGroup(
-          groupKey: const Key('profile-settings'),
-          children: [
-            _MenuRow(
-              rowKey: const Key('profile-language'),
-              icon: Icons.language_rounded,
-              title: l10n.language,
-              onTap: () => showLanguageSheet(context),
-              trailing: Text(
-                Localizations.localeOf(context).languageCode == 'ar'
-                    ? l10n.languageArabic
-                    : l10n.languageEnglish,
-                key: const Key('profile-language-value'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-            // Placeholder only: no theme switching or persistence yet, so the
-            // switch stays off and disabled.
-            _MenuRow(
-              rowKey: const Key('profile-dark-mode'),
-              icon: Icons.dark_mode_outlined,
-              title: l10n.darkMode,
-              showChevron: false,
-              trailing: const Switch(
-                key: Key('profile-dark-mode-switch'),
-                value: false,
-                onChanged: null,
-              ),
+            _SectionLabel(l10n.profileAccount),
+            _MenuGroup(
+              groupKey: const Key('profile-account'),
+              children: [
+                _MenuRow(
+                  rowKey: const Key('profile-logout'),
+                  icon: Icons.logout_rounded,
+                  iconColor: AppColors.rejectedText,
+                  iconBackground: AppColors.dangerBackground,
+                  title: l10n.logout,
+                  titleColor: AppColors.rejectedText,
+                  showChevron: false,
+                  onTap: () => showLogoutDialog(context),
+                ),
+              ],
             ),
           ],
-        ),
-        _SectionLabel(l10n.profileAccount),
-        _MenuGroup(
-          groupKey: const Key('profile-account'),
-          children: [
-            _MenuRow(
-              rowKey: const Key('profile-logout'),
-              icon: Icons.logout_rounded,
-              iconColor: AppColors.rejectedText,
-              iconBackground: AppColors.dangerBackground,
-              title: l10n.logout,
-              titleColor: AppColors.rejectedText,
-              showChevron: false,
-              onTap: () => showLogoutDialog(context),
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -435,15 +461,16 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     return Padding(
       key: groupKey,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Material(
-        color: Colors.white,
+        color: surfaces.card,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.card),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: surfaces.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -455,7 +482,7 @@ class _MenuGroup extends StatelessWidget {
                   thickness: 1,
                   indent: 70,
                   endIndent: 16,
-                  color: AppColors.title.withValues(alpha: 0.08),
+                  color: surfaces.divider,
                 ),
               child,
             ],
@@ -472,7 +499,7 @@ class _MenuRow extends StatelessWidget {
   final Color iconColor;
   final Color iconBackground;
   final String title;
-  final Color titleColor;
+  final Color? titleColor;
   final Widget? trailing;
   final bool showChevron;
   final VoidCallback? onTap;
@@ -484,13 +511,15 @@ class _MenuRow extends StatelessWidget {
     this.onTap,
     this.iconColor = AppColors.primary,
     this.iconBackground = AppColors.primarySurface,
-    this.titleColor = AppColors.title,
+    this.titleColor,
     this.trailing,
     this.showChevron = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
+    final resolvedTitle = titleColor ?? surfaces.title;
     final chevron = Directionality.of(context) == TextDirection.rtl
         ? Icons.chevron_left
         : Icons.chevron_right;
@@ -514,7 +543,7 @@ class _MenuRow extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.rowTitle.copyWith(color: titleColor),
+                  style: AppTextStyles.rowTitle.copyWith(color: resolvedTitle),
                 ),
               ),
               if (trailing != null) ...[
@@ -526,7 +555,7 @@ class _MenuRow extends StatelessWidget {
               ],
               if (showChevron) ...[
                 const SizedBox(width: 4),
-                Icon(chevron, color: AppColors.hint, size: 22),
+                Icon(chevron, color: surfaces.muted, size: 22),
               ],
             ],
           ),

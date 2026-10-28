@@ -743,4 +743,128 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notificationTargetUnavailable => 'هذا العنصر لم يعد متاحاً.';
+
+  @override
+  String get offlineBannerTitle => 'أنت غير متصل';
+
+  @override
+  String get offlineBannerHint => 'اتصل بالإنترنت لتحديث بياناتك.';
+
+  @override
+  String get offlineRetry => 'إعادة المحاولة';
+
+  @override
+  String get offlineUnavailableTitle => 'غير متاح بدون اتصال';
+
+  @override
+  String get offlineUnavailableHint => 'اتصل بالإنترنت لتحميل هذه المعلومات.';
+
+  @override
+  String get offlineActionRequiresInternet =>
+      'يلزم اتصال بالإنترنت لتنفيذ هذا الإجراء.';
+
+  @override
+  String get loginRequiresInternet => 'اتصل بالإنترنت لتسجيل الدخول.';
+
+  @override
+  String get offlineSectionUnavailable => 'غير متاح أثناء عدم الاتصال';
+
+  @override
+  String get filter => 'تصفية';
+
+  @override
+  String get apply => 'تطبيق';
+
+  @override
+  String get reset => 'إعادة تعيين';
+
+  @override
+  String get clearSearch => 'مسح البحث';
+
+  @override
+  String get approvalsSearchHint => 'ابحث في الموافقات';
+
+  @override
+  String get historySearchHint => 'ابحث في الحركات';
+
+  @override
+  String get notificationsFilterRead => 'مقروء';
+
+  @override
+  String get notificationsNoRead => 'لا توجد إشعارات مقروءة';
+
+  @override
+  String get notificationsNoReadHint => 'ستظهر الإشعارات المقروءة هنا.';
+
+  @override
+  String get filterCashTransfers => 'التحويلات النقدية';
+
+  @override
+  String get filterVaultTransactions => 'معاملات الخزينة';
+
+  @override
+  String get filterAllTransactions => 'كل الحركات';
+
+  @override
+  String get dateFilterAll => 'كل التواريخ';
+
+  @override
+  String get dateFilterDay => 'يوم محدد';
+
+  @override
+  String get dateFilterRange => 'نطاق تاريخ';
+
+  @override
+  String get startDate => 'تاريخ البدء';
+
+  @override
+  String get endDate => 'تاريخ الانتهاء';
+
+  @override
+  String get selectDate => 'اختر التاريخ';
+
+  @override
+  String get tripFilterAll => 'كل الرحلات';
+
+  @override
+  String get tripFilterSpecific => 'رحلة محددة';
+
+  @override
+  String get selectTrip => 'اختر الرحلة';
+
+  @override
+  String get invalidDateRange =>
+      'يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء أو مساوياً له.';
+
+  @override
+  String get tripRequired => 'اختر رحلة لتطبيق هذا التصفية.';
+
+  @override
+  String get historyNoResults => 'لا توجد حركات مطابقة';
+
+  @override
+  String get historyNoResultsHint =>
+      'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
+
+  @override
+  String get clearFilters => 'مسح عوامل التصفية';
+
+  @override
+  String get approvalsNoResults => 'لا توجد موافقات مطابقة';
+
+  @override
+  String get approvalsNoResultsHint =>
+      'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
+
+  @override
+  String get filterTransactionType => 'نوع الحركة';
+
+  @override
+  String get filterDate => 'التاريخ';
+
+  @override
+  String get filterTrip => 'الرحلة';
+
+  @override
+  String get filterReadStatus => 'حالة القراءة';
 }

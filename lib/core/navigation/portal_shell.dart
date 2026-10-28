@@ -4,12 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../features/approvals/domain/repositories/approval_repository.dart';
+import '../../features/approvals/presentation/bloc/approvals_bloc.dart';
+import '../../features/approvals/presentation/bloc/approvals_event.dart';
 import '../../features/approvals/presentation/pages/approvals_page.dart';
 import '../../features/approvals/presentation/widgets/approval_sheets.dart';
 import '../../features/history/domain/repositories/history_repository.dart';
 import '../../features/history/presentation/bloc/history_bloc.dart';
 import '../../features/history/presentation/bloc/history_event.dart';
 import '../../features/history/presentation/pages/history_page.dart';
+import '../../features/home/presentation/bloc/home_bloc.dart';
+import '../../features/home/presentation/bloc/home_event.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/notifications/domain/entities/app_notification.dart';
 import '../../features/notifications/domain/entities/notification_destination.dart';
@@ -17,10 +21,16 @@ import '../../features/notifications/domain/repositories/notification_repository
 import '../../features/notifications/domain/usecases/mark_notification_read.dart';
 import '../../features/notifications/domain/usecases/resolve_notification_destination.dart';
 import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
+import '../../features/notifications/presentation/bloc/notifications_event.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../l10n/app_localizations.dart';
-import '../theme/app_colors.dart';
+import '../connectivity/domain/network_status.dart';
+import '../connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../connectivity/presentation/bloc/connectivity_event.dart';
+import '../connectivity/presentation/bloc/connectivity_state.dart';
+import '../connectivity/presentation/widgets/offline_banner.dart';
+import '../theme/app_surfaces.dart';
 import 'widgets/portal_bottom_nav.dart';
 
 class PortalShell extends StatefulWidget {
@@ -54,6 +64,9 @@ class _PortalShellState extends State<PortalShell> {
   bool _released = false;
   bool _applyScheduled = false;
 
+  /// True after a confirmed offline/unreachable period; cleared on refresh.
+  bool _needsReconnectRefresh = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -73,11 +86,15 @@ class _PortalShellState extends State<PortalShell> {
 
   /// Pushed above the shell, so the shell's providers are handed over.
   void _openNotifications() {
-    final bloc = context.read<NotificationsBloc>();
+    final notifications = context.read<NotificationsBloc>();
+    final connectivity = context.read<ConnectivityBloc>();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => BlocProvider.value(
-          value: bloc,
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: notifications),
+            BlocProvider.value(value: connectivity),
+          ],
           child: NotificationsPage(now: widget.now, onOpen: _openNotification),
         ),
       ),
@@ -265,45 +282,102 @@ class _PortalShellState extends State<PortalShell> {
     _moved = false;
   }
 
+  void _onReconnected() {
+    context.read<HomeBloc>().add(const HomeSummaryRefreshed());
+    context.read<ApprovalsBloc>().add(const ApprovalsStarted());
+    context.read<HistoryBloc>().add(const HistoryStarted());
+    context.read<NotificationsBloc>().add(const NotificationsStarted());
+  }
+
   @override
   Widget build(BuildContext context) {
     _swipeEnabled = ModalRoute.isCurrentOf(context) ?? true;
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      extendBody: true,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: _onPointerDown,
-          onPointerMove: _onPointerMove,
-          onPointerUp: _onPointerUp,
-          onPointerCancel: _onPointerCancel,
-          child: PageView(
-            key: const Key('portal-tabs'),
-            controller: _controller,
-            physics: const NeverScrollableScrollPhysics(),
-            onPageChanged: _onPageChanged,
-            children: [
-              HomePage(
-                now: widget.now,
-                onOpenApprovals: () => _select(1),
-                onOpenHistory: () => _select(2),
-                onOpenProfile: () => _select(3),
-                onOpenNotifications: _openNotifications,
+    final l10n = AppLocalizations.of(context);
+    return BlocListener<ConnectivityBloc, ConnectivityState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status &&
+          (current.isUnavailable || current.isOnline),
+      listener: (context, state) {
+        if (state.isUnavailable) {
+          _needsReconnectRefresh = true;
+          return;
+        }
+        if (state.isOnline && _needsReconnectRefresh) {
+          _needsReconnectRefresh = false;
+          _onReconnected();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppSurfaces.of(context).scaffold,
+        extendBody: true,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BlocBuilder<ConnectivityBloc, ConnectivityState>(
+              buildWhen: (previous, current) =>
+                  previous.status != current.status,
+              builder: (context, state) {
+                if (state.isOnline) {
+                  return const SizedBox.shrink();
+                }
+                // Keep the last offline/unreachable banner visible while a
+                // Retry probe runs (status == checking).
+                final bannerStatus = state.status == NetworkStatus.checking
+                    ? (state.previous ?? NetworkStatus.offline)
+                    : state.status;
+                return OfflineBanner(
+                  status: bannerStatus,
+                  title: l10n.offlineBannerTitle,
+                  hint: l10n.offlineBannerHint,
+                  retryLabel: l10n.offlineRetry,
+                  retrying: state.status == NetworkStatus.checking,
+                  onRetry: () => context.read<ConnectivityBloc>().add(
+                    const ConnectivityRetryRequested(),
+                  ),
+                );
+              },
+            ),
+            Expanded(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScroll,
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: _onPointerDown,
+                  onPointerMove: _onPointerMove,
+                  onPointerUp: _onPointerUp,
+                  onPointerCancel: _onPointerCancel,
+                  child: PageView(
+                    key: const Key('portal-tabs'),
+                    controller: _controller,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: _onPageChanged,
+                    children: [
+                      HomePage(
+                        now: widget.now,
+                        onOpenApprovals: () => _select(1),
+                        onOpenHistory: () => _select(2),
+                        onOpenProfile: () => _select(3),
+                        onOpenNotifications: _openNotifications,
+                      ),
+                      const ApprovalsPage(),
+                      HistoryPage(now: widget.now),
+                      ProfilePage(
+                        onOpenHome: () => _select(0),
+                        onOpenApprovals: () => _select(1),
+                        onOpenHistory: () => _select(2),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const ApprovalsPage(),
-              HistoryPage(now: widget.now),
-              ProfilePage(
-                onOpenHome: () => _select(0),
-                onOpenApprovals: () => _select(1),
-                onOpenHistory: () => _select(2),
-              ),
-            ],
-          ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: PortalBottomNav(
+          index: _index,
+          onSelected: _select,
         ),
       ),
-      bottomNavigationBar: PortalBottomNav(index: _index, onSelected: _select),
     );
   }
 }

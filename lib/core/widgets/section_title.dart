@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_surfaces.dart';
 import '../theme/app_text_styles.dart';
 
 /// Trailing content keeps its natural width up to [maxFraction] of the row
@@ -65,7 +66,9 @@ class SectionTitle extends StatelessWidget {
       title,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: AppTextStyles.sectionTitle,
+      style: AppTextStyles.sectionTitle.copyWith(
+        color: AppSurfaces.of(context).title,
+      ),
     );
     if (leading != null) {
       heading = Row(

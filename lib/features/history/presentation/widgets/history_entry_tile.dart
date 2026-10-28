@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/assets/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/widgets/activity_row.dart';
 import '../../../../core/widgets/type_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -42,7 +43,9 @@ class HistoryEntryTile extends StatelessWidget {
         subtitle: historySubtitle(l10n, entry),
         subtitleColor: historyStatusColor(entry.status),
         amount: signedHistoryAmount(entry, locale: locale, currency: l10n.egp),
-        amountColor: entry.credit ? AppColors.creditText : AppColors.title,
+        amountColor: entry.credit
+            ? AppColors.creditText
+            : AppSurfaces.of(context).title,
         when: when,
         detailsKey: Key('$keyPrefix-details-$id'),
         valuesKey: Key('$keyPrefix-values-$id'),
@@ -83,7 +86,7 @@ class HistoryEntryDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      color: AppColors.title.withValues(alpha: 0.08),
+      color: AppSurfaces.of(context).divider,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/assets/app_icons.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/activity_row.dart';
 import '../../../../core/widgets/type_avatar.dart';
@@ -23,8 +24,9 @@ class ApprovalCard extends StatelessWidget {
     final rejected = item.outcome == ApprovalOutcome.rejected;
     final radius = BorderRadius.circular(AppRadii.card);
 
+    final surfaces = AppSurfaces.of(context);
     return Material(
-      color: Colors.white,
+      color: surfaces.card,
       borderRadius: radius,
       child: InkWell(
         key: Key('approval-card-${item.id}'),
@@ -35,7 +37,7 @@ class ApprovalCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(
-              color: pending ? AppColors.primaryBorder : AppColors.border,
+              color: pending ? AppColors.primaryBorder : surfaces.border,
             ),
           ),
           child: ActivityRow(
@@ -53,9 +55,9 @@ class ApprovalCard extends StatelessWidget {
               currency: l10n.egp,
             ),
             amountColor: pending
-                ? AppColors.title
+                ? surfaces.title
                 : rejected
-                ? AppColors.muted
+                ? surfaces.body
                 : AppColors.creditText,
             detailsKey: Key('approval-details-${item.id}'),
             valuesKey: Key('approval-values-${item.id}'),

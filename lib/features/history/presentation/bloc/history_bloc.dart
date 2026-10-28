@@ -24,6 +24,9 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     on<HistoryStarted>(_onStarted);
     on<HistoryRefreshed>(_onRefreshed);
     on<HistoryFilterSelected>(_onFilterSelected);
+    on<HistorySearchChanged>(_onSearchChanged);
+    on<HistoryFiltersApplied>(_onFiltersApplied);
+    on<HistoryFiltersReset>(_onFiltersReset);
     on<HistoryEntryHighlighted>(_onHighlighted);
     on<HistoryHighlightCleared>(_onHighlightCleared);
     _ledgerChanges = repository.changes.listen(
@@ -68,12 +71,61 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     emit(state.copyWith(filter: event.filter));
   }
 
+  void _onSearchChanged(
+    HistorySearchChanged event,
+    Emitter<HistoryState> emit,
+  ) {
+    emit(state.copyWith(query: event.query));
+  }
+
+  void _onFiltersApplied(
+    HistoryFiltersApplied event,
+    Emitter<HistoryState> emit,
+  ) {
+    final draft = event.draft;
+    final expenses = draft.filter == HistoryFilter.expenses;
+    emit(
+      state.copyWith(
+        filter: draft.filter,
+        dateMode: draft.dateMode,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
+        tripMode: expenses ? draft.tripMode : HistoryTripMode.all,
+        tripId: expenses ? draft.tripId : null,
+      ),
+    );
+  }
+
+  void _onFiltersReset(HistoryFiltersReset event, Emitter<HistoryState> emit) {
+    emit(
+      state.copyWith(
+        filter: HistoryFilter.all,
+        dateMode: HistoryDateMode.all,
+        startDate: null,
+        endDate: null,
+        tripMode: HistoryTripMode.all,
+        tripId: null,
+      ),
+    );
+  }
+
   void _onHighlighted(
     HistoryEntryHighlighted event,
     Emitter<HistoryState> emit,
   ) {
     _highlightTimer?.cancel();
-    emit(state.copyWith(highlightedId: event.id, filter: HistoryFilter.all));
+    emit(
+      state.copyWith(
+        highlightedId: event.id,
+        filter: HistoryFilter.all,
+        query: '',
+        dateMode: HistoryDateMode.all,
+        startDate: null,
+        endDate: null,
+        tripMode: HistoryTripMode.all,
+        tripId: null,
+      ),
+    );
     _highlightTimer = Timer(historyHighlightDuration, () {
       if (!isClosed) add(const HistoryHighlightCleared());
     });

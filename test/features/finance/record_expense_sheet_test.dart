@@ -3,6 +3,7 @@ import 'package:driver_portal_app/features/finance/domain/entities/settlement_ty
 import 'package:driver_portal_app/features/finance/domain/expense_attachment_picker.dart';
 import 'package:driver_portal_app/features/finance/presentation/bloc/record_expense_bloc.dart';
 import 'package:driver_portal_app/features/finance/presentation/widgets/record_expense_sheet.dart';
+import 'package:driver_portal_app/features/finance/presentation/widgets/trip_picker_sheet.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/home/presentation/pages/home_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
@@ -19,7 +20,8 @@ void main() {
     await tester.tap(find.byKey(const Key('expense-close')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Record Expense'), findsOneWidget);
+    expect(find.byKey(const Key('expense-close')), findsNothing);
+    expect(find.byKey(const Key('record-expense')), findsOneWidget);
     expect(find.text('2,200 EGP'), findsOneWidget);
     expect(find.text('1,900 EGP'), findsNothing);
   });
@@ -73,15 +75,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1,900 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
     expect(find.text('2,200 EGP'), findsNothing);
     expect(find.text('Pending Approvals'), findsOneWidget);
     expect(find.textContaining('EXP-'), findsNothing);
-    expect(
-      find.byKey(const Key('approval-action-DSB-2025-0441')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('home-pending-DSB-2025-0441')), findsOneWidget);
   });
 
   testWidgets('confirm expense sheet is shorter than the entry sheet', (
@@ -161,7 +160,7 @@ void main() {
     expect(find.text('Expense Recorded'), findsNothing);
   });
 
-  testWidgets('completed trips stay visible but cannot be selected', (
+  testWidgets('the general picker lists completed trips and selects them', (
     tester,
   ) async {
     await _openForm(tester);
@@ -169,55 +168,44 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('TR-2026-0927'), findsOneWidget);
-    expect(find.text('Active'), findsWidgets);
+    final picker = find.byType(TripPickerSheet);
+    Finder inPicker(Finder finder) =>
+        find.descendant(of: picker, matching: finder);
+    expect(inPicker(find.text('TR-2026-0927')), findsOneWidget);
+    expect(inPicker(find.text('Active')), findsWidgets);
+    expect(inPicker(find.text('Completed')), findsWidgets);
     expect(
       find.byKey(const Key('expense-trip-locked-trip-2026-0904')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.text('Completed'), findsWidgets);
-
-    await tester.ensureVisible(
-      find.byKey(const Key('expense-trip-trip-2026-0904')),
-    );
-    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0904')));
-    await tester.pump();
-    expect(find.text('Select Trip'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('expense-trip-search')),
       'Suez',
     );
     await tester.pump();
-    expect(find.text('TR-2026-0927'), findsOneWidget);
-    expect(find.text('TR-2026-0904'), findsOneWidget);
-    expect(
-      find.byKey(const Key('expense-trip-locked-trip-2026-0904')),
-      findsOneWidget,
-    );
+    expect(inPicker(find.text('TR-2026-0927')), findsOneWidget);
+    expect(inPicker(find.text('TR-2026-0904')), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('expense-trip-search')),
       '0904',
     );
     await tester.pump();
-    expect(find.text('TR-2026-0904'), findsOneWidget);
-    expect(find.text('TR-2026-0927'), findsNothing);
+    expect(inPicker(find.text('TR-2026-0904')), findsOneWidget);
+    expect(inPicker(find.text('TR-2026-0927')), findsNothing);
     await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0904')));
-    await tester.pump();
-    expect(find.text('Select Trip'), findsOneWidget);
-
-    await tester.enterText(
-      find.byKey(const Key('expense-trip-search')),
-      '0927',
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0927')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Select Trip'), findsNothing);
-    expect(find.text('TR-2026-0927'), findsOneWidget);
+    expect(picker, findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(RecordExpenseSheet),
+        matching: find.text('TR-2026-0904'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Select trip...'), findsNothing);
   });
 

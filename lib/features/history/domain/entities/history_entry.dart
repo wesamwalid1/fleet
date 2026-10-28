@@ -4,7 +4,19 @@ import '../../../finance/domain/entities/settlement_type.dart';
 
 enum HistoryKind { expense, roadExpense, vault, incoming, outgoing }
 
-enum HistoryFilter { all, expenses, vault, drivers, sent, pending }
+enum HistoryFilter {
+  all,
+  expenses,
+  vault,
+  drivers,
+  sent,
+  pending,
+  cashTransfers,
+}
+
+enum HistoryDateMode { all, day, range }
+
+enum HistoryTripMode { all, specific }
 
 enum HistoryDisplayStatus {
   recorded,
@@ -24,6 +36,7 @@ class HistoryEntry extends Equatable {
   final HistoryDisplayStatus status;
   final SettlementType? settlementType;
   final String tripCode;
+  final String tripId;
   final String counterpartyName;
   final String counterpartyId;
 
@@ -36,6 +49,7 @@ class HistoryEntry extends Equatable {
     required this.status,
     this.settlementType,
     this.tripCode = '',
+    this.tripId = '',
     this.counterpartyName = '',
     this.counterpartyId = '',
   });
@@ -53,7 +67,39 @@ class HistoryEntry extends Equatable {
       HistoryFilter.drivers => kind == HistoryKind.incoming,
       HistoryFilter.sent => kind == HistoryKind.outgoing,
       HistoryFilter.pending => isPending,
+      HistoryFilter.cashTransfers =>
+        kind == HistoryKind.incoming || kind == HistoryKind.outgoing,
     };
+  }
+
+  bool matchesDate({
+    required HistoryDateMode mode,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    if (mode == HistoryDateMode.all) return true;
+    final day = DateTime(occurredAt.year, occurredAt.month, occurredAt.day);
+    if (mode == HistoryDateMode.day) {
+      if (startDate == null) return true;
+      final selected = DateTime(startDate.year, startDate.month, startDate.day);
+      return day == selected;
+    }
+    if (startDate == null || endDate == null) return true;
+    final start = DateTime(startDate.year, startDate.month, startDate.day);
+    final end = DateTime(endDate.year, endDate.month, endDate.day);
+    return !day.isBefore(start) && !day.isAfter(end);
+  }
+
+  bool matchesTrip({
+    required HistoryFilter filter,
+    required HistoryTripMode tripMode,
+    String? tripId,
+  }) {
+    if (filter != HistoryFilter.expenses) return true;
+    if (tripMode != HistoryTripMode.specific) return true;
+    final id = tripId ?? '';
+    if (id.isEmpty) return true;
+    return kind == HistoryKind.expense && this.tripId == id;
   }
 
   @override
@@ -66,6 +112,7 @@ class HistoryEntry extends Equatable {
     status,
     settlementType,
     tripCode,
+    tripId,
     counterpartyName,
     counterpartyId,
   ];
@@ -89,11 +136,11 @@ List<HistoryDay> groupHistoryByDay(List<HistoryEntry> newestFirst) {
       entry.occurredAt.month,
       entry.occurredAt.day,
     );
-    if (groups.isNotEmpty && groups.last.day == day) {
+    if (groups.isEmpty || groups.last.day != day) {
+      groups.add(HistoryDay(day: day, entries: [entry]));
+    } else {
       groups.last.entries.add(entry);
-      continue;
     }
-    groups.add(HistoryDay(day: day, entries: [entry]));
   }
   return groups;
 }

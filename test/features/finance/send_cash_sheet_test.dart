@@ -47,15 +47,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1,700 EGP'), findsOneWidget);
-    expect(find.text('3,200'), findsOneWidget);
+    expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
     expect(find.text('2,200 EGP'), findsNothing);
-    expect(find.text('Record Expense'), findsOneWidget);
+    expect(find.byKey(const Key('record-expense')), findsOneWidget);
     expect(find.text('Pending Approvals'), findsOneWidget);
-    expect(
-      find.byKey(const Key('approval-action-TRF-2026-0124')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('home-pending-TRF-2026-0124')), findsNothing);
   });
 
   testWidgets('send request label stays fully visible on a narrow width', (
@@ -66,6 +63,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('send-cash')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('send-cash')));
     await tester.pump();

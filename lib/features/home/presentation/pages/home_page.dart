@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/assets/app_icons.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/activity_row.dart';
 import '../../../../core/widgets/section_title.dart';
@@ -136,9 +139,13 @@ class _HomePageState extends State<HomePage> {
                               onOpenHistory: widget.onOpenHistory,
                             ),
                           ),
-                          const SliverFillRemaining(
+                          SliverFillRemaining(
                             hasScrollBody: false,
-                            child: ColoredBox(color: Colors.white),
+                            child: Builder(
+                              builder: (context) => ColoredBox(
+                                color: AppSurfaces.of(context).card,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -421,24 +428,64 @@ class _WalletPlane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final summary = this.summary;
-    final ready = financeStatus == HomeFinanceStatus.ready && summary != null;
+    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
+      buildWhen: (previous, current) =>
+          previous.isUnavailable != current.isUnavailable,
+      builder: (context, connectivity) {
+        if (connectivity.isUnavailable) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 36, 20, 36),
+            child: const _OfflineFinancePlaceholder(onDark: true),
+          );
+        }
+        final summary = this.summary;
+        final ready =
+            financeStatus == HomeFinanceStatus.ready && summary != null;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 36, 20, 36),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              switch (financeStatus) {
+                HomeFinanceStatus.loading => const _WalletLoading(),
+                HomeFinanceStatus.ready when summary != null => _WalletFigures(
+                  summary: summary,
+                ),
+                _ => const _WalletError(),
+              },
+              if (ready) ...[
+                const SizedBox(height: 36),
+                _LimitGauge(summary: summary),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _OfflineFinancePlaceholder extends StatelessWidget {
+  final bool onDark;
+
+  const _OfflineFinancePlaceholder({this.onDark = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final color = onDark ? AppColors.hint : AppColors.muted;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 36, 20, 36),
+      key: const Key('home-offline-finance'),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          switch (financeStatus) {
-            HomeFinanceStatus.loading => const _WalletLoading(),
-            HomeFinanceStatus.ready when summary != null => _WalletFigures(
-              summary: summary,
-            ),
-            _ => const _WalletError(),
-          },
-          if (ready) ...[
-            const SizedBox(height: 36),
-            _LimitGauge(summary: summary),
-          ],
+          Icon(Icons.cloud_off_outlined, color: color, size: 28),
+          const SizedBox(height: 10),
+          Text(
+            l10n.offlineSectionUnavailable,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.body.copyWith(color: color),
+          ),
         ],
       ),
     );
@@ -729,10 +776,11 @@ class _ActivitySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      decoration: BoxDecoration(
+        color: surfaces.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -769,97 +817,125 @@ class _TripSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final loading = trip.connectionState != ConnectionState.done;
-    final active = trip.data;
-    final canRecord = !loading && active != null;
-    return Column(
-      key: const Key('home-trip-card'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionTitle(
-          title: l10n.homeActiveTrip,
-          trailing: active == null
-              ? null
-              : StatusBadge(
-                  label: l10n.tripActive,
-                  foreground: AppColors.creditText,
-                  background: AppColors.successBackground,
-                  leading: const SizedBox(
-                    width: 8,
-                    height: 8,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
+    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
+      buildWhen: (previous, current) =>
+          previous.isUnavailable != current.isUnavailable ||
+          previous.blocksOnlineWork != current.blocksOnlineWork,
+      builder: (context, connectivity) {
+        final offline = connectivity.isUnavailable;
+        final locked = connectivity.blocksOnlineWork;
+        final loading = trip.connectionState != ConnectionState.done;
+        final active = offline ? null : trip.data;
+        final canRecord = !locked && !loading && active != null;
+        return Column(
+          key: const Key('home-trip-card'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SectionTitle(
+              title: l10n.homeActiveTrip,
+              trailing: active == null
+                  ? null
+                  : StatusBadge(
+                      label: l10n.tripActive,
+                      foreground: AppColors.creditText,
+                      background: AppColors.successBackground,
+                      leading: const SizedBox(
+                        width: 8,
+                        height: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-        ),
-        const SizedBox(height: 14),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.primarySurface,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (loading)
-                  const _Skeleton(
-                    width: double.infinity,
-                    height: 64,
-                    color: Colors.white,
-                  )
-                else if (active == null)
-                  _NoTrip(l10n: l10n)
-                else
-                  _Journey(trip: active),
-                const SizedBox(height: 18),
-                FilledButton.icon(
-                  key: const Key('trip-record-expense'),
-                  onPressed: canRecord
-                      ? () => showRecordExpenseSheet(
-                          context,
-                          driverId: driverId,
-                          tripId: active.id,
-                        )
-                      : null,
-                  icon: Icon(
-                    canRecord
-                        ? Icons.receipt_long_rounded
-                        : Icons.lock_outline_rounded,
-                    size: 20,
-                  ),
-                  label: Text(
-                    l10n.recordExpense,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.title,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.white,
-                    disabledForegroundColor: AppColors.muted,
-                    minimumSize: const Size.fromHeight(54),
-                    textStyle: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ],
             ),
-          ),
-        ),
-      ],
+            const SizedBox(height: 14),
+            Builder(
+              builder: (context) {
+                final surfaces = AppSurfaces.of(context);
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: surfaces.panel,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (offline)
+                          const _OfflineFinancePlaceholder()
+                        else if (loading)
+                          _Skeleton(
+                            width: double.infinity,
+                            height: 64,
+                            color: surfaces.card,
+                          )
+                        else if (active == null)
+                          _NoTrip(l10n: l10n)
+                        else
+                          _Journey(trip: active),
+                        const SizedBox(height: 18),
+                        FilledButton.icon(
+                          key: const Key('trip-record-expense'),
+                          onPressed: canRecord
+                              ? () => showRecordExpenseSheet(
+                                  context,
+                                  driverId: driverId,
+                                  tripId: active.id,
+                                )
+                              : locked
+                              ? () => _showOfflineActionNotice(context)
+                              : null,
+                          icon: Icon(
+                            canRecord
+                                ? Icons.receipt_long_rounded
+                                : Icons.lock_outline_rounded,
+                            size: 20,
+                          ),
+                          label: Text(
+                            l10n.recordExpense,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: surfaces.title,
+                            foregroundColor: surfaces.card,
+                            disabledBackgroundColor: surfaces.card,
+                            disabledForegroundColor: surfaces.body,
+                            minimumSize: const Size.fromHeight(54),
+                            textStyle: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
+}
+
+void _showOfflineActionNotice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('offline-action-notice'),
+      content: Text(l10n.offlineActionRequiresInternet),
+    ),
+  );
 }
 
 /// General actions. This Record Expense is not tied to the active trip: the
@@ -873,69 +949,103 @@ class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final surfaces = AppSurfaces.of(context);
     const label = TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800);
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
     );
     const padding = EdgeInsets.symmetric(horizontal: 12);
-    return Column(
-      key: const Key('home-actions'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionTitle(title: l10n.homeActions),
-        const SizedBox(height: 14),
-        Row(
+    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
+      buildWhen: (previous, current) =>
+          previous.isUnavailable != current.isUnavailable ||
+          previous.blocksOnlineWork != current.blocksOnlineWork,
+      builder: (context, connectivity) {
+        final offline = connectivity.isUnavailable;
+        final locked = connectivity.blocksOnlineWork;
+        return Column(
+          key: const Key('home-actions'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: FilledButton.icon(
-                key: const Key('send-cash'),
-                onPressed: () => showSendCashSheet(
-                  context,
-                  senderId: driverId,
-                  onViewTransaction: (transferId) {
-                    context.read<HistoryBloc>().add(
-                      HistoryEntryHighlighted(transferId),
-                    );
-                    onOpenHistory?.call();
-                  },
+            SectionTitle(title: l10n.homeActions),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    key: const Key('send-cash'),
+                    onPressed: locked
+                        ? () => _showOfflineActionNotice(context)
+                        : () => showSendCashSheet(
+                            context,
+                            senderId: driverId,
+                            onViewTransaction: (transferId) {
+                              context.read<HistoryBloc>().add(
+                                HistoryEntryHighlighted(transferId),
+                              );
+                              onOpenHistory?.call();
+                            },
+                          ),
+                    icon: Icon(
+                      locked
+                          ? Icons.lock_outline_rounded
+                          : Icons.north_east_rounded,
+                      size: 20,
+                    ),
+                    label: _FitLabel(l10n.sendCash),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: locked
+                          ? surfaces.neutral
+                          : AppColors.primary,
+                      foregroundColor: locked ? surfaces.muted : Colors.white,
+                      minimumSize: const Size.fromHeight(54),
+                      padding: padding,
+                      textStyle: label,
+                      shape: shape,
+                    ),
+                  ),
                 ),
-                icon: const Icon(Icons.north_east_rounded, size: 20),
-                label: _FitLabel(l10n.sendCash),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(54),
-                  padding: padding,
-                  textStyle: label,
-                  shape: shape,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('record-expense'),
+                    onPressed: locked
+                        ? () => _showOfflineActionNotice(context)
+                        : () => showRecordExpenseSheet(
+                            context,
+                            driverId: driverId,
+                            tripScope: ExpenseTripScope.anyTrip,
+                          ),
+                    icon: Icon(
+                      locked
+                          ? Icons.lock_outline_rounded
+                          : Icons.receipt_long_rounded,
+                      size: 20,
+                    ),
+                    label: _FitLabel(l10n.recordExpense),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: locked ? surfaces.muted : surfaces.title,
+                      backgroundColor: surfaces.card,
+                      side: BorderSide(color: surfaces.border),
+                      minimumSize: const Size.fromHeight(54),
+                      padding: padding,
+                      textStyle: label,
+                      shape: shape,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('record-expense'),
-                onPressed: () => showRecordExpenseSheet(
-                  context,
-                  driverId: driverId,
-                  tripScope: ExpenseTripScope.anyTrip,
-                ),
-                icon: const Icon(Icons.receipt_long_rounded, size: 20),
-                label: _FitLabel(l10n.recordExpense),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.title,
-                  backgroundColor: Colors.white,
-                  side: const BorderSide(color: AppColors.border),
-                  minimumSize: const Size.fromHeight(54),
-                  padding: padding,
-                  textStyle: label,
-                  shape: shape,
-                ),
+            if (offline) ...[
+              const SizedBox(height: 10),
+              Text(
+                key: const Key('home-offline-actions-hint'),
+                l10n.offlineActionRequiresInternet,
+                style: AppTextStyles.caption,
               ),
-            ),
+            ],
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -1092,7 +1202,9 @@ class _Fact extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: strong ? AppColors.title : AppColors.muted,
+              color: strong
+                  ? AppSurfaces.of(context).title
+                  : AppSurfaces.of(context).body,
               fontSize: 13.5,
               fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
               fontFeatures: _tabular,
@@ -1111,11 +1223,12 @@ class _NoTrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaces = AppSurfaces.of(context);
     return Row(
       key: const Key('home-no-trip'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TypeAvatar.asset(AppIcons.bus, tint: Colors.white, opacity: 0.55),
+        TypeAvatar.asset(AppIcons.bus, tint: surfaces.card, opacity: 0.55),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -1123,8 +1236,8 @@ class _NoTrip extends StatelessWidget {
             children: [
               Text(
                 l10n.homeNoActiveTrip,
-                style: const TextStyle(
-                  color: AppColors.title,
+                style: TextStyle(
+                  color: surfaces.title,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -1132,8 +1245,8 @@ class _NoTrip extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 l10n.homeNoActiveTripHint,
-                style: const TextStyle(
-                  color: AppColors.muted,
+                style: TextStyle(
+                  color: surfaces.body,
                   fontSize: 13.5,
                   height: 1.35,
                   fontWeight: FontWeight.w500,
@@ -1162,46 +1275,54 @@ class _PendingSection extends StatelessWidget {
       listener: (context, state) {
         context.read<HomeBloc>().add(const HomeSummaryRefreshed());
       },
-      child: BlocBuilder<ApprovalsBloc, ApprovalsState>(
-        builder: (context, state) {
-          final pending = latestPendingApprovals(
-            state.items,
-            limit: _pendingLimit,
-          );
-          final count = state.pendingCount;
-          return Column(
-            key: const Key('home-pending-card'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SectionTitle(
-                title: l10n.pendingApprovals,
-                trailing: count > 0
-                    ? StatusBadge(
-                        key: const Key('home-pending-count'),
-                        label: l10n.pendingCount(count),
-                        foreground: AppColors.pendingText,
-                        background: AppColors.warningBackground,
-                      )
-                    : null,
-              ),
-              const SizedBox(height: 10),
-              if (state.loading)
-                const _RowsLoading(rows: 2)
-              else if (pending.isEmpty)
-                const _AllCaughtUp()
-              else ...[
-                for (final item in pending)
-                  _PendingRow(item: item, onTap: onOpen),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextLink(
-                    key: const Key('home-view-all-approvals'),
-                    label: l10n.homeViewAllApprovals,
-                    onPressed: onOpen,
+      child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
+        buildWhen: (previous, current) =>
+            previous.isUnavailable != current.isUnavailable,
+        builder: (context, connectivity) {
+          return BlocBuilder<ApprovalsBloc, ApprovalsState>(
+            builder: (context, state) {
+              final offline = connectivity.isUnavailable;
+              final pending = offline
+                  ? const <ApprovalItem>[]
+                  : latestPendingApprovals(state.items, limit: _pendingLimit);
+              final count = offline ? 0 : state.pendingCount;
+              return Column(
+                key: const Key('home-pending-card'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SectionTitle(
+                    title: l10n.pendingApprovals,
+                    trailing: count > 0
+                        ? StatusBadge(
+                            key: const Key('home-pending-count'),
+                            label: l10n.pendingCount(count),
+                            foreground: AppColors.pendingText,
+                            background: AppColors.warningBackground,
+                          )
+                        : null,
                   ),
-                ),
-              ],
-            ],
+                  const SizedBox(height: 10),
+                  if (offline)
+                    const _OfflineFinancePlaceholder()
+                  else if (state.loading)
+                    const _RowsLoading(rows: 2)
+                  else if (pending.isEmpty)
+                    const _AllCaughtUp()
+                  else ...[
+                    for (final item in pending)
+                      _PendingRow(item: item, onTap: onOpen),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextLink(
+                        key: const Key('home-view-all-approvals'),
+                        label: l10n.homeViewAllApprovals,
+                        onPressed: onOpen,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
           );
         },
       ),
@@ -1235,8 +1356,8 @@ class _AllCaughtUp extends StatelessWidget {
               children: [
                 Text(
                   l10n.homeAllCaughtUp,
-                  style: const TextStyle(
-                    color: AppColors.title,
+                  style: TextStyle(
+                    color: AppSurfaces.of(context).title,
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1244,8 +1365,8 @@ class _AllCaughtUp extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   l10n.noPendingApprovals,
-                  style: const TextStyle(
-                    color: AppColors.muted,
+                  style: TextStyle(
+                    color: AppSurfaces.of(context).body,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1365,52 +1486,64 @@ class _RecentSection extends StatelessWidget {
       listener: (context, state) {
         context.read<HistoryBloc>().add(const HistoryStarted());
       },
-      child: BlocBuilder<HistoryBloc, HistoryState>(
-        builder: (context, state) {
-          final latest = latestHistoryEntries(state.entries);
-          final locale = Localizations.localeOf(context).toString();
-          return Column(
-            key: const Key('home-recent-card'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SectionTitle(
-                title: l10n.homeRecentTransactions,
-                trailing: TextLink(
-                  key: const Key('home-recent-see-all'),
-                  label: l10n.seeAll,
-                  onPressed: onSeeAll,
-                ),
-              ),
-              const SizedBox(height: 6),
-              if (state.loading && state.entries.isEmpty)
-                const _RowsLoading(rows: 3)
-              else if (latest.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    l10n.noTransactions,
-                    key: const Key('home-recent-empty'),
-                    style: AppTextStyles.body.copyWith(
-                      fontWeight: FontWeight.w600,
+      child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
+        buildWhen: (previous, current) =>
+            previous.isUnavailable != current.isUnavailable,
+        builder: (context, connectivity) {
+          return BlocBuilder<HistoryBloc, HistoryState>(
+            builder: (context, state) {
+              final offline = connectivity.isUnavailable;
+              final latest = offline
+                  ? const <HistoryEntry>[]
+                  : latestHistoryEntries(state.entries);
+              final locale = Localizations.localeOf(context).toString();
+              return Column(
+                key: const Key('home-recent-card'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SectionTitle(
+                    title: l10n.homeRecentTransactions,
+                    trailing: TextLink(
+                      key: const Key('home-recent-see-all'),
+                      label: l10n.seeAll,
+                      onPressed: onSeeAll,
                     ),
                   ),
-                )
-              else
-                for (final entry in latest)
-                  HistoryEntryTile(
-                    entry: entry,
-                    keyPrefix: 'home-recent',
-                    when: recentWhenLabel(
-                      l10n,
-                      entry.occurredAt,
-                      now(),
-                      locale,
-                    ),
-                    onTap: entry.kind == HistoryKind.expense
-                        ? () => showExpenseDetailSheet(context, entry: entry)
-                        : null,
-                  ),
-            ],
+                  const SizedBox(height: 6),
+                  if (offline)
+                    const _OfflineFinancePlaceholder()
+                  else if (state.loading && state.entries.isEmpty)
+                    const _RowsLoading(rows: 3)
+                  else if (latest.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        l10n.noTransactions,
+                        key: const Key('home-recent-empty'),
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final entry in latest)
+                      HistoryEntryTile(
+                        entry: entry,
+                        keyPrefix: 'home-recent',
+                        when: recentWhenLabel(
+                          l10n,
+                          entry.occurredAt,
+                          now(),
+                          locale,
+                        ),
+                        onTap: entry.kind == HistoryKind.expense
+                            ? () =>
+                                  showExpenseDetailSheet(context, entry: entry)
+                            : null,
+                      ),
+                ],
+              );
+            },
           );
         },
       ),

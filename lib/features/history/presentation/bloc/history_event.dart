@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/history_entry.dart';
+import 'history_state.dart';
 
 sealed class HistoryEvent extends Equatable {
   const HistoryEvent();
@@ -26,6 +27,28 @@ final class HistoryFilterSelected extends HistoryEvent {
 
   @override
   List<Object?> get props => [filter];
+}
+
+final class HistorySearchChanged extends HistoryEvent {
+  final String query;
+
+  const HistorySearchChanged(this.query);
+
+  @override
+  List<Object?> get props => [query];
+}
+
+final class HistoryFiltersApplied extends HistoryEvent {
+  final HistoryFilterDraft draft;
+
+  const HistoryFiltersApplied(this.draft);
+
+  @override
+  List<Object?> get props => [draft];
+}
+
+final class HistoryFiltersReset extends HistoryEvent {
+  const HistoryFiltersReset();
 }
 
 final class HistoryEntryHighlighted extends HistoryEvent {

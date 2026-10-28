@@ -4,6 +4,8 @@ import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/fake_connectivity.dart';
+
 void main() {
   testWidgets(
     'the language sheet marks the active language and switches immediately',
@@ -11,7 +13,13 @@ void main() {
       final repository = _MemoryLocaleRepository();
       await tester.binding.setSurfaceSize(const Size(400, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(DriverPortalApp(localeRepository: repository));
+      await tester.pumpWidget(
+        DriverPortalApp(
+          localeRepository: repository,
+          networkMonitor: FakeNetworkInterfaceMonitor(),
+          internetReachability: FakeInternetReachability(),
+        ),
+      );
       await tester.pumpAndSettle();
       await _login(tester);
       await tester.tap(find.byKey(const Key('nav-profile')));
@@ -71,7 +79,13 @@ void main() {
 
   testWidgets('a saved locale is restored on startup', (tester) async {
     final repository = _MemoryLocaleRepository(const Locale('ar'));
-    await tester.pumpWidget(DriverPortalApp(localeRepository: repository));
+    await tester.pumpWidget(
+      DriverPortalApp(
+        localeRepository: repository,
+        networkMonitor: FakeNetworkInterfaceMonitor(),
+        internetReachability: FakeInternetReachability(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('مرحباً بعودتك!'), findsOneWidget);
@@ -87,6 +101,8 @@ void main() {
       DriverPortalApp(
         locale: const Locale('ar'),
         localeRepository: _MemoryLocaleRepository(),
+        networkMonitor: FakeNetworkInterfaceMonitor(),
+        internetReachability: FakeInternetReachability(),
       ),
     );
     await tester.pumpAndSettle();

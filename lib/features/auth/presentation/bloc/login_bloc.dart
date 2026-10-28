@@ -9,7 +9,10 @@ import 'login_state.dart';
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginUseCase _login;
 
-  LoginBloc(this._login) : super(const LoginInitial()) {
+  /// When false, login is blocked after validation (no offline auth).
+  final bool Function()? isOnline;
+
+  LoginBloc(this._login, {this.isOnline}) : super(const LoginInitial()) {
     on<LoginSubmitted>(_onSubmitted, transformer: droppable());
   }
 
@@ -27,6 +30,11 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
     if (emailError != null || passwordError != null) {
       emit(LoginFailure(emailError: emailError, passwordError: passwordError));
+      return;
+    }
+
+    if (isOnline != null && !isOnline!()) {
+      emit(const LoginFailure(authError: AuthError.offline));
       return;
     }
 

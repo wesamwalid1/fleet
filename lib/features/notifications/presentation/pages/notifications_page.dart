@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_event.dart';
+import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
+import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/app_filter_chip.dart';
+import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/filter_bottom_sheet.dart';
+import '../../../../core/widgets/search_filter_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/app_notification.dart';
 import '../bloc/notifications_bloc.dart';
@@ -52,22 +58,76 @@ class _NotificationsPageState extends State<NotificationsPage> {
     _onSearchChanged('');
   }
 
+  Future<void> _openFilterSheet(NotificationsState state) async {
+    final l10n = AppLocalizations.of(context);
+    final selected = await showFilterBottomSheet<NotificationFilter>(
+      context: context,
+      title: l10n.filter,
+      initial: state.filter,
+      defaults: NotificationFilter.all,
+      resetKey: const Key('notifications-filter-reset'),
+      applyKey: const Key('notifications-filter-apply'),
+      bodyBuilder: (context, draft, onChanged) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.filterReadStatus,
+              style: TextStyle(
+                color: AppSurfaces.of(context).muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FilterOptionTile(
+              optionKey: const Key('notifications-filter-all'),
+              label: l10n.filterAll,
+              selected: draft == NotificationFilter.all,
+              onTap: () => onChanged(NotificationFilter.all),
+            ),
+            const SizedBox(height: 8),
+            FilterOptionTile(
+              optionKey: const Key('notifications-filter-unread'),
+              label: l10n.notificationsFilterUnread,
+              selected: draft == NotificationFilter.unread,
+              onTap: () => onChanged(NotificationFilter.unread),
+            ),
+            const SizedBox(height: 8),
+            FilterOptionTile(
+              optionKey: const Key('notifications-filter-read'),
+              label: l10n.notificationsFilterRead,
+              selected: draft == NotificationFilter.read,
+              onTap: () => onChanged(NotificationFilter.read),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted || selected == null) return;
+    context.read<NotificationsBloc>().add(
+      NotificationsFilterSelected(selected),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final surfaces = AppSurfaces.of(context);
     return Scaffold(
       key: const Key('notifications-page'),
-      backgroundColor: AppColors.background,
+      backgroundColor: surfaces.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: surfaces.scaffold,
         surfaceTintColor: Colors.transparent,
-        foregroundColor: AppColors.title,
+        foregroundColor: surfaces.title,
         titleSpacing: 4,
         title: Text(
           l10n.notifications,
           key: const Key('notifications-title'),
-          style: const TextStyle(
-            color: AppColors.title,
+          style: TextStyle(
+            color: surfaces.title,
             fontSize: 22,
             fontWeight: FontWeight.w800,
           ),
@@ -75,119 +135,55 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
       body: SafeArea(
         top: false,
-        child: BlocBuilder<NotificationsBloc, NotificationsState>(
-          builder: (context, state) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Toolbar(
-                  state: state,
-                  controller: _search,
-                  onChanged: _onSearchChanged,
-                  onClear: _clearSearch,
-                ),
-                Expanded(
-                  child: _Body(
-                    state: state,
-                    now: widget.now,
-                    onOpen: widget.onOpen,
+        child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
+          buildWhen: (previous, current) =>
+              previous.isUnavailable != current.isUnavailable,
+          builder: (context, connectivity) {
+            if (connectivity.isUnavailable) {
+              return Center(
+                child: OfflineUnavailable(
+                  title: l10n.offlineUnavailableTitle,
+                  hint: l10n.offlineUnavailableHint,
+                  retryLabel: l10n.offlineRetry,
+                  onRetry: () => context.read<ConnectivityBloc>().add(
+                    const ConnectivityRetryRequested(),
                   ),
                 ),
-              ],
+              );
+            }
+            return BlocBuilder<NotificationsBloc, NotificationsState>(
+              builder: (context, state) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SearchFilterBar(
+                      controller: _search,
+                      searchHint: l10n.notificationsSearchHint,
+                      clearTooltip: l10n.notificationsClearSearch,
+                      filterLabel: l10n.filter,
+                      onChanged: _onSearchChanged,
+                      onClear: _clearSearch,
+                      showClear: state.query.isNotEmpty,
+                      filterActive: state.hasActiveFilter,
+                      onFilterTap: () => _openFilterSheet(state),
+                      searchKey: const Key('notifications-search'),
+                      clearKey: const Key('notifications-search-clear'),
+                      filterKey: const Key('notifications-filter-button'),
+                    ),
+                    Expanded(
+                      child: _Body(
+                        state: state,
+                        now: widget.now,
+                        onOpen: widget.onOpen,
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),
       ),
-    );
-  }
-}
-
-class _Toolbar extends StatelessWidget {
-  final NotificationsState state;
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  const _Toolbar({
-    required this.state,
-    required this.controller,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final bloc = context.read<NotificationsBloc>();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            key: const Key('notifications-search'),
-            controller: controller,
-            onChanged: onChanged,
-            textInputAction: TextInputAction.search,
-            style: const TextStyle(color: AppColors.title, fontSize: 15),
-            decoration: InputDecoration(
-              hintText: l10n.notificationsSearchHint,
-              hintStyle: const TextStyle(color: AppColors.hint),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                color: AppColors.hint,
-              ),
-              suffixIcon: state.query.isEmpty
-                  ? null
-                  : IconButton(
-                      key: const Key('notifications-search-clear'),
-                      tooltip: l10n.notificationsClearSearch,
-                      onPressed: onClear,
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: AppColors.muted,
-                      ),
-                    ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              border: _border(AppColors.border),
-              enabledBorder: _border(AppColors.border),
-              focusedBorder: _border(AppColors.primary, 1.5),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              AppFilterChip(
-                key: const Key('notifications-filter-all'),
-                label: l10n.filterAll,
-                selected: state.filter == NotificationFilter.all,
-                onSelected: () => bloc.add(
-                  const NotificationsFilterSelected(NotificationFilter.all),
-                ),
-              ),
-              AppFilterChip(
-                key: const Key('notifications-filter-unread'),
-                label: l10n.notificationsFilterUnread,
-                selected: state.filter == NotificationFilter.unread,
-                onSelected: () => bloc.add(
-                  const NotificationsFilterSelected(NotificationFilter.unread),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  OutlineInputBorder _border(Color color, [double width = 1]) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: color, width: width),
     );
   }
 }
@@ -227,19 +223,26 @@ class _Body extends StatelessWidget {
           hint: l10n.notificationsNoResultsHint,
         );
       }
-      return state.filter == NotificationFilter.unread
-          ? EmptyState(
-              key: const Key('notifications-empty-unread'),
-              icon: Icons.mark_email_read_outlined,
-              title: l10n.notificationsNoUnread,
-              hint: l10n.notificationsNoUnreadHint,
-            )
-          : EmptyState(
-              key: const Key('notifications-empty'),
-              icon: Icons.notifications_none_rounded,
-              title: l10n.notificationsEmpty,
-              hint: l10n.notificationsEmptyHint,
-            );
+      return switch (state.filter) {
+        NotificationFilter.unread => EmptyState(
+          key: const Key('notifications-empty-unread'),
+          icon: Icons.mark_email_read_outlined,
+          title: l10n.notificationsNoUnread,
+          hint: l10n.notificationsNoUnreadHint,
+        ),
+        NotificationFilter.read => EmptyState(
+          key: const Key('notifications-empty-read'),
+          icon: Icons.mark_email_unread_outlined,
+          title: l10n.notificationsNoRead,
+          hint: l10n.notificationsNoReadHint,
+        ),
+        NotificationFilter.all => EmptyState(
+          key: const Key('notifications-empty'),
+          icon: Icons.notifications_none_rounded,
+          title: l10n.notificationsEmpty,
+          hint: l10n.notificationsEmptyHint,
+        ),
+      };
     }
     return ListView.separated(
       key: const Key('notifications-list'),
@@ -273,10 +276,11 @@ class _NotificationTile extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     final unread = !notification.read;
     final mark = notificationMark(notification.type);
+    final surfaces = AppSurfaces.of(context);
     return Semantics(
       label: unread ? l10n.notificationUnread : null,
       child: Material(
-        color: unread ? Colors.white : Colors.transparent,
+        color: unread ? surfaces.card : Colors.transparent,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           key: Key('notification-${notification.id}'),
@@ -287,7 +291,7 @@ class _NotificationTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: unread ? AppColors.primaryBorder : AppColors.border,
+                color: unread ? AppColors.primaryBorder : surfaces.border,
               ),
             ),
             child: Row(
@@ -298,7 +302,7 @@ class _NotificationTile extends StatelessWidget {
                   height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: unread ? mark.tint : AppColors.neutralBackground,
+                    color: unread ? mark.tint : surfaces.neutral,
                     shape: BoxShape.circle,
                   ),
                   child: Opacity(
@@ -321,7 +325,7 @@ class _NotificationTile extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: unread ? AppColors.title : AppColors.muted,
+                          color: unread ? surfaces.title : surfaces.muted,
                           fontSize: 14.5,
                           height: 1.3,
                           fontWeight: unread
@@ -334,8 +338,8 @@ class _NotificationTile extends StatelessWidget {
                         notificationBody(l10n, notification, locale),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.muted,
+                        style: TextStyle(
+                          color: surfaces.muted,
                           fontSize: 13,
                           height: 1.3,
                           fontWeight: FontWeight.w500,
@@ -352,7 +356,7 @@ class _NotificationTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: unread ? AppColors.primary : AppColors.hint,
+                          color: unread ? AppColors.primary : surfaces.muted,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),

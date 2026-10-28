@@ -1,3 +1,4 @@
+import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import 'package:driver_portal_app/features/auth/domain/usecases/login_use_case.dart';
 import 'package:driver_portal_app/features/auth/presentation/bloc/login_bloc.dart';
 import 'package:driver_portal_app/features/auth/presentation/pages/login_page.dart';
@@ -17,8 +18,12 @@ abstract final class AppRoute {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (context) {
+            final connectivity = context.read<ConnectivityBloc>();
             return BlocProvider(
-              create: (_) => LoginBloc(context.read<LoginUseCase>()),
+              create: (_) => LoginBloc(
+                context.read<LoginUseCase>(),
+                isOnline: () => connectivity.state.isOnline,
+              ),
               child: const LoginPage(),
             );
           },
