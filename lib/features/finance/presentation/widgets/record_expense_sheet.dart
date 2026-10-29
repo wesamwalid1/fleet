@@ -529,7 +529,7 @@ class _ConfirmExpense extends StatelessWidget {
                 _SummaryRow(
                   label: l10n.trip,
                   value: trip.code,
-                  detail: tripRoute(trip),
+                  detail: tripRoute(trip, locale),
                 ),
               _SummaryRow(
                 label: l10n.currentBalance,
@@ -808,7 +808,7 @@ class _SelectedTrip extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${tripRoute(trip)} · ${formatTripDate(trip.date, locale)}',
+                      '${tripRoute(trip, locale)} · ${formatTripDate(trip.date, locale)}',
                       style: const TextStyle(
                         color: AppColors.muted,
                         fontSize: 12,

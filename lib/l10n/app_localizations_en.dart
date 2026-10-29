@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -28,8 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign In';
 
   @override
-  String get contactVaultManager =>
-      'Having trouble? Contact your vault manager';
+  String get contactVaultManager => 'Having trouble? Contact your vault manager';
 
   @override
   String get emptyEmail => 'Please enter your email';
@@ -104,6 +102,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendCashSubtitle => 'Select driver and enter amount';
 
   @override
+  String get requestCash => 'Request Cash';
+
+  @override
+  String get withdraw => 'Withdraw';
+
+  @override
+  String get actionComingSoon => 'This action will be available soon.';
+
+  @override
   String get selectDriver => 'Select a driver';
 
   @override
@@ -166,8 +173,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidAmountError => 'Enter an amount greater than zero';
 
   @override
-  String get insufficientBalanceError =>
-      'Amount exceeds your available balance';
+  String get insufficientBalanceError => 'Amount exceeds your available balance';
 
   @override
   String get sendCashFailed => 'Could not send the request.';
@@ -307,8 +313,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmExpense => 'Confirm Expense';
 
   @override
-  String get confirmExpenseSubtitle =>
-      'This will be deducted from your balance';
+  String get confirmExpenseSubtitle => 'This will be deducted from your balance';
 
   @override
   String get deduction => 'DEDUCTION';
@@ -425,6 +430,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get from => 'From';
 
   @override
+  String get to => 'To';
+
+  @override
   String get date => 'Date';
 
   @override
@@ -447,8 +455,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roadExpenseApproval => 'Road Expense Approval';
 
   @override
-  String get adminSubmittedExpense =>
-      'Admin submitted this expense for your confirmation';
+  String get adminSubmittedExpense => 'Admin submitted this expense for your confirmation';
 
   @override
   String get totalAmount => 'TOTAL AMOUNT';
@@ -638,8 +645,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoActiveTrip => 'No Active Trip';
 
   @override
-  String get homeNoActiveTripHint =>
-      'Expenses can be recorded once a trip is active.';
+  String get homeNoActiveTripHint => 'Expenses can be recorded once a trip is active.';
 
   @override
   String get homeActions => 'Actions';
@@ -660,8 +666,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsEmpty => 'No notifications yet';
 
   @override
-  String get notificationsEmptyHint =>
-      'Updates about cash, approvals, and expenses will appear here.';
+  String get notificationsEmptyHint => 'Updates about cash, approvals, and expenses will appear here.';
 
   @override
   String get notificationsNoUnread => 'No unread notifications';
@@ -676,8 +681,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationUnread => 'Unread';
 
   @override
-  String get notificationVaultPendingTitle =>
-      'Vault cash awaiting your approval';
+  String get notificationVaultPendingTitle => 'Vault cash awaiting your approval';
 
   @override
   String notificationIncomingTitle(String name) {
@@ -719,12 +723,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsNoResults => 'No matching notifications';
 
   @override
-  String get notificationsNoResultsHint =>
-      'Try a different word or clear the search.';
+  String get notificationsNoResultsHint => 'Try a different word or clear the search.';
 
   @override
-  String get notificationRoadPendingTitle =>
-      'Road expense needs your confirmation';
+  String get notificationRoadPendingTitle => 'Road expense needs your confirmation';
 
   @override
   String get notificationExpenseRecordedTitle => 'Expense recorded';
@@ -745,19 +747,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notificationRequestHandled =>
-      'This request was already handled. Showing its current status.';
+  String get notificationRequestHandled => 'This request was already handled. Showing its current status.';
 
   @override
-  String get notificationTargetUnavailable =>
-      'This item is no longer available.';
+  String get notificationTargetUnavailable => 'This item is no longer available.';
 
   @override
   String get offlineBannerTitle => 'You\'re offline';
 
   @override
-  String get offlineBannerHint =>
-      'Connect to the Internet to refresh your data.';
+  String get offlineBannerHint => 'Connect to the Internet to refresh your data.';
 
   @override
   String get offlineRetry => 'Retry';
@@ -766,12 +765,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineUnavailableTitle => 'Unavailable offline';
 
   @override
-  String get offlineUnavailableHint =>
-      'Connect to the Internet to load this information.';
+  String get offlineUnavailableHint => 'Connect to the Internet to load this information.';
 
   @override
-  String get offlineActionRequiresInternet =>
-      'An Internet connection is required for this action.';
+  String get offlineActionRequiresInternet => 'An Internet connection is required for this action.';
 
   @override
   String get loginRequiresInternet => 'Connect to the Internet to sign in.';
@@ -783,10 +780,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filter => 'Filter';
 
   @override
+  String get filterTransactions => 'Filter Transactions';
+
+  @override
   String get apply => 'Apply';
 
   @override
+  String get applyFilters => 'Apply Filters';
+
+  @override
   String get reset => 'Reset';
+
+  @override
+  String get clearAll => 'Clear All';
 
   @override
   String get clearSearch => 'Clear search';
@@ -843,8 +849,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectTrip => 'Select trip';
 
   @override
-  String get invalidDateRange =>
-      'Start date must be on or before the end date.';
+  String get invalidDateRange => 'Start date must be on or before the end date.';
 
   @override
   String get tripRequired => 'Select a trip to apply this filter.';
@@ -853,8 +858,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get historyNoResults => 'No matching transactions';
 
   @override
-  String get historyNoResultsHint =>
-      'Try a different search or reset the filters.';
+  String get historyNoResultsHint => 'Try a different search or reset the filters.';
 
   @override
   String get clearFilters => 'Clear filters';
@@ -863,8 +867,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsNoResults => 'No matching approvals';
 
   @override
-  String get approvalsNoResultsHint =>
-      'Try a different search or reset the filters.';
+  String get approvalsNoResultsHint => 'Try a different search or reset the filters.';
 
   @override
   String get filterTransactionType => 'Transaction type';

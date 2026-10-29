@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -101,6 +100,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sendCashSubtitle => 'اختر السائق وأدخل المبلغ';
+
+  @override
+  String get requestCash => 'طلب نقد';
+
+  @override
+  String get withdraw => 'تسليم نقد';
+
+  @override
+  String get actionComingSoon => 'سيكون هذا الإجراء متاحاً قريباً.';
 
   @override
   String get selectDriver => 'اختر سائقاً';
@@ -422,6 +430,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get from => 'من';
 
   @override
+  String get to => 'إلى';
+
+  @override
   String get date => 'التاريخ';
 
   @override
@@ -655,8 +666,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationsEmpty => 'لا توجد إشعارات بعد';
 
   @override
-  String get notificationsEmptyHint =>
-      'ستظهر هنا التحديثات الخاصة بالنقدية والموافقات والمصروفات.';
+  String get notificationsEmptyHint => 'ستظهر هنا التحديثات الخاصة بالنقدية والموافقات والمصروفات.';
 
   @override
   String get notificationsNoUnread => 'لا توجد إشعارات غير مقروءة';
@@ -671,8 +681,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationUnread => 'غير مقروء';
 
   @override
-  String get notificationVaultPendingTitle =>
-      'نقدية من الخزينة بانتظار موافقتك';
+  String get notificationVaultPendingTitle => 'نقدية من الخزينة بانتظار موافقتك';
 
   @override
   String notificationIncomingTitle(String name) {
@@ -738,8 +747,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get notificationRequestHandled =>
-      'تمت معالجة هذا الطلب بالفعل. يتم عرض حالته الحالية.';
+  String get notificationRequestHandled => 'تمت معالجة هذا الطلب بالفعل. يتم عرض حالته الحالية.';
 
   @override
   String get notificationTargetUnavailable => 'هذا العنصر لم يعد متاحاً.';
@@ -760,8 +768,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get offlineUnavailableHint => 'اتصل بالإنترنت لتحميل هذه المعلومات.';
 
   @override
-  String get offlineActionRequiresInternet =>
-      'يلزم اتصال بالإنترنت لتنفيذ هذا الإجراء.';
+  String get offlineActionRequiresInternet => 'يلزم اتصال بالإنترنت لتنفيذ هذا الإجراء.';
 
   @override
   String get loginRequiresInternet => 'اتصل بالإنترنت لتسجيل الدخول.';
@@ -773,10 +780,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get filter => 'تصفية';
 
   @override
+  String get filterTransactions => 'تصفية الحركات';
+
+  @override
   String get apply => 'تطبيق';
 
   @override
+  String get applyFilters => 'تطبيق عوامل التصفية';
+
+  @override
   String get reset => 'إعادة تعيين';
+
+  @override
+  String get clearAll => 'مسح الكل';
 
   @override
   String get clearSearch => 'مسح البحث';
@@ -833,8 +849,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectTrip => 'اختر الرحلة';
 
   @override
-  String get invalidDateRange =>
-      'يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء أو مساوياً له.';
+  String get invalidDateRange => 'يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء أو مساوياً له.';
 
   @override
   String get tripRequired => 'اختر رحلة لتطبيق هذا التصفية.';
@@ -843,8 +858,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get historyNoResults => 'لا توجد حركات مطابقة';
 
   @override
-  String get historyNoResultsHint =>
-      'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
+  String get historyNoResultsHint => 'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
 
   @override
   String get clearFilters => 'مسح عوامل التصفية';
@@ -853,8 +867,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get approvalsNoResults => 'لا توجد موافقات مطابقة';
 
   @override
-  String get approvalsNoResultsHint =>
-      'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
+  String get approvalsNoResultsHint => 'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
 
   @override
   String get filterTransactionType => 'نوع الحركة';

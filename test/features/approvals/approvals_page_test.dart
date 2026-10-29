@@ -407,11 +407,8 @@ void main() {
 const _cardInset = 15.0;
 
 Future<void> _selectApprovalFilter(WidgetTester tester, Key optionKey) async {
-  await tester.tap(find.byKey(const Key('approvals-filter-button')));
-  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.byKey(optionKey));
   await tester.tap(find.byKey(optionKey));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('approvals-filter-apply')));
   await tester.pumpAndSettle();
 }
 

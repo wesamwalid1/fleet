@@ -7,9 +7,9 @@ import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart'
 import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
+import '../../../../core/widgets/app_search_field.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/filter_bottom_sheet.dart';
-import '../../../../core/widgets/search_filter_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/app_notification.dart';
 import '../bloc/notifications_bloc.dart';
@@ -58,57 +58,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
     _onSearchChanged('');
   }
 
-  Future<void> _openFilterSheet(NotificationsState state) async {
-    final l10n = AppLocalizations.of(context);
-    final selected = await showFilterBottomSheet<NotificationFilter>(
-      context: context,
-      title: l10n.filter,
-      initial: state.filter,
-      defaults: NotificationFilter.all,
-      resetKey: const Key('notifications-filter-reset'),
-      applyKey: const Key('notifications-filter-apply'),
-      bodyBuilder: (context, draft, onChanged) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.filterReadStatus,
-              style: TextStyle(
-                color: AppSurfaces.of(context).muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.4,
-              ),
-            ),
-            const SizedBox(height: 10),
-            FilterOptionTile(
-              optionKey: const Key('notifications-filter-all'),
-              label: l10n.filterAll,
-              selected: draft == NotificationFilter.all,
-              onTap: () => onChanged(NotificationFilter.all),
-            ),
-            const SizedBox(height: 8),
-            FilterOptionTile(
-              optionKey: const Key('notifications-filter-unread'),
-              label: l10n.notificationsFilterUnread,
-              selected: draft == NotificationFilter.unread,
-              onTap: () => onChanged(NotificationFilter.unread),
-            ),
-            const SizedBox(height: 8),
-            FilterOptionTile(
-              optionKey: const Key('notifications-filter-read'),
-              label: l10n.notificationsFilterRead,
-              selected: draft == NotificationFilter.read,
-              onTap: () => onChanged(NotificationFilter.read),
-            ),
-          ],
-        );
-      },
-    );
-    if (!mounted || selected == null) return;
-    context.read<NotificationsBloc>().add(
-      NotificationsFilterSelected(selected),
-    );
+  void _selectFilter(NotificationFilter filter) {
+    context.read<NotificationsBloc>().add(NotificationsFilterSelected(filter));
   }
 
   @override
@@ -156,19 +107,52 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SearchFilterBar(
-                      controller: _search,
-                      searchHint: l10n.notificationsSearchHint,
-                      clearTooltip: l10n.notificationsClearSearch,
-                      filterLabel: l10n.filter,
-                      onChanged: _onSearchChanged,
-                      onClear: _clearSearch,
-                      showClear: state.query.isNotEmpty,
-                      filterActive: state.hasActiveFilter,
-                      onFilterTap: () => _openFilterSheet(state),
-                      searchKey: const Key('notifications-search'),
-                      clearKey: const Key('notifications-search-clear'),
-                      filterKey: const Key('notifications-filter-button'),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AppSearchField(
+                            controller: _search,
+                            hintText: l10n.notificationsSearchHint,
+                            clearTooltip: l10n.notificationsClearSearch,
+                            onChanged: _onSearchChanged,
+                            onClear: _clearSearch,
+                            showClear: state.query.isNotEmpty,
+                            fieldKey: const Key('notifications-search'),
+                            clearKey: const Key('notifications-search-clear'),
+                          ),
+                          const SizedBox(height: 12),
+                          FilterChipWrap(
+                            children: [
+                              AppFilterChip(
+                                key: const Key('notifications-filter-all'),
+                                label: l10n.filterAll,
+                                selected:
+                                    state.filter == NotificationFilter.all,
+                                onSelected: () =>
+                                    _selectFilter(NotificationFilter.all),
+                              ),
+                              AppFilterChip(
+                                key: const Key('notifications-filter-unread'),
+                                label: l10n.notificationsFilterUnread,
+                                selected:
+                                    state.filter == NotificationFilter.unread,
+                                onSelected: () =>
+                                    _selectFilter(NotificationFilter.unread),
+                              ),
+                              AppFilterChip(
+                                key: const Key('notifications-filter-read'),
+                                label: l10n.notificationsFilterRead,
+                                selected:
+                                    state.filter == NotificationFilter.read,
+                                onSelected: () =>
+                                    _selectFilter(NotificationFilter.read),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     Expanded(
                       child: _Body(

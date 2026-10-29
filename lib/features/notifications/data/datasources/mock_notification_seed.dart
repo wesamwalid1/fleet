@@ -1,3 +1,4 @@
+import '../../../../core/localization/localized_string.dart';
 import '../../../finance/data/datasources/mock_cash_ledger.dart';
 import '../../domain/entities/app_notification.dart';
 
@@ -31,7 +32,10 @@ abstract final class MockNotificationSeed {
         entityId: 'TRF-2025-0123',
         createdAt: DateTime(2025, 5, 13, 8, 55),
         amountEgp: 500,
-        counterpartyName: 'Khaled Ramadan',
+        counterpartyName: const LocalizedString(
+          en: 'Khaled Ramadan',
+          ar: 'خالد رمضان',
+        ),
       ),
       _seed(
         driverId: driverId,
@@ -54,7 +58,7 @@ abstract final class MockNotificationSeed {
     required String entityId,
     required DateTime createdAt,
     required int amountEgp,
-    String counterpartyName = '',
+    LocalizedString counterpartyName = LocalizedString.empty,
     bool read = false,
   }) {
     final key = '$driverId|${type.name}|$entityId|seed';

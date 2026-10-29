@@ -1,3 +1,4 @@
+import 'package:driver_portal_app/core/localization/localized_string.dart';
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/finance_event.dart';
 import 'package:driver_portal_app/features/history/data/repositories/history_repository_impl.dart';
@@ -42,7 +43,10 @@ AppNotification _notification({
     dedupKey: key,
     source: NotificationSource.event,
     amountEgp: 400,
-    counterpartyName: 'Khaled Ramadan',
+    counterpartyName: const LocalizedString(
+      en: 'Khaled Ramadan',
+      ar: 'خالد رمضان',
+    ),
   );
 }
 
@@ -160,13 +164,14 @@ void main() {
     final transfer = (MockCashLedger(
       senderBalanceEgp: 2200,
     )..seedDriverApprovals()).transfers.first;
+    const ahmed = LocalizedString(en: 'Ahmed Ali', ar: 'أحمد علي');
     final first = notificationsForFinanceEvent(
       TransferApproved(transfer),
-      nameOf: (_) => 'Ahmed Ali',
+      nameOf: (_) => ahmed,
     );
     final second = notificationsForFinanceEvent(
       TransferApproved(transfer),
-      nameOf: (_) => 'Ahmed Ali',
+      nameOf: (_) => ahmed,
     );
     expect(first.single.dedupKey, second.single.dedupKey);
   });
@@ -183,7 +188,9 @@ void main() {
     for (var i = 0; i < 3; i++) {
       for (final item in notificationsForFinanceEvent(
         TransferCreated(transfer),
-        nameOf: (id) => id == 'DR-004' ? 'Sami Hassan' : 'Ahmed Ali',
+        nameOf: (id) => id == 'DR-004'
+            ? const LocalizedString(en: 'Sami Hassan', ar: 'سامي حسن')
+            : const LocalizedString(en: 'Ahmed Ali', ar: 'أحمد علي'),
       )) {
         await repository.add(item);
       }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:driver_portal_app/core/localization/localized_string.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/assigned_trip.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_attachment.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_request.dart';
@@ -341,8 +342,8 @@ class _FakeExpenses implements ExpenseRepository {
         code: 'TR-2026-0927',
         driverId: 'DR-001',
         status: TripStatus.active,
-        origin: 'Suez',
-        destination: 'Cairo',
+        origin: const LocalizedString(en: 'Suez', ar: 'السويس'),
+        destination: const LocalizedString(en: 'Cairo', ar: 'القاهرة'),
         date: DateTime(2026, 5, 28),
         vehicle: 'Telescope',
       ),
@@ -351,8 +352,8 @@ class _FakeExpenses implements ExpenseRepository {
         code: 'TR-2026-0904',
         driverId: 'DR-001',
         status: TripStatus.completed,
-        origin: 'Alexandria',
-        destination: 'Suez',
+        origin: const LocalizedString(en: 'Alexandria', ar: 'الإسكندرية'),
+        destination: const LocalizedString(en: 'Suez', ar: 'السويس'),
         date: DateTime(2026, 5, 14),
         vehicle: 'Telescope',
       ),

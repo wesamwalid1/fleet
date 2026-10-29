@@ -272,6 +272,9 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('history-filter-button')));
     await tester.pumpAndSettle();
+    expect(find.text('تصفية الحركات'), findsOneWidget);
+    expect(find.text('مسح الكل'), findsOneWidget);
+    expect(find.text('تطبيق عوامل التصفية'), findsOneWidget);
     expect(find.text('معاملات الخزينة'), findsOneWidget);
     await tester.tap(find.byKey(const Key('history-filter-apply')));
     await tester.pumpAndSettle();
@@ -429,11 +432,12 @@ void main() {
 
     await tester.tap(find.byKey(const Key('history-filter-button')));
     await tester.pumpAndSettle();
+    expect(find.text('Filter Transactions'), findsOneWidget);
+    expect(find.text('Clear All'), findsOneWidget);
+    expect(find.text('Apply Filters'), findsOneWidget);
     await tester.tap(find.byKey(const Key('history-filter-expenses')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(const Key('history-trip-specific')));
-    await tester.tap(find.byKey(const Key('history-trip-specific')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-trip-all')), findsOneWidget);
     await tester.ensureVisible(
       find.byKey(const Key('history-trip-trip-2026-0927')),
     );
@@ -456,6 +460,68 @@ void main() {
     await tester.tap(find.byKey(const Key('history-filter-apply')));
     await tester.pumpAndSettle();
     expect(find.text('Cross Border'), findsOneWidget);
+  });
+
+  testWidgets('filter sheet sizes to content and labels date range from/to', (
+    tester,
+  ) async {
+    await _openHistory(
+      tester,
+      now: () => DateTime(2026, 10, 21, 12),
+      configureLedger: (ledger) {
+        ledger.createRecordedExpense(
+          driverId: MockCashLedger.senderId,
+          tripId: 'trip-2026-0927',
+          settlementType: SettlementType.crossBorder,
+          amountEgp: 300,
+          notes: null,
+          attachments: const [],
+          createdAt: DateTime(2026, 10, 21, 11, 37),
+        );
+      },
+    );
+
+    await tester.tap(find.byKey(const Key('history-filter-button')));
+    await tester.pumpAndSettle();
+
+    final sheet = find.byKey(const Key('filter-bottom-sheet'));
+    expect(sheet, findsOneWidget);
+    final baseHeight = tester.getSize(sheet).height;
+    expect(baseHeight, lessThan(tester.view.physicalSize.height * 0.85));
+
+    await tester.tap(find.byKey(const Key('history-filter-expenses')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-trip-all')), findsOneWidget);
+    final withTripsHeight = tester.getSize(sheet).height;
+    expect(withTripsHeight, greaterThan(baseHeight));
+
+    await tester.tap(find.byKey(const Key('history-filter-cash')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-trip-all')), findsNothing);
+    expect(tester.getSize(sheet).height, lessThan(withTripsHeight));
+
+    await tester.tap(find.byKey(const Key('history-date-range')));
+    await tester.pumpAndSettle();
+    expect(find.text('From'), findsOneWidget);
+    expect(find.text('To'), findsOneWidget);
+    expect(find.byKey(const Key('history-date-start')), findsOneWidget);
+    expect(find.byKey(const Key('history-date-end')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('arabic filter sheet labels date range from/to', (tester) async {
+    await _openHistory(tester, locale: const Locale('ar'));
+
+    await tester.tap(find.byKey(const Key('history-filter-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-date-range')));
+    await tester.pumpAndSettle();
+    expect(find.text('من'), findsOneWidget);
+    expect(find.text('إلى'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('filter sheet reset restores defaults without clearing search', (

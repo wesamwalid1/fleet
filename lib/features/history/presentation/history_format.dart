@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../../../core/localization/localized_string.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../finance/presentation/settlement_style.dart';
 import '../../home/presentation/amount_format.dart';
@@ -57,15 +58,14 @@ String historyDayHeader(
 }
 
 String historyTitle(AppLocalizations l10n, HistoryEntry entry) {
+  final name = entry.counterpartyName.tr(l10n);
   return switch (entry.kind) {
     HistoryKind.expense => settlementName(l10n, entry.settlementType!),
     HistoryKind.roadExpense => l10n.roadExpenseApproval,
     HistoryKind.vault => l10n.receivedFromVault,
-    HistoryKind.incoming when entry.isPending => l10n.pendingFrom(
-      entry.counterpartyName,
-    ),
-    HistoryKind.incoming => l10n.receivedFromDriver(entry.counterpartyName),
-    HistoryKind.outgoing => l10n.sentTo(entry.counterpartyName),
+    HistoryKind.incoming when entry.isPending => l10n.pendingFrom(name),
+    HistoryKind.incoming => l10n.receivedFromDriver(name),
+    HistoryKind.outgoing => l10n.sentTo(name),
   };
 }
 
@@ -90,7 +90,7 @@ bool historyMatches(AppLocalizations l10n, HistoryEntry entry, String query) {
       hit(entry.id) ||
       hit(entry.tripCode) ||
       hit(entry.tripId) ||
-      hit(entry.counterpartyName) ||
+      entry.counterpartyName.matchesQuery(needle) ||
       hit(entry.counterpartyId);
 }
 

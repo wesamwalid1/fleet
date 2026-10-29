@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:driver_portal_app/core/localization/localized_string.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/cash_transfer.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/finance_driver.dart';
 import 'package:driver_portal_app/features/finance/domain/failures/send_cash_exception.dart';
@@ -163,7 +164,11 @@ class _FakeTransfers implements CashTransferRepository {
   @override
   Future<List<FinanceDriver>> getRecipients(String senderId) async {
     return const [
-      FinanceDriver(id: 'DR-003', fullName: 'Khaled Ramadan', balanceEgp: 1100),
+      FinanceDriver(
+        id: 'DR-003',
+        fullName: LocalizedString(en: 'Khaled Ramadan', ar: 'خالد رمضان'),
+        balanceEgp: 1100,
+      ),
     ];
   }
 

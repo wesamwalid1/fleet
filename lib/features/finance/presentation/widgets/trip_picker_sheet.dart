@@ -10,7 +10,8 @@ import '../bloc/record_expense_bloc.dart';
 import '../bloc/record_expense_event.dart';
 import '../bloc/record_expense_state.dart';
 
-String tripRoute(AssignedTrip trip) => '${trip.origin} → ${trip.destination}';
+String tripRoute(AssignedTrip trip, [Object? localeOrCode]) =>
+    trip.route(localeOrCode);
 
 String formatTripDate(DateTime date, String locale) {
   return DateFormat('d MMM y', locale).format(date);
@@ -230,7 +231,7 @@ class _TripCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      tripRoute(trip),
+                      tripRoute(trip, locale),
                       style: TextStyle(color: detailColor, fontSize: 13),
                     ),
                     const SizedBox(height: 2),

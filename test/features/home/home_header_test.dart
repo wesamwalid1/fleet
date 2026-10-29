@@ -1,10 +1,11 @@
+import 'package:driver_portal_app/core/localization/localized_string.dart';
+import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/home/domain/entities/driver.dart';
 import 'package:driver_portal_app/features/home/domain/greeting.dart';
-import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/notifications/domain/repositories/notification_repository.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,15 +41,34 @@ void main() {
 
   group('Driver.initials', () {
     test('uses the first and last name', () {
-      expect(const Driver(fullName: 'Ahmed Ali').initials, 'AA');
+      expect(
+        const Driver(fullName: LocalizedString(en: 'Ahmed Ali')).initials(),
+        'AA',
+      );
     });
 
     test('ignores extra spaces', () {
-      expect(const Driver(fullName: '  Ahmed   Ali  ').initials, 'AA');
+      expect(
+        const Driver(fullName: LocalizedString(en: '  Ahmed   Ali  '))
+            .initials(),
+        'AA',
+      );
     });
 
     test('uses one letter for a single name', () {
-      expect(const Driver(fullName: 'Ahmed').initials, 'A');
+      expect(
+        const Driver(fullName: LocalizedString(en: 'Ahmed')).initials(),
+        'A',
+      );
+    });
+
+    test('uses Arabic initials for the Arabic locale', () {
+      expect(
+        const Driver(
+          fullName: LocalizedString(en: 'Ahmed Ali', ar: 'أحمد علي'),
+        ).initials(const Locale('ar')),
+        'أع',
+      );
     });
   });
 
@@ -132,13 +152,39 @@ void main() {
     await tester.pumpWidget(_app(now: () => DateTime(2026, 10, 20, 9)));
     await tester.pumpAndSettle();
 
-    _expectEqualActionButtons(tester, 'Send Cash', 'Record Expense');
+    _expectEqualActionButtons(
+      tester,
+      const Key('send-cash'),
+      'Send Cash',
+      const Key('record-expense'),
+      'Record Expense',
+    );
+    _expectEqualActionButtons(
+      tester,
+      const Key('request-cash'),
+      'Request Cash',
+      const Key('withdraw'),
+      'Withdraw',
+    );
 
     await tester.pumpWidget(
       _app(locale: const Locale('ar'), now: () => DateTime(2026, 10, 20, 9)),
     );
     await tester.pumpAndSettle();
-    _expectEqualActionButtons(tester, 'إرسال نقد', 'تسجيل مصروف');
+    _expectEqualActionButtons(
+      tester,
+      const Key('send-cash'),
+      'إرسال نقد',
+      const Key('record-expense'),
+      'تسجيل مصروف',
+    );
+    _expectEqualActionButtons(
+      tester,
+      const Key('request-cash'),
+      'طلب نقد',
+      const Key('withdraw'),
+      'تسليم نقد',
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -160,13 +206,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('مرحباً بعودتك!'), findsOneWidget);
+    expect(find.text('أحمد علي'), findsOneWidget);
     expect(
-      Directionality.of(tester.element(find.text('Ahmed Ali'))),
+      Directionality.of(tester.element(find.text('أحمد علي'))),
       TextDirection.rtl,
     );
     expect(
-      tester.getCenter(find.text('AA')).dx,
-      greaterThan(tester.getCenter(find.text('Ahmed Ali')).dx),
+      tester.getCenter(find.text('أع')).dx,
+      greaterThan(tester.getCenter(find.text('أحمد علي')).dx),
     );
   });
 
@@ -183,18 +230,20 @@ void main() {
 
 void _expectEqualActionButtons(
   WidgetTester tester,
-  String sendLabel,
-  String expenseLabel,
+  Key leftKey,
+  String leftLabel,
+  Key rightKey,
+  String rightLabel,
 ) {
-  final sendButton = find.byKey(const Key('send-cash'));
-  final expenseButton = find.byKey(const Key('record-expense'));
-  expect(tester.getSize(sendButton).width, tester.getSize(expenseButton).width);
+  final left = find.byKey(leftKey);
+  final right = find.byKey(rightKey);
+  expect(tester.getSize(left).width, tester.getSize(right).width);
   expect(
-    find.descendant(of: sendButton, matching: find.text(sendLabel)),
+    find.descendant(of: left, matching: find.text(leftLabel)),
     findsOneWidget,
   );
   expect(
-    find.descendant(of: expenseButton, matching: find.text(expenseLabel)),
+    find.descendant(of: right, matching: find.text(rightLabel)),
     findsOneWidget,
   );
   expect(tester.takeException(), isNull);

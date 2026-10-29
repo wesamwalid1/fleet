@@ -8,9 +8,9 @@ import '../../../../core/connectivity/presentation/widgets/offline_unavailable.d
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
+import '../../../../core/widgets/app_search_field.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/filter_bottom_sheet.dart';
-import '../../../../core/widgets/search_filter_bar.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -49,44 +49,8 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
     _onSearchChanged('');
   }
 
-  Future<void> _openFilterSheet(ApprovalsState state) async {
-    final l10n = AppLocalizations.of(context);
-    final selected = await showFilterBottomSheet<ApprovalFilter>(
-      context: context,
-      title: l10n.filter,
-      initial: state.filter,
-      defaults: ApprovalFilter.all,
-      resetKey: const Key('approvals-filter-reset'),
-      applyKey: const Key('approvals-filter-apply'),
-      bodyBuilder: (context, draft, onChanged) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final entry in const [
-              (ApprovalFilter.all, 'approval-filter-all'),
-              (ApprovalFilter.vault, 'approval-filter-vault'),
-              (ApprovalFilter.drivers, 'approval-filter-drivers'),
-              (ApprovalFilter.roadExpense, 'approval-filter-road'),
-            ]) ...[
-              FilterOptionTile(
-                optionKey: Key(entry.$2),
-                label: switch (entry.$1) {
-                  ApprovalFilter.all => l10n.filterAll,
-                  ApprovalFilter.vault => l10n.fromVault,
-                  ApprovalFilter.drivers => l10n.fromDrivers,
-                  ApprovalFilter.roadExpense => l10n.roadExpenses,
-                },
-                selected: draft == entry.$1,
-                onTap: () => onChanged(entry.$1),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ],
-        );
-      },
-    );
-    if (!mounted || selected == null) return;
-    context.read<ApprovalsBloc>().add(ApprovalsFilterSelected(selected));
+  void _selectFilter(ApprovalFilter filter) {
+    context.read<ApprovalsBloc>().add(ApprovalsFilterSelected(filter));
   }
 
   @override
@@ -149,19 +113,62 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                           child: _Header(count: state.pendingCount),
                         ),
-                        SearchFilterBar(
-                          controller: _search,
-                          searchHint: l10n.approvalsSearchHint,
-                          clearTooltip: l10n.clearSearch,
-                          filterLabel: l10n.filter,
-                          onChanged: _onSearchChanged,
-                          onClear: _clearSearch,
-                          showClear: state.query.isNotEmpty,
-                          filterActive: state.hasActiveFilter,
-                          onFilterTap: () => _openFilterSheet(state),
-                          searchKey: const Key('approvals-search'),
-                          clearKey: const Key('approvals-search-clear'),
-                          filterKey: const Key('approvals-filter-button'),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              AppSearchField(
+                                controller: _search,
+                                hintText: l10n.approvalsSearchHint,
+                                clearTooltip: l10n.clearSearch,
+                                onChanged: _onSearchChanged,
+                                onClear: _clearSearch,
+                                showClear: state.query.isNotEmpty,
+                                fieldKey: const Key('approvals-search'),
+                                clearKey: const Key('approvals-search-clear'),
+                              ),
+                              const SizedBox(height: 12),
+                              FilterChipWrap(
+                                children: [
+                                  AppFilterChip(
+                                    key: const Key('approval-filter-all'),
+                                    label: l10n.filterAll,
+                                    selected:
+                                        state.filter == ApprovalFilter.all,
+                                    onSelected: () =>
+                                        _selectFilter(ApprovalFilter.all),
+                                  ),
+                                  AppFilterChip(
+                                    key: const Key('approval-filter-vault'),
+                                    label: l10n.fromVault,
+                                    selected:
+                                        state.filter == ApprovalFilter.vault,
+                                    onSelected: () =>
+                                        _selectFilter(ApprovalFilter.vault),
+                                  ),
+                                  AppFilterChip(
+                                    key: const Key('approval-filter-drivers'),
+                                    label: l10n.fromDrivers,
+                                    selected:
+                                        state.filter == ApprovalFilter.drivers,
+                                    onSelected: () =>
+                                        _selectFilter(ApprovalFilter.drivers),
+                                  ),
+                                  AppFilterChip(
+                                    key: const Key('approval-filter-road'),
+                                    label: l10n.roadExpenses,
+                                    selected:
+                                        state.filter ==
+                                        ApprovalFilter.roadExpense,
+                                    onSelected: () => _selectFilter(
+                                      ApprovalFilter.roadExpense,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                         Expanded(
                           child: ListView(

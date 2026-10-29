@@ -54,7 +54,8 @@ void main() {
     expect(theirs, hasLength(1));
     expect(theirs.single.type, NotificationType.incomingTransferPending);
     expect(theirs.single.entityId, transfer.id);
-    expect(theirs.single.counterpartyName, 'Ahmed Ali');
+    expect(theirs.single.counterpartyName.en, 'Ahmed Ali');
+    expect(theirs.single.counterpartyName.ar, 'أحمد علي');
     expect(theirs.single.amountEgp, 500);
 
     final mine = await eventsFor(_me);
@@ -62,7 +63,8 @@ void main() {
     expect(mine.single.type, NotificationType.transferSent);
     expect(mine.single.entityType, NotificationEntityType.transfer);
     expect(mine.single.entityId, transfer.id);
-    expect(mine.single.counterpartyName, 'Khaled Ramadan');
+    expect(mine.single.counterpartyName.en, 'Khaled Ramadan');
+    expect(mine.single.counterpartyName.ar, 'خالد رمضان');
     expect(mine.single.amountEgp, 500);
   });
 
@@ -126,7 +128,8 @@ void main() {
     final sender = await eventsFor('DR-003');
     expect(sender.single.type, NotificationType.sentTransferApproved);
     expect(sender.single.entityId, 'TRF-2025-0123');
-    expect(sender.single.counterpartyName, 'Ahmed Ali');
+    expect(sender.single.counterpartyName.en, 'Ahmed Ali');
+    expect(sender.single.counterpartyName.ar, 'أحمد علي');
     expect(await eventsFor(_me), isEmpty);
   });
 

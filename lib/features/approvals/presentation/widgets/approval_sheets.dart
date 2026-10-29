@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/assets/app_icons.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/localization/localized_string.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -43,9 +44,10 @@ Future<ApprovalSheetAction?> showApprovalSheet(
           balanceEgp: balanceEgp,
           title: AppLocalizations.of(context).approveCashFromDriver,
           subtitle: AppLocalizations.of(context)
-              .driverSentCash(item.counterpartyName),
+              .driverSentCash(item.counterpartyName.of(context)),
           amountColor: AppColors.success,
-          party: '${item.counterpartyName} (${item.counterpartyId})',
+          party:
+              '${item.counterpartyName.of(context)} (${item.counterpartyId})',
           confirm: ApprovalSheetAction.approve,
           decline: ApprovalSheetAction.decline,
         ),
@@ -595,7 +597,7 @@ class _TripLine extends StatelessWidget {
             const SizedBox(width: 4),
             Expanded(
               child: Text(
-                '${line.origin} → ${line.destination}',
+                line.route(locale),
                 style: const TextStyle(color: AppColors.title, fontSize: 13),
               ),
             ),

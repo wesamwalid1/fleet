@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/assets/app_icons.dart';
+import '../../../core/localization/localized_string.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../history/presentation/history_format.dart';
@@ -12,21 +13,22 @@ String notificationTitle(
   AppNotification n,
   String locale,
 ) {
+  final name = n.counterpartyName.tr(l10n);
   return switch (n.type) {
     NotificationType.vaultReceiptPending => l10n.notificationVaultPendingTitle,
     NotificationType.incomingTransferPending => l10n.notificationIncomingTitle(
-      n.counterpartyName,
+      name,
     ),
     NotificationType.transferSent => l10n.notificationTransferSentTitle(
       _amount(l10n, n, locale),
-      n.counterpartyName,
+      name,
     ),
     NotificationType.sentTransferApproved => l10n.notificationSentApprovedTitle(
-      n.counterpartyName,
+      name,
       _amount(l10n, n, locale),
     ),
     NotificationType.sentTransferRejected => l10n.notificationSentRejectedTitle(
-      n.counterpartyName,
+      name,
       _amount(l10n, n, locale),
     ),
     NotificationType.roadExpensePending => l10n.notificationRoadPendingTitle,

@@ -98,15 +98,20 @@ class _SendCashSheetState extends State<SendCashSheet> {
         navigator.pop();
         navigator.push(
           MaterialPageRoute<void>(
-            builder: (_) => RequestSentPage(
-              result: result,
-              recipientName: recipient?.fullName ?? result.transfer.recipientId,
-              recipientGivenName:
-                  recipient?.givenName ??
-                  recipient?.fullName ??
-                  result.transfer.recipientId,
-              onViewTransaction: onViewTransaction,
-            ),
+            builder: (pageContext) {
+              final locale = Localizations.localeOf(pageContext);
+              return RequestSentPage(
+                result: result,
+                recipientName:
+                    recipient?.displayName(locale) ??
+                    result.transfer.recipientId,
+                recipientGivenName:
+                    recipient?.givenName(locale) ??
+                    recipient?.displayName(locale) ??
+                    result.transfer.recipientId,
+                onViewTransaction: onViewTransaction,
+              );
+            },
           ),
         );
       },
@@ -280,7 +285,11 @@ class _SendCashForm extends StatelessWidget {
         _AmountSummary(state: state),
         if (recipient != null) ...[
           const SizedBox(height: 12),
-          _WarningBanner(text: l10n.mustApprove(recipient.givenName)),
+          _WarningBanner(
+            text: l10n.mustApprove(
+              recipient.givenName(Localizations.localeOf(context)),
+            ),
+          ),
         ],
         if (_message(state, l10n) case final message?) ...[
           const SizedBox(height: 10),
@@ -590,14 +599,14 @@ class _DriverSelector extends StatelessWidget {
                   ),
                 )
               else ...[
-                _Initials(initials: driver!.initials),
+                _Initials(initials: driver!.initials(locale)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        driver!.fullName,
+                        driver!.displayName(locale),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -641,6 +650,7 @@ class _DriverList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -660,14 +670,14 @@ class _DriverList extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    _Initials(initials: drivers[index].initials),
+                    _Initials(initials: drivers[index].initials(locale)),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            drivers[index].fullName,
+                            drivers[index].displayName(locale),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

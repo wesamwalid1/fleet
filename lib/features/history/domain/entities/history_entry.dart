@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/localization/localized_string.dart';
 import '../../../finance/domain/entities/settlement_type.dart';
 
 enum HistoryKind { expense, roadExpense, vault, incoming, outgoing }
@@ -37,7 +38,7 @@ class HistoryEntry extends Equatable {
   final SettlementType? settlementType;
   final String tripCode;
   final String tripId;
-  final String counterpartyName;
+  final LocalizedString counterpartyName;
   final String counterpartyId;
 
   const HistoryEntry({
@@ -50,7 +51,7 @@ class HistoryEntry extends Equatable {
     this.settlementType,
     this.tripCode = '',
     this.tripId = '',
-    this.counterpartyName = '',
+    this.counterpartyName = LocalizedString.empty,
     this.counterpartyId = '',
   });
 

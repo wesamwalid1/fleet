@@ -284,6 +284,24 @@ abstract class AppLocalizations {
   /// **'Select driver and enter amount'**
   String get sendCashSubtitle;
 
+  /// No description provided for @requestCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Cash'**
+  String get requestCash;
+
+  /// No description provided for @withdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get withdraw;
+
+  /// No description provided for @actionComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will be available soon.'**
+  String get actionComingSoon;
+
   /// No description provided for @selectDriver.
   ///
   /// In en, this message translates to:
@@ -865,6 +883,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From'**
   String get from;
+
+  /// No description provided for @to.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
 
   /// No description provided for @date.
   ///
@@ -1460,17 +1484,35 @@ abstract class AppLocalizations {
   /// **'Filter'**
   String get filter;
 
+  /// No description provided for @filterTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter Transactions'**
+  String get filterTransactions;
+
   /// No description provided for @apply.
   ///
   /// In en, this message translates to:
   /// **'Apply'**
   String get apply;
 
+  /// No description provided for @applyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filters'**
+  String get applyFilters;
+
   /// No description provided for @reset.
   ///
   /// In en, this message translates to:
   /// **'Reset'**
   String get reset;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
 
   /// No description provided for @clearSearch.
   ///

@@ -136,7 +136,7 @@ void main() {
     _expectSelected(tester, const Key('nav-home'));
   });
 
-  testWidgets('opening the approvals filter sheet does not change the tab', (
+  testWidgets('selecting an approvals filter chip does not change the tab', (
     tester,
   ) async {
     await _pump(tester, const Locale('en'), const Size(320, 700));
@@ -144,10 +144,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('approvals-search')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('approvals-filter-button')));
-    await tester.pumpAndSettle();
     expect(find.byKey(const Key('approval-filter-vault')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('approvals-filter-apply')));
+    await tester.tap(find.byKey(const Key('approval-filter-vault')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('approvals-search')), findsOneWidget);

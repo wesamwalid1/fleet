@@ -1,11 +1,13 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/localization/localized_string.dart';
+
 enum RoadExpenseStatus { pending, approved, rejected }
 
 class RoadExpenseLine extends Equatable {
   final String code;
-  final String origin;
-  final String destination;
+  final LocalizedString origin;
+  final LocalizedString destination;
   final DateTime date;
   final int amountEgp;
   final int tripNumber;
@@ -18,6 +20,9 @@ class RoadExpenseLine extends Equatable {
     required this.amountEgp,
     required this.tripNumber,
   });
+
+  String route([Object? localeOrCode, String separator = ' → ']) =>
+      '${origin.resolve(localeOrCode)}$separator${destination.resolve(localeOrCode)}';
 
   @override
   List<Object?> get props => [

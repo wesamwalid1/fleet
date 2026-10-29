@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../../../core/localization/localized_string.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../finance/domain/entities/approval_timing.dart';
 import '../../home/presentation/amount_format.dart';
@@ -46,7 +47,8 @@ String approvalPeriod(DateTime start, DateTime end, String locale) {
 String approvalTitle(AppLocalizations l10n, ApprovalItem item) {
   return switch (item.kind) {
     ApprovalKind.vault => l10n.receivedFromVault,
-    ApprovalKind.driver => l10n.receivedFromDriver(item.counterpartyName),
+    ApprovalKind.driver =>
+      l10n.receivedFromDriver(item.counterpartyName.tr(l10n)),
     ApprovalKind.roadExpense => l10n.roadExpenseApproval,
   };
 }
@@ -56,7 +58,7 @@ bool approvalMatches(AppLocalizations l10n, ApprovalItem item, String query) {
   final needle = query.trim().toLowerCase();
   if (needle.isEmpty) return true;
   bool hit(String value) => value.toLowerCase().contains(needle);
-  return hit(item.counterpartyName) ||
+  return item.counterpartyName.matchesQuery(needle) ||
       hit(item.counterpartyId) ||
       hit(item.reference) ||
       hit(item.id) ||

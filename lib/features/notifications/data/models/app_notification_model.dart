@@ -1,3 +1,4 @@
+import '../../../../core/localization/localized_string.dart';
 import '../../domain/entities/app_notification.dart';
 
 /// JSON shape for locally stored notifications. Enum values are stored by
@@ -14,7 +15,8 @@ abstract final class AppNotificationModel {
       'read': notification.read,
       'dedupKey': notification.dedupKey,
       'amountEgp': notification.amountEgp,
-      'counterpartyName': notification.counterpartyName,
+      'counterpartyName': notification.counterpartyName.en,
+      'counterpartyNameAr': notification.counterpartyName.ar,
       'source': notification.source.name,
     };
   }
@@ -46,6 +48,7 @@ abstract final class AppNotificationModel {
     }
     final amount = json['amountEgp'];
     final counterparty = json['counterpartyName'];
+    final counterpartyAr = json['counterpartyNameAr'];
     return AppNotification(
       id: id,
       driverId: driverId,
@@ -57,7 +60,10 @@ abstract final class AppNotificationModel {
       source: source,
       read: json['read'] == true,
       amountEgp: amount is int ? amount : 0,
-      counterpartyName: counterparty is String ? counterparty : '',
+      counterpartyName: LocalizedString(
+        en: counterparty is String ? counterparty : '',
+        ar: counterpartyAr is String ? counterpartyAr : '',
+      ),
     );
   }
 

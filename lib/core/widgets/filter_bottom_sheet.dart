@@ -22,6 +22,8 @@ Future<T?> showFilterBottomSheet<T>({
   )
   bodyBuilder,
   String? Function(T draft)? validate,
+  String? resetLabel,
+  String? applyLabel,
   Key? resetKey,
   Key? applyKey,
   double maxHeightFactor = 0.85,
@@ -36,8 +38,11 @@ Future<T?> showFilterBottomSheet<T>({
         defaults: defaults,
         bodyBuilder: bodyBuilder,
         validate: validate,
+        resetLabel: resetLabel,
+        applyLabel: applyLabel,
         resetKey: resetKey,
         applyKey: applyKey,
+        maxHeightFactor: maxHeightFactor,
       );
     },
   );
@@ -54,8 +59,11 @@ class _FilterBottomSheetHost<T> extends StatefulWidget {
   )
   bodyBuilder;
   final String? Function(T draft)? validate;
+  final String? resetLabel;
+  final String? applyLabel;
   final Key? resetKey;
   final Key? applyKey;
+  final double maxHeightFactor;
 
   const _FilterBottomSheetHost({
     required this.title,
@@ -63,8 +71,11 @@ class _FilterBottomSheetHost<T> extends StatefulWidget {
     required this.defaults,
     required this.bodyBuilder,
     this.validate,
+    this.resetLabel,
+    this.applyLabel,
     this.resetKey,
     this.applyKey,
+    required this.maxHeightFactor,
   });
 
   @override
@@ -110,23 +121,27 @@ class _FilterBottomSheetHostState<T> extends State<_FilterBottomSheetHost<T>> {
     final l10n = AppLocalizations.of(context);
     final surfaces = AppSurfaces.of(context);
     final media = MediaQuery.of(context);
-    final height = media.size.height * 0.85;
-    return SizedBox(
-      height: height,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        child: SafeArea(
-          top: false,
+    final maxHeight =
+        (media.size.height * widget.maxHeightFactor - media.viewInsets.bottom)
+            .clamp(0.0, double.infinity);
+    return Padding(
+      key: const Key('filter-bottom-sheet'),
+      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SheetHandle(),
                 const SizedBox(height: 14),
                 SheetHeader(title: widget.title),
                 const SizedBox(height: 16),
-                Expanded(
+                Flexible(
                   child: SingleChildScrollView(
                     child: widget.bodyBuilder(context, _draft, _onChanged),
                   ),
@@ -160,11 +175,12 @@ class _FilterBottomSheetHostState<T> extends State<_FilterBottomSheetHost<T>> {
                             ),
                           ),
                         ),
-                        child: Text(l10n.reset),
+                        child: Text(widget.resetLabel ?? l10n.reset),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
+                      flex: 2,
                       child: FilledButton(
                         key: widget.applyKey,
                         onPressed: _apply,
@@ -178,7 +194,7 @@ class _FilterBottomSheetHostState<T> extends State<_FilterBottomSheetHost<T>> {
                             ),
                           ),
                         ),
-                        child: Text(l10n.apply),
+                        child: Text(widget.applyLabel ?? l10n.apply),
                       ),
                     ),
                   ],

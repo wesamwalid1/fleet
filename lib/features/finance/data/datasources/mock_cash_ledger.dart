@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../../../core/localization/localized_string.dart';
 import '../../domain/entities/approval_timing.dart';
 import '../../domain/entities/assigned_trip.dart';
 import '../../domain/entities/cash_transfer.dart';
@@ -18,7 +19,7 @@ import 'mock_assigned_trips.dart';
 
 class _DriverSeed {
   final String id;
-  final String fullName;
+  final LocalizedString fullName;
   final int balanceEgp;
 
   const _DriverSeed(this.id, this.fullName, this.balanceEgp);
@@ -34,7 +35,7 @@ class MockCashLedger {
 
   static const _recipientOrder = ['DR-003', 'DR-002', 'DR-004'];
 
-  final Map<String, String> _names = {};
+  final Map<String, LocalizedString> _names = {};
   final Map<String, int> _balances = {};
   final List<CashTransfer> _transfers = [];
   final List<CustodyReceipt> _receipts = [];
@@ -71,10 +72,26 @@ class MockCashLedger {
 
   MockCashLedger({required int senderBalanceEgp}) {
     const seeds = [
-      _DriverSeed(senderId, 'Ahmed Ali', 0),
-      _DriverSeed('DR-003', 'Khaled Ramadan', 1100),
-      _DriverSeed('DR-002', 'Mohamed Said', 900),
-      _DriverSeed('DR-004', 'Sami Hassan', 750),
+      _DriverSeed(
+        senderId,
+        LocalizedString(en: 'Ahmed Ali', ar: 'أحمد علي'),
+        0,
+      ),
+      _DriverSeed(
+        'DR-003',
+        LocalizedString(en: 'Khaled Ramadan', ar: 'خالد رمضان'),
+        1100,
+      ),
+      _DriverSeed(
+        'DR-002',
+        LocalizedString(en: 'Mohamed Said', ar: 'محمد سعيد'),
+        900,
+      ),
+      _DriverSeed(
+        'DR-004',
+        LocalizedString(en: 'Sami Hassan', ar: 'سامي حسن'),
+        750,
+      ),
     ];
     for (final seed in seeds) {
       _names[seed.id] = seed.fullName;
@@ -108,10 +125,17 @@ class MockCashLedger {
 
   ApprovalTiming? timingFor(String id) => _timings[id];
 
-  String nameOf(String driverId) {
+  LocalizedString nameOf(String driverId) {
     final name = _names[driverId];
     if (name == null) throw UnknownDriverException(driverId);
     return name;
+  }
+
+  AssignedTrip? tripByCode(String code) {
+    for (final trip in _trips) {
+      if (trip.code == code) return trip;
+    }
+    return null;
   }
 
   String codeForTrip(String tripId) {
@@ -188,32 +212,23 @@ class MockCashLedger {
         perTripEgp: 100,
         status: RoadExpenseStatus.pending,
         lines: [
-          RoadExpenseLine(
-            code: 'TR-2026-0881',
-            origin: 'Cairo',
-            destination: 'Alexandria',
-            date: DateTime(2026, 5, 5),
-            amountEgp: 100,
-            tripNumber: 1,
-          ),
-          RoadExpenseLine(
-            code: 'TR-2026-0904',
-            origin: 'Alexandria',
-            destination: 'Suez',
-            date: DateTime(2026, 5, 14),
-            amountEgp: 100,
-            tripNumber: 2,
-          ),
-          RoadExpenseLine(
-            code: 'TR-2026-0927',
-            origin: 'Suez',
-            destination: 'Cairo',
-            date: DateTime(2026, 5, 28),
-            amountEgp: 100,
-            tripNumber: 3,
-          ),
+          _roadLine('TR-2026-0881', 1, 100),
+          _roadLine('TR-2026-0904', 2, 100),
+          _roadLine('TR-2026-0927', 3, 100),
         ],
       ),
+    );
+  }
+
+  RoadExpenseLine _roadLine(String code, int tripNumber, int amountEgp) {
+    final trip = tripByCode(code)!;
+    return RoadExpenseLine(
+      code: trip.code,
+      origin: trip.origin,
+      destination: trip.destination,
+      date: trip.date,
+      amountEgp: amountEgp,
+      tripNumber: tripNumber,
     );
   }
 

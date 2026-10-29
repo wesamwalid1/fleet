@@ -60,10 +60,7 @@ class RecordExpenseState extends Equatable {
     if (query.isEmpty) return trips;
     return [
       for (final trip in trips)
-        if (trip.code.toLowerCase().contains(query) ||
-            trip.origin.toLowerCase().contains(query) ||
-            trip.destination.toLowerCase().contains(query))
-          trip,
+        if (trip.matchesQuery(query)) trip,
     ];
   }
 

@@ -1,8 +1,11 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
+
+import '../../../../core/localization/localized_string.dart';
 
 class FinanceDriver extends Equatable {
   final String id;
-  final String fullName;
+  final LocalizedString fullName;
   final int balanceEgp;
 
   const FinanceDriver({
@@ -11,8 +14,13 @@ class FinanceDriver extends Equatable {
     required this.balanceEgp,
   });
 
-  String get initials {
+  String displayName([Object? localeOrCode]) => fullName.resolve(localeOrCode);
+
+  String displayNameOf(BuildContext context) => fullName.of(context);
+
+  String initials([Object? localeOrCode]) {
     final parts = fullName
+        .resolve(localeOrCode)
         .trim()
         .split(RegExp(r'\s+'))
         .where((part) => part.isNotEmpty)
@@ -26,12 +34,13 @@ class FinanceDriver extends Equatable {
     return '${letter(parts.first)}${letter(parts.last)}';
   }
 
-  String get givenName {
-    final parts = fullName
+  String givenName([Object? localeOrCode]) {
+    final resolved = fullName.resolve(localeOrCode);
+    final parts = resolved
         .trim()
         .split(RegExp(r'\s+'))
         .where((part) => part.isNotEmpty);
-    return parts.isEmpty ? fullName : parts.first;
+    return parts.isEmpty ? resolved : parts.first;
   }
 
   @override

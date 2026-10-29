@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/assets/app_icons.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
+import '../../../../core/localization/localized_string.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -117,11 +118,16 @@ class _HomePageState extends State<HomePage> {
                       builder: (context, trip) => CustomScrollView(
                         slivers: [
                           SliverToBoxAdapter(
-                            child: _WalletHeader(
-                              fullName: driver.fullName,
-                              initials: driver.initials,
-                              onNotifications: widget.onOpenNotifications,
-                              onProfile: widget.onOpenProfile,
+                            child: Builder(
+                              builder: (context) {
+                                final locale = Localizations.localeOf(context);
+                                return _WalletHeader(
+                                  fullName: driver.displayName(locale),
+                                  initials: driver.initials(locale),
+                                  onNotifications: widget.onOpenNotifications,
+                                  onProfile: widget.onOpenProfile,
+                                );
+                              },
                             ),
                           ),
                           SliverToBoxAdapter(
@@ -827,6 +833,7 @@ class _TripSection extends StatelessWidget {
         final loading = trip.connectionState != ConnectionState.done;
         final active = offline ? null : trip.data;
         final canRecord = !locked && !loading && active != null;
+        final activeTripId = active?.id;
         return Column(
           key: const Key('home-trip-card'),
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -880,17 +887,19 @@ class _TripSection extends StatelessWidget {
                         const SizedBox(height: 18),
                         FilledButton.icon(
                           key: const Key('trip-record-expense'),
-                          onPressed: canRecord
+                          onPressed: canRecord && activeTripId != null
                               ? () => showRecordExpenseSheet(
                                   context,
                                   driverId: driverId,
-                                  tripId: active.id,
+                                  tripId: activeTripId,
                                 )
                               : locked
                               ? () => _showOfflineActionNotice(context)
                               : null,
                           icon: Icon(
-                            canRecord
+                            // Keep the action icon when offline-locked; only
+                            // the online "no trip" disabled state uses a lock.
+                            canRecord || locked
                                 ? Icons.receipt_long_rounded
                                 : Icons.lock_outline_rounded,
                             size: 20,
@@ -901,8 +910,12 @@ class _TripSection extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           style: FilledButton.styleFrom(
-                            backgroundColor: surfaces.title,
-                            foregroundColor: surfaces.card,
+                            backgroundColor: locked
+                                ? surfaces.neutral
+                                : surfaces.title,
+                            foregroundColor: locked
+                                ? surfaces.muted
+                                : surfaces.card,
                             disabledBackgroundColor: surfaces.card,
                             disabledForegroundColor: surfaces.body,
                             minimumSize: const Size.fromHeight(54),
@@ -938,8 +951,20 @@ void _showOfflineActionNotice(BuildContext context) {
   );
 }
 
+void _showComingSoonNotice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('action-coming-soon-notice'),
+      content: Text(l10n.actionComingSoon),
+    ),
+  );
+}
+
 /// General actions. This Record Expense is not tied to the active trip: the
 /// driver selects any of their trips in the sheet, including completed ones.
+/// Request Cash and Withdraw are UI entry points only until their flows are
+/// defined.
 class _Actions extends StatelessWidget {
   final String driverId;
   final VoidCallback? onOpenHistory;
@@ -962,87 +987,139 @@ class _Actions extends StatelessWidget {
       builder: (context, connectivity) {
         final offline = connectivity.isUnavailable;
         final locked = connectivity.blocksOnlineWork;
+        VoidCallback gated(VoidCallback onlineAction) {
+          return locked
+              ? () => _showOfflineActionNotice(context)
+              : onlineAction;
+        }
+
+        final filledStyle = FilledButton.styleFrom(
+          backgroundColor: locked ? surfaces.neutral : AppColors.primary,
+          foregroundColor: locked ? surfaces.muted : Colors.white,
+          minimumSize: const Size.fromHeight(54),
+          padding: padding,
+          textStyle: label,
+          shape: shape,
+        );
+        final outlinedStyle = OutlinedButton.styleFrom(
+          foregroundColor: locked ? surfaces.muted : surfaces.title,
+          backgroundColor: locked ? surfaces.neutral : surfaces.card,
+          side: BorderSide(color: surfaces.border),
+          minimumSize: const Size.fromHeight(54),
+          padding: padding,
+          textStyle: label,
+          shape: shape,
+        );
+
         return Column(
           key: const Key('home-actions'),
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SectionTitle(title: l10n.homeActions),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    key: const Key('send-cash'),
-                    onPressed: locked
-                        ? () => _showOfflineActionNotice(context)
-                        : () => showSendCashSheet(
-                            context,
-                            senderId: driverId,
-                            onViewTransaction: (transferId) {
-                              context.read<HistoryBloc>().add(
-                                HistoryEntryHighlighted(transferId),
-                              );
-                              onOpenHistory?.call();
-                            },
-                          ),
-                    icon: Icon(
-                      locked
-                          ? Icons.lock_outline_rounded
-                          : Icons.north_east_rounded,
-                      size: 20,
-                    ),
-                    label: _FitLabel(l10n.sendCash),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: locked
-                          ? surfaces.neutral
-                          : AppColors.primary,
-                      foregroundColor: locked ? surfaces.muted : Colors.white,
-                      minimumSize: const Size.fromHeight(54),
-                      padding: padding,
-                      textStyle: label,
-                      shape: shape,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    key: const Key('record-expense'),
-                    onPressed: locked
-                        ? () => _showOfflineActionNotice(context)
-                        : () => showRecordExpenseSheet(
-                            context,
-                            driverId: driverId,
-                            tripScope: ExpenseTripScope.anyTrip,
-                          ),
-                    icon: Icon(
-                      locked
-                          ? Icons.lock_outline_rounded
-                          : Icons.receipt_long_rounded,
-                      size: 20,
-                    ),
-                    label: _FitLabel(l10n.recordExpense),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: locked ? surfaces.muted : surfaces.title,
-                      backgroundColor: surfaces.card,
-                      side: BorderSide(color: surfaces.border),
-                      minimumSize: const Size.fromHeight(54),
-                      padding: padding,
-                      textStyle: label,
-                      shape: shape,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (offline) ...[
-              const SizedBox(height: 10),
-              Text(
-                key: const Key('home-offline-actions-hint'),
-                l10n.offlineActionRequiresInternet,
-                style: AppTextStyles.caption,
+            DecoratedBox(
+              key: const Key('home-actions-panel'),
+              decoration: BoxDecoration(
+                color: surfaces.panel,
+                borderRadius: BorderRadius.circular(24),
               ),
-            ],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            key: const Key('send-cash'),
+                            onPressed: gated(
+                              () => showSendCashSheet(
+                                context,
+                                senderId: driverId,
+                                onViewTransaction: (transferId) {
+                                  context.read<HistoryBloc>().add(
+                                    HistoryEntryHighlighted(transferId),
+                                  );
+                                  onOpenHistory?.call();
+                                },
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.north_east_rounded,
+                              size: 20,
+                            ),
+                            label: _FitLabel(l10n.sendCash),
+                            style: filledStyle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            key: const Key('record-expense'),
+                            onPressed: gated(
+                              () => showRecordExpenseSheet(
+                                context,
+                                driverId: driverId,
+                                tripScope: ExpenseTripScope.anyTrip,
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.receipt_long_rounded,
+                              size: 20,
+                            ),
+                            label: _FitLabel(l10n.recordExpense),
+                            style: outlinedStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            key: const Key('request-cash'),
+                            onPressed: gated(
+                              () => _showComingSoonNotice(context),
+                            ),
+                            icon: const Icon(
+                              Icons.south_west_rounded,
+                              size: 20,
+                            ),
+                            label: _FitLabel(l10n.requestCash),
+                            style: outlinedStyle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            key: const Key('withdraw'),
+                            onPressed: gated(
+                              () => _showComingSoonNotice(context),
+                            ),
+                            icon: const Icon(
+                              Icons.account_balance_outlined,
+                              size: 20,
+                            ),
+                            label: _FitLabel(l10n.withdraw),
+                            style: outlinedStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (offline) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        key: const Key('home-offline-actions-hint'),
+                        l10n.offlineActionRequiresInternet,
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -1088,7 +1165,7 @@ class _Journey extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                trip.origin,
+                trip.origin.resolve(locale),
                 key: const Key('home-trip-origin'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1100,7 +1177,7 @@ class _Journey extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                trip.destination,
+                trip.destination.resolve(locale),
                 key: const Key('home-trip-destination'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1433,7 +1510,7 @@ class _PendingRow extends StatelessWidget {
         AppColors.warningBackground,
       ),
       ApprovalKind.driver => (
-        l10n.receivedFromDriver(item.counterpartyName),
+        l10n.receivedFromDriver(item.counterpartyName.tr(l10n)),
         item.counterpartyId,
         AppIcons.person,
         AppColors.successBackground,

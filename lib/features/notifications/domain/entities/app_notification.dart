@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/localization/localized_string.dart';
+
 enum NotificationType {
   vaultReceiptPending,
   incomingTransferPending,
@@ -30,7 +32,7 @@ class AppNotification extends Equatable {
   final bool read;
   final String dedupKey;
   final int amountEgp;
-  final String counterpartyName;
+  final LocalizedString counterpartyName;
   final NotificationSource source;
 
   const AppNotification({
@@ -44,7 +46,7 @@ class AppNotification extends Equatable {
     required this.source,
     this.read = false,
     this.amountEgp = 0,
-    this.counterpartyName = '',
+    this.counterpartyName = LocalizedString.empty,
   });
 
   AppNotification copyWith({bool? read}) {

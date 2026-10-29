@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/core/connectivity/domain/network_status.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/core/theme/app_colors.dart';
 import 'package:driver_portal_app/core/theme/domain/theme_repository.dart';
 import 'package:driver_portal_app/core/theme/presentation/bloc/theme_bloc.dart';
 import 'package:driver_portal_app/core/theme/presentation/bloc/theme_event.dart';
@@ -32,6 +33,40 @@ void main() {
     expect(find.byKey(const Key('home-pending-count')), findsNothing);
     expect(find.byKey(const Key('home-offline-actions-hint')), findsOneWidget);
 
+    expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('send-cash')),
+        matching: find.byIcon(Icons.north_east_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('record-expense')),
+        matching: find.byIcon(Icons.receipt_long_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('trip-record-expense')),
+        matching: find.byIcon(Icons.receipt_long_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('request-cash')), findsOneWidget);
+    expect(find.byKey(const Key('withdraw')), findsOneWidget);
+    expect(find.byKey(const Key('home-actions-panel')), findsOneWidget);
+
+    final sendCash = tester.widget<FilledButton>(
+      find.byKey(const Key('send-cash')),
+    );
+    expect(
+      sendCash.style?.backgroundColor?.resolve({}),
+      isNot(AppColors.primary),
+    );
+
     await tester.ensureVisible(find.byKey(const Key('send-cash')));
     await tester.tap(find.byKey(const Key('send-cash')));
     await tester.pump();
@@ -40,6 +75,14 @@ void main() {
       findsAtLeastNWidgets(1),
     );
     expect(find.byKey(const Key('send-cash-submit')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('request-cash')));
+    await tester.pump();
+    expect(find.byKey(const Key('action-coming-soon-notice')), findsNothing);
+    expect(
+      find.text('An Internet connection is required for this action.'),
+      findsAtLeastNWidgets(1),
+    );
   });
 
   testWidgets('approvals and history show unavailable offline', (tester) async {

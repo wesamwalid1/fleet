@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:driver_portal_app/core/localization/localized_string.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
@@ -181,6 +182,7 @@ void main() {
       find.descendant(of: actions, matching: find.text('Actions')),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('home-actions-panel')), findsOneWidget);
     final record = find.descendant(
       of: actions,
       matching: find.byKey(const Key('record-expense')),
@@ -189,9 +191,24 @@ void main() {
       of: actions,
       matching: find.byKey(const Key('send-cash')),
     );
+    final request = find.descendant(
+      of: actions,
+      matching: find.byKey(const Key('request-cash')),
+    );
+    final withdraw = find.descendant(
+      of: actions,
+      matching: find.byKey(const Key('withdraw')),
+    );
     expect(record, findsOneWidget);
     expect(send, findsOneWidget);
+    expect(request, findsOneWidget);
+    expect(withdraw, findsOneWidget);
     expect(tester.getRect(record).top, tester.getRect(send).top);
+    expect(tester.getRect(request).top, tester.getRect(withdraw).top);
+    expect(
+      tester.getRect(request).top,
+      greaterThan(tester.getRect(send).bottom),
+    );
     expect(
       tester.getRect(actions).top,
       greaterThan(
@@ -243,6 +260,35 @@ void main() {
     expect(expense.tripId, 'trip-2026-0904');
     expect(expense.status, ExpenseStatus.recorded);
     expect(ledger.balanceOf('DR-001'), 2100);
+  });
+
+  testWidgets('request cash and withdraw are entry points only', (
+    tester,
+  ) async {
+    late MockCashLedger ledger;
+    await _pump(tester, configureLedger: (value) => ledger = value);
+    final transfersBefore = ledger.transfers.length;
+    final expensesBefore = ledger.expenses.length;
+    final balanceBefore = ledger.balanceOf('DR-001');
+
+    await tester.ensureVisible(find.byKey(const Key('request-cash')));
+    await tester.tap(find.byKey(const Key('request-cash')));
+    await tester.pump();
+    expect(find.byKey(const Key('action-coming-soon-notice')), findsOneWidget);
+    expect(find.text('This action will be available soon.'), findsOneWidget);
+    expect(ledger.transfers, hasLength(transfersBefore));
+    expect(ledger.expenses, hasLength(expensesBefore));
+
+    ScaffoldMessenger.of(tester.element(find.byKey(const Key('home-actions'))))
+        .hideCurrentSnackBar();
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('withdraw')));
+    await tester.pump();
+    expect(find.byKey(const Key('action-coming-soon-notice')), findsOneWidget);
+    expect(ledger.balanceOf('DR-001'), balanceBefore);
+    expect(ledger.transfers, hasLength(transfersBefore));
+    expect(ledger.expenses, hasLength(expensesBefore));
   });
 
   testWidgets('send cash is in the actions row and opens the real sheet', (
@@ -495,7 +541,10 @@ class _DriverWithoutTrips implements DriverRepository {
 
   @override
   Future<Driver> getCurrentDriver() async {
-    return const Driver(id: 'DR-002', fullName: 'Mohamed Said');
+    return const Driver(
+      id: 'DR-002',
+      fullName: LocalizedString(en: 'Mohamed Said', ar: 'محمد سعيد'),
+    );
   }
 }
 

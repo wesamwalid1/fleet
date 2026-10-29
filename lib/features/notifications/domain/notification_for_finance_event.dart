@@ -1,3 +1,4 @@
+import '../../../core/localization/localized_string.dart';
 import '../../finance/domain/entities/finance_event.dart';
 import 'entities/app_notification.dart';
 
@@ -10,7 +11,7 @@ import 'entities/app_notification.dart';
 /// sender that it was sent and awaits confirmation.
 List<AppNotification> notificationsForFinanceEvent(
   FinanceEvent event, {
-  required String Function(String driverId) nameOf,
+  required LocalizedString Function(String driverId) nameOf,
 }) {
   return switch (event) {
     TransferCreated(:final transfer) => [
@@ -92,7 +93,7 @@ AppNotification _event({
   required DateTime eventAt,
   required DateTime createdAt,
   required int amountEgp,
-  String counterpartyName = '',
+  LocalizedString counterpartyName = LocalizedString.empty,
 }) {
   final key = notificationDedupKey(
     driverId: driverId,

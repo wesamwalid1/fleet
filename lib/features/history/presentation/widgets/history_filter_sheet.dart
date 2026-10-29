@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_surfaces.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
 import '../../../../core/widgets/filter_bottom_sheet.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../finance/domain/entities/assigned_trip.dart';
@@ -21,11 +23,13 @@ Future<void> showHistoryFilterSheet(BuildContext context) async {
 
   final applied = await showFilterBottomSheet<HistoryFilterDraft>(
     context: context,
-    title: l10n.filter,
+    title: l10n.filterTransactions,
     initial: HistoryFilterDraft.fromState(bloc.state),
     defaults: HistoryFilterDraft.defaults,
     resetKey: const Key('history-filter-reset'),
     applyKey: const Key('history-filter-apply'),
+    resetLabel: l10n.clearAll,
+    applyLabel: l10n.applyFilters,
     validate: (draft) {
       if (draft.dateMode == HistoryDateMode.day && draft.startDate == null) {
         return l10n.selectDate;
@@ -85,7 +89,7 @@ class _HistoryFilterBody extends StatelessWidget {
 
     Widget section(String title) {
       return Padding(
-        padding: const EdgeInsets.only(bottom: 10, top: 4),
+        padding: const EdgeInsets.only(bottom: 10, top: 8),
         child: Text(
           title,
           style: TextStyle(
@@ -102,79 +106,132 @@ class _HistoryFilterBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         section(l10n.filterTransactionType),
-        for (final entry in [
-          (HistoryFilter.all, l10n.filterAllTransactions, 'history-filter-all'),
-          (
-            HistoryFilter.expenses,
-            l10n.filterExpenses,
-            'history-filter-expenses',
+        FilterChipWrap(
+          children: [
+            for (final entry in [
+              (
+                HistoryFilter.all,
+                l10n.filterAllTransactions,
+                'history-filter-all',
+              ),
+              (
+                HistoryFilter.expenses,
+                l10n.filterExpenses,
+                'history-filter-expenses',
+              ),
+              (
+                HistoryFilter.cashTransfers,
+                l10n.filterCashTransfers,
+                'history-filter-cash',
+              ),
+              (
+                HistoryFilter.vault,
+                l10n.filterVaultTransactions,
+                'history-filter-vault',
+              ),
+            ])
+              AppFilterChip(
+                key: Key(entry.$3),
+                label: entry.$2,
+                selected: draft.filter == entry.$1,
+                onSelected: () => onChanged(
+                  draft.copyWith(
+                    filter: entry.$1,
+                    tripMode: entry.$1 == HistoryFilter.expenses
+                        ? draft.tripMode
+                        : HistoryTripMode.all,
+                    tripId: entry.$1 == HistoryFilter.expenses
+                        ? draft.tripId
+                        : null,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (showTrip) ...[
+          section(l10n.filterTrip),
+          FilterChipWrap(
+            children: [
+              AppFilterChip(
+                key: const Key('history-trip-all'),
+                label: l10n.tripFilterAll,
+                selected: draft.tripMode == HistoryTripMode.all,
+                onSelected: () => onChanged(
+                  draft.copyWith(tripMode: HistoryTripMode.all, tripId: null),
+                ),
+              ),
+              for (final trip in trips)
+                AppFilterChip(
+                  key: Key('history-trip-${trip.id}'),
+                  label: '${trip.code} · ${trip.route(locale)}',
+                  selected:
+                      draft.tripMode == HistoryTripMode.specific &&
+                      draft.tripId == trip.id,
+                  onSelected: () => onChanged(
+                    draft.copyWith(
+                      tripMode: HistoryTripMode.specific,
+                      tripId: trip.id,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          (
-            HistoryFilter.cashTransfers,
-            l10n.filterCashTransfers,
-            'history-filter-cash',
-          ),
-          (
-            HistoryFilter.vault,
-            l10n.filterVaultTransactions,
-            'history-filter-vault',
-          ),
-        ]) ...[
-          FilterOptionTile(
-            optionKey: Key(entry.$3),
-            label: entry.$2,
-            selected: draft.filter == entry.$1,
-            onTap: () => onChanged(
-              draft.copyWith(
-                filter: entry.$1,
-                tripMode: entry.$1 == HistoryFilter.expenses
-                    ? draft.tripMode
-                    : HistoryTripMode.all,
-                tripId: entry.$1 == HistoryFilter.expenses
-                    ? draft.tripId
-                    : null,
+          if (trips.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                l10n.selectTrip,
+                style: TextStyle(color: surfaces.body, fontSize: 13.5),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
         ],
         section(l10n.filterDate),
-        for (final entry in [
-          (HistoryDateMode.all, l10n.dateFilterAll, 'history-date-all'),
-          (HistoryDateMode.day, l10n.dateFilterDay, 'history-date-day'),
-          (HistoryDateMode.range, l10n.dateFilterRange, 'history-date-range'),
-        ]) ...[
-          FilterOptionTile(
-            optionKey: Key(entry.$3),
-            label: entry.$2,
-            selected: draft.dateMode == entry.$1,
-            onTap: () => onChanged(
-              draft.copyWith(
-                dateMode: entry.$1,
-                startDate: entry.$1 == HistoryDateMode.all
-                    ? null
-                    : draft.startDate,
-                endDate: entry.$1 == HistoryDateMode.range
-                    ? draft.endDate
-                    : null,
+        FilterChipWrap(
+          children: [
+            for (final entry in [
+              (HistoryDateMode.all, l10n.dateFilterAll, 'history-date-all'),
+              (HistoryDateMode.day, l10n.dateFilterDay, 'history-date-day'),
+              (
+                HistoryDateMode.range,
+                l10n.dateFilterRange,
+                'history-date-range',
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-        if (draft.dateMode == HistoryDateMode.day)
+            ])
+              AppFilterChip(
+                key: Key(entry.$3),
+                label: entry.$2,
+                selected: draft.dateMode == entry.$1,
+                onSelected: () => onChanged(
+                  draft.copyWith(
+                    dateMode: entry.$1,
+                    startDate: entry.$1 == HistoryDateMode.all
+                        ? null
+                        : draft.startDate,
+                    endDate: entry.$1 == HistoryDateMode.range
+                        ? draft.endDate
+                        : null,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (draft.dateMode == HistoryDateMode.day) ...[
+          const SizedBox(height: 12),
           _DateField(
             fieldKey: const Key('history-date-day-value'),
-            label: l10n.selectDate,
+            emptyLabel: l10n.selectDate,
             value: draft.startDate,
             locale: locale,
             onPick: (date) =>
                 onChanged(draft.copyWith(startDate: date, endDate: date)),
           ),
+        ],
         if (draft.dateMode == HistoryDateMode.range) ...[
+          const SizedBox(height: 12),
           _DateField(
             fieldKey: const Key('history-date-start'),
-            label: l10n.startDate,
+            caption: l10n.from,
+            emptyLabel: l10n.selectDate,
             value: draft.startDate,
             locale: locale,
             onPick: (date) => onChanged(draft.copyWith(startDate: date)),
@@ -182,47 +239,12 @@ class _HistoryFilterBody extends StatelessWidget {
           const SizedBox(height: 8),
           _DateField(
             fieldKey: const Key('history-date-end'),
-            label: l10n.endDate,
+            caption: l10n.to,
+            emptyLabel: l10n.selectDate,
             value: draft.endDate,
             locale: locale,
             onPick: (date) => onChanged(draft.copyWith(endDate: date)),
           ),
-        ],
-        if (showTrip) ...[
-          section(l10n.filterTrip),
-          FilterOptionTile(
-            optionKey: const Key('history-trip-all'),
-            label: l10n.tripFilterAll,
-            selected: draft.tripMode == HistoryTripMode.all,
-            onTap: () => onChanged(
-              draft.copyWith(tripMode: HistoryTripMode.all, tripId: null),
-            ),
-          ),
-          const SizedBox(height: 8),
-          FilterOptionTile(
-            optionKey: const Key('history-trip-specific'),
-            label: l10n.tripFilterSpecific,
-            selected: draft.tripMode == HistoryTripMode.specific,
-            onTap: () =>
-                onChanged(draft.copyWith(tripMode: HistoryTripMode.specific)),
-          ),
-          if (draft.tripMode == HistoryTripMode.specific) ...[
-            const SizedBox(height: 10),
-            for (final trip in trips) ...[
-              FilterOptionTile(
-                optionKey: Key('history-trip-${trip.id}'),
-                label: '${trip.code} · ${trip.origin} → ${trip.destination}',
-                selected: draft.tripId == trip.id,
-                onTap: () => onChanged(draft.copyWith(tripId: trip.id)),
-              ),
-              const SizedBox(height: 8),
-            ],
-            if (trips.isEmpty)
-              Text(
-                l10n.selectTrip,
-                style: TextStyle(color: surfaces.body, fontSize: 13.5),
-              ),
-          ],
         ],
       ],
     );
@@ -231,14 +253,16 @@ class _HistoryFilterBody extends StatelessWidget {
 
 class _DateField extends StatelessWidget {
   final Key fieldKey;
-  final String label;
+  final String? caption;
+  final String emptyLabel;
   final DateTime? value;
   final String locale;
   final ValueChanged<DateTime> onPick;
 
   const _DateField({
     required this.fieldKey,
-    required this.label,
+    this.caption,
+    required this.emptyLabel,
     required this.value,
     required this.locale,
     required this.onPick,
@@ -248,28 +272,74 @@ class _DateField extends StatelessWidget {
   Widget build(BuildContext context) {
     final surfaces = AppSurfaces.of(context);
     final text = value == null
-        ? label
+        ? emptyLabel
         : DateFormat('d MMM y', locale).format(value!);
-    return OutlinedButton(
-      key: fieldKey,
-      onPressed: () async {
-        final now = DateTime.now();
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: value ?? now,
-          firstDate: DateTime(now.year - 5),
-          lastDate: DateTime(now.year + 1),
-        );
-        if (picked != null) onPick(picked);
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: surfaces.title,
-        side: BorderSide(color: surfaces.border),
-        alignment: AlignmentDirectional.centerStart,
-        minimumSize: const Size.fromHeight(48),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-      ),
-      child: Text(text),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (caption != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              caption!,
+              style: TextStyle(
+                color: surfaces.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+        ],
+        Material(
+          color: surfaces.field,
+          borderRadius: BorderRadius.circular(AppRadii.field),
+          child: InkWell(
+            key: fieldKey,
+            onTap: () async {
+              final now = DateTime.now();
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: value ?? now,
+                firstDate: DateTime(now.year - 5),
+                lastDate: DateTime(now.year + 1),
+              );
+              if (picked != null) onPick(picked);
+            },
+            borderRadius: BorderRadius.circular(AppRadii.field),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadii.field),
+                border: Border.all(color: surfaces.border),
+              ),
+              alignment: AlignmentDirectional.centerStart,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: surfaces.muted,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        color: value == null ? surfaces.muted : surfaces.title,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: surfaces.muted),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

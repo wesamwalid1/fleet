@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/localization/localized_string.dart';
 import '../../../finance/domain/entities/approval_timing.dart';
 
 enum ApprovalKind { vault, driver, roadExpense }
@@ -10,8 +11,8 @@ enum ApprovalFilter { all, vault, drivers, roadExpense }
 
 class ApprovalTripLine extends Equatable {
   final String code;
-  final String origin;
-  final String destination;
+  final LocalizedString origin;
+  final LocalizedString destination;
   final DateTime date;
   final int amountEgp;
   final int tripNumber;
@@ -24,6 +25,9 @@ class ApprovalTripLine extends Equatable {
     required this.amountEgp,
     required this.tripNumber,
   });
+
+  String route([Object? localeOrCode, String separator = ' → ']) =>
+      '${origin.resolve(localeOrCode)}$separator${destination.resolve(localeOrCode)}';
 
   @override
   List<Object?> get props => [
@@ -45,7 +49,7 @@ class ApprovalItem extends Equatable {
   final DateTime? finalizedAt;
   final ApprovalRecency? recency;
   final int minutes;
-  final String counterpartyName;
+  final LocalizedString counterpartyName;
   final String counterpartyId;
   final String reference;
   final DateTime? periodStart;
@@ -65,7 +69,7 @@ class ApprovalItem extends Equatable {
     this.finalizedAt,
     this.recency,
     this.minutes = 0,
-    this.counterpartyName = '',
+    this.counterpartyName = LocalizedString.empty,
     this.counterpartyId = '',
     this.periodStart,
     this.periodEnd,

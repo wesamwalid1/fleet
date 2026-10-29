@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_surfaces.dart';
 import '../theme/app_theme.dart';
 
-/// Single-choice filter pill used above lists.
+/// Single-choice filter pill used above lists and inside filter sheets.
 class AppFilterChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -37,6 +37,19 @@ class AppFilterChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
+  }
+}
+
+/// Wrapping row of labeled filter chips with shared spacing.
+class FilterChipWrap extends StatelessWidget {
+  final List<Widget> children;
+
+  const FilterChipWrap({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(spacing: 8, runSpacing: 8, children: children);
   }
 }

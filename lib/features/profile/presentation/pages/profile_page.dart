@@ -153,8 +153,8 @@ class _ProfileBody extends StatelessWidget {
           ),
           children: [
             _Header(
-              initials: driver.initials,
-              name: driver.fullName,
+              initials: driver.initials(Localizations.localeOf(context)),
+              name: driver.displayName(Localizations.localeOf(context)),
               title: l10n.navProfile,
               identity: l10n.profileIdentity(driver.id, l10n.driversVault),
               balanceLabel: balanceLabel,

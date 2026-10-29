@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:driver_portal_app/core/localization/localized_string.dart';
 import 'package:driver_portal_app/features/home/domain/entities/driver.dart';
 import 'package:driver_portal_app/features/home/domain/entities/financial_summary.dart';
 import 'package:driver_portal_app/features/home/domain/repositories/driver_repository.dart';
@@ -12,7 +13,9 @@ import 'package:driver_portal_app/features/home/presentation/bloc/home_state.dar
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const driver = Driver(fullName: 'Ahmed Ali');
+  const driver = Driver(
+    fullName: LocalizedString(en: 'Ahmed Ali', ar: 'أحمد علي'),
+  );
   const summary = FinancialSummary(
     balanceEgp: 2200,
     chargeEgp: 3200,
