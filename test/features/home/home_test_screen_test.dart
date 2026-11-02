@@ -262,33 +262,25 @@ void main() {
     expect(ledger.balanceOf('DR-001'), 2100);
   });
 
-  testWidgets('request cash and withdraw are entry points only', (
-    tester,
-  ) async {
+  testWidgets('request cash and withdraw open real sheets', (tester) async {
     late MockCashLedger ledger;
     await _pump(tester, configureLedger: (value) => ledger = value);
-    final transfersBefore = ledger.transfers.length;
-    final expensesBefore = ledger.expenses.length;
     final balanceBefore = ledger.balanceOf('DR-001');
 
     await tester.ensureVisible(find.byKey(const Key('request-cash')));
     await tester.tap(find.byKey(const Key('request-cash')));
-    await tester.pump();
-    expect(find.byKey(const Key('action-coming-soon-notice')), findsOneWidget);
-    expect(find.text('This action will be available soon.'), findsOneWidget);
-    expect(ledger.transfers, hasLength(transfersBefore));
-    expect(ledger.expenses, hasLength(expensesBefore));
-
-    ScaffoldMessenger.of(tester.element(find.byKey(const Key('home-actions'))))
-        .hideCurrentSnackBar();
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('request-cash-amount')), findsOneWidget);
+    expect(find.byKey(const Key('request-cash-submit')), findsOneWidget);
+    expect(ledger.balanceOf('DR-001'), balanceBefore);
+    await tester.tap(find.byKey(const Key('request-cash-cancel')));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('withdraw')));
-    await tester.pump();
-    expect(find.byKey(const Key('action-coming-soon-notice')), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('withdraw-amount')), findsOneWidget);
+    expect(find.byKey(const Key('withdraw-submit')), findsOneWidget);
     expect(ledger.balanceOf('DR-001'), balanceBefore);
-    expect(ledger.transfers, hasLength(transfersBefore));
-    expect(ledger.expenses, hasLength(expensesBefore));
   });
 
   testWidgets('send cash is in the actions row and opens the real sheet', (

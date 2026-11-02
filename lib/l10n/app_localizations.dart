@@ -302,6 +302,180 @@ abstract class AppLocalizations {
   /// **'This action will be available soon.'**
   String get actionComingSoon;
 
+  /// No description provided for @requestCashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Cash'**
+  String get requestCashTitle;
+
+  /// No description provided for @requestCashSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request money from the company vault'**
+  String get requestCashSubtitle;
+
+  /// No description provided for @withdrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get withdrawTitle;
+
+  /// No description provided for @withdrawSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Return unused cash to the company vault'**
+  String get withdrawSubtitle;
+
+  /// No description provided for @availableRequestCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Available request capacity'**
+  String get availableRequestCapacity;
+
+  /// No description provided for @availableToWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Available to withdraw'**
+  String get availableToWithdraw;
+
+  /// No description provided for @submitRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Request'**
+  String get submitRequest;
+
+  /// No description provided for @submitWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Withdraw'**
+  String get submitWithdraw;
+
+  /// No description provided for @exceedsRequestCapacityError.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount exceeds your available request capacity'**
+  String get exceedsRequestCapacityError;
+
+  /// No description provided for @exceedsAvailableBalanceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount exceeds your available balance'**
+  String get exceedsAvailableBalanceError;
+
+  /// No description provided for @requestCashFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to submit the cash request. Please try again.'**
+  String get requestCashFailed;
+
+  /// No description provided for @withdrawFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to submit the withdraw request. Please try again.'**
+  String get withdrawFailed;
+
+  /// No description provided for @cashRequestSubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Submitted!'**
+  String get cashRequestSubmittedTitle;
+
+  /// No description provided for @cashRequestSubmittedDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} submitted as {number}'**
+  String cashRequestSubmittedDetail(String amount, String number);
+
+  /// No description provided for @historyRequestCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Cash'**
+  String get historyRequestCash;
+
+  /// No description provided for @historyWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get historyWithdraw;
+
+  /// No description provided for @historyPendingBalanceUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance unchanged'**
+  String get historyPendingBalanceUnchanged;
+
+  /// No description provided for @notificationRequestCashPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash request submitted'**
+  String get notificationRequestCashPendingTitle;
+
+  /// No description provided for @notificationRequestCashApprovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash request approved'**
+  String get notificationRequestCashApprovedTitle;
+
+  /// No description provided for @notificationRequestCashRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash request rejected'**
+  String get notificationRequestCashRejectedTitle;
+
+  /// No description provided for @notificationWithdrawPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request submitted'**
+  String get notificationWithdrawPendingTitle;
+
+  /// No description provided for @notificationWithdrawApprovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request approved'**
+  String get notificationWithdrawApprovedTitle;
+
+  /// No description provided for @notificationWithdrawRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw request rejected'**
+  String get notificationWithdrawRejectedTitle;
+
+  /// No description provided for @notificationRequestCashPendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} request {reference} is pending approval'**
+  String notificationRequestCashPendingBody(String amount, String reference);
+
+  /// No description provided for @notificationRequestCashApprovedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} was added for request {reference}'**
+  String notificationRequestCashApprovedBody(String amount, String reference);
+
+  /// No description provided for @notificationRequestCashRejectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} request {reference} was rejected'**
+  String notificationRequestCashRejectedBody(String amount, String reference);
+
+  /// No description provided for @notificationWithdrawPendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} withdraw {reference} is pending approval'**
+  String notificationWithdrawPendingBody(String amount, String reference);
+
+  /// No description provided for @notificationWithdrawApprovedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} was returned for withdraw {reference}'**
+  String notificationWithdrawApprovedBody(String amount, String reference);
+
+  /// No description provided for @notificationWithdrawRejectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} withdraw {reference} was rejected'**
+  String notificationWithdrawRejectedBody(String amount, String reference);
+
   /// No description provided for @selectDriver.
   ///
   /// In en, this message translates to:

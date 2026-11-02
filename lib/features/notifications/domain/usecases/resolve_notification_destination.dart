@@ -32,7 +32,13 @@ class ResolveNotificationDestination {
       case NotificationType.transferSent ||
           NotificationType.sentTransferApproved ||
           NotificationType.sentTransferRejected ||
-          NotificationType.expenseRecorded:
+          NotificationType.expenseRecorded ||
+          NotificationType.requestCashPending ||
+          NotificationType.requestCashApproved ||
+          NotificationType.requestCashRejected ||
+          NotificationType.withdrawPending ||
+          NotificationType.withdrawApproved ||
+          NotificationType.withdrawRejected:
         if (await _inHistory(driverId, id)) return ShowHistoryEntry(id);
         return const ShowTabFallback(NotificationTab.history);
     }

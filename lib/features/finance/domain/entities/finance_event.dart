@@ -1,3 +1,4 @@
+import 'cash_request.dart';
 import 'cash_transfer.dart';
 import 'custody_receipt.dart';
 import 'expense_request.dart';
@@ -36,4 +37,22 @@ final class VaultReceiptCreated extends FinanceEvent {
   final CustodyReceipt receipt;
 
   const VaultReceiptCreated(this.receipt);
+}
+
+final class CashRequestCreated extends FinanceEvent {
+  final CashRequest request;
+
+  const CashRequestCreated(this.request);
+}
+
+final class CashRequestApproved extends FinanceEvent {
+  final CashRequest request;
+
+  const CashRequestApproved(this.request);
+}
+
+final class CashRequestRejected extends FinanceEvent {
+  final CashRequest request;
+
+  const CashRequestRejected(this.request);
 }

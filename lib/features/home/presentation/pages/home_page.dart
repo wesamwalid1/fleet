@@ -24,7 +24,9 @@ import '../../../finance/domain/entities/assigned_trip.dart';
 import '../../../finance/domain/entities/expense_trip_scope.dart';
 import '../../../finance/domain/repositories/expense_repository.dart';
 import '../../../finance/presentation/widgets/record_expense_sheet.dart';
+import '../../../finance/presentation/widgets/request_cash_sheet.dart';
 import '../../../finance/presentation/widgets/send_cash_sheet.dart';
+import '../../../finance/presentation/widgets/withdraw_cash_sheet.dart';
 import '../../../history/domain/entities/history_entry.dart';
 import '../../../history/domain/latest_history.dart';
 import '../../../history/presentation/bloc/history_bloc.dart';
@@ -951,20 +953,8 @@ void _showOfflineActionNotice(BuildContext context) {
   );
 }
 
-void _showComingSoonNotice(BuildContext context) {
-  final l10n = AppLocalizations.of(context);
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      key: const Key('action-coming-soon-notice'),
-      content: Text(l10n.actionComingSoon),
-    ),
-  );
-}
-
 /// General actions. This Record Expense is not tied to the active trip: the
 /// driver selects any of their trips in the sheet, including completed ones.
-/// Request Cash and Withdraw are UI entry points only until their flows are
-/// defined.
 class _Actions extends StatelessWidget {
   final String driverId;
   final VoidCallback? onOpenHistory;
@@ -1081,7 +1071,16 @@ class _Actions extends StatelessWidget {
                           child: OutlinedButton.icon(
                             key: const Key('request-cash'),
                             onPressed: gated(
-                              () => _showComingSoonNotice(context),
+                              () => showRequestCashSheet(
+                                context,
+                                driverId: driverId,
+                                onViewTransaction: (requestId) {
+                                  context.read<HistoryBloc>().add(
+                                    HistoryEntryHighlighted(requestId),
+                                  );
+                                  onOpenHistory?.call();
+                                },
+                              ),
                             ),
                             icon: const Icon(
                               Icons.south_west_rounded,
@@ -1096,7 +1095,16 @@ class _Actions extends StatelessWidget {
                           child: OutlinedButton.icon(
                             key: const Key('withdraw'),
                             onPressed: gated(
-                              () => _showComingSoonNotice(context),
+                              () => showWithdrawCashSheet(
+                                context,
+                                driverId: driverId,
+                                onViewTransaction: (requestId) {
+                                  context.read<HistoryBloc>().add(
+                                    HistoryEntryHighlighted(requestId),
+                                  );
+                                  onOpenHistory?.call();
+                                },
+                              ),
                             ),
                             icon: const Icon(
                               Icons.account_balance_outlined,

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -109,6 +110,112 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get actionComingSoon => 'سيكون هذا الإجراء متاحاً قريباً.';
+
+  @override
+  String get requestCashTitle => 'طلب نقد';
+
+  @override
+  String get requestCashSubtitle => 'اطلب مالاً من خزينة الشركة';
+
+  @override
+  String get withdrawTitle => 'تسليم نقد';
+
+  @override
+  String get withdrawSubtitle => 'أعد النقد غير المستخدم إلى خزينة الشركة';
+
+  @override
+  String get availableRequestCapacity => 'السعة المتاحة للطلب';
+
+  @override
+  String get availableToWithdraw => 'المتاح للتسليم';
+
+  @override
+  String get submitRequest => 'إرسال الطلب';
+
+  @override
+  String get submitWithdraw => 'إرسال التسليم';
+
+  @override
+  String get exceedsRequestCapacityError =>
+      'المبلغ أكبر من السعة المتاحة للطلب';
+
+  @override
+  String get exceedsAvailableBalanceError => 'المبلغ أكبر من رصيدك المتاح';
+
+  @override
+  String get requestCashFailed =>
+      'تعذر إرسال طلب النقد. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get withdrawFailed =>
+      'تعذر إرسال طلب التسليم. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get cashRequestSubmittedTitle => 'تم إرسال الطلب!';
+
+  @override
+  String cashRequestSubmittedDetail(String amount, String number) {
+    return 'تم إرسال $amount برقم $number';
+  }
+
+  @override
+  String get historyRequestCash => 'طلب نقد';
+
+  @override
+  String get historyWithdraw => 'تسليم نقد';
+
+  @override
+  String get historyPendingBalanceUnchanged => 'الرصيد لم يتغير';
+
+  @override
+  String get notificationRequestCashPendingTitle => 'تم إرسال طلب النقد';
+
+  @override
+  String get notificationRequestCashApprovedTitle =>
+      'تمت الموافقة على طلب النقد';
+
+  @override
+  String get notificationRequestCashRejectedTitle => 'تم رفض طلب النقد';
+
+  @override
+  String get notificationWithdrawPendingTitle => 'تم إرسال طلب التسليم';
+
+  @override
+  String get notificationWithdrawApprovedTitle =>
+      'تمت الموافقة على طلب التسليم';
+
+  @override
+  String get notificationWithdrawRejectedTitle => 'تم رفض طلب التسليم';
+
+  @override
+  String notificationRequestCashPendingBody(String amount, String reference) {
+    return 'طلب $amount برقم $reference بانتظار الموافقة';
+  }
+
+  @override
+  String notificationRequestCashApprovedBody(String amount, String reference) {
+    return 'تمت إضافة $amount للطلب $reference';
+  }
+
+  @override
+  String notificationRequestCashRejectedBody(String amount, String reference) {
+    return 'تم رفض طلب $amount برقم $reference';
+  }
+
+  @override
+  String notificationWithdrawPendingBody(String amount, String reference) {
+    return 'تسليم $amount برقم $reference بانتظار الموافقة';
+  }
+
+  @override
+  String notificationWithdrawApprovedBody(String amount, String reference) {
+    return 'تم إرجاع $amount للتسليم $reference';
+  }
+
+  @override
+  String notificationWithdrawRejectedBody(String amount, String reference) {
+    return 'تم رفض تسليم $amount برقم $reference';
+  }
 
   @override
   String get selectDriver => 'اختر سائقاً';
@@ -666,7 +773,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationsEmpty => 'لا توجد إشعارات بعد';
 
   @override
-  String get notificationsEmptyHint => 'ستظهر هنا التحديثات الخاصة بالنقدية والموافقات والمصروفات.';
+  String get notificationsEmptyHint =>
+      'ستظهر هنا التحديثات الخاصة بالنقدية والموافقات والمصروفات.';
 
   @override
   String get notificationsNoUnread => 'لا توجد إشعارات غير مقروءة';
@@ -681,7 +789,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationUnread => 'غير مقروء';
 
   @override
-  String get notificationVaultPendingTitle => 'نقدية من الخزينة بانتظار موافقتك';
+  String get notificationVaultPendingTitle =>
+      'نقدية من الخزينة بانتظار موافقتك';
 
   @override
   String notificationIncomingTitle(String name) {
@@ -747,7 +856,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get notificationRequestHandled => 'تمت معالجة هذا الطلب بالفعل. يتم عرض حالته الحالية.';
+  String get notificationRequestHandled =>
+      'تمت معالجة هذا الطلب بالفعل. يتم عرض حالته الحالية.';
 
   @override
   String get notificationTargetUnavailable => 'هذا العنصر لم يعد متاحاً.';
@@ -768,7 +878,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get offlineUnavailableHint => 'اتصل بالإنترنت لتحميل هذه المعلومات.';
 
   @override
-  String get offlineActionRequiresInternet => 'يلزم اتصال بالإنترنت لتنفيذ هذا الإجراء.';
+  String get offlineActionRequiresInternet =>
+      'يلزم اتصال بالإنترنت لتنفيذ هذا الإجراء.';
 
   @override
   String get loginRequiresInternet => 'اتصل بالإنترنت لتسجيل الدخول.';
@@ -849,7 +960,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get selectTrip => 'اختر الرحلة';
 
   @override
-  String get invalidDateRange => 'يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء أو مساوياً له.';
+  String get invalidDateRange =>
+      'يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء أو مساوياً له.';
 
   @override
   String get tripRequired => 'اختر رحلة لتطبيق هذا التصفية.';
@@ -858,7 +970,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get historyNoResults => 'لا توجد حركات مطابقة';
 
   @override
-  String get historyNoResultsHint => 'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
+  String get historyNoResultsHint =>
+      'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
 
   @override
   String get clearFilters => 'مسح عوامل التصفية';
@@ -867,7 +980,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get approvalsNoResults => 'لا توجد موافقات مطابقة';
 
   @override
-  String get approvalsNoResultsHint => 'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
+  String get approvalsNoResultsHint =>
+      'جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.';
 
   @override
   String get filterTransactionType => 'نوع الحركة';

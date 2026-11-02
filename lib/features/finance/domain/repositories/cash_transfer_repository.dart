@@ -4,7 +4,11 @@ import '../entities/finance_driver.dart';
 abstract class CashTransferRepository {
   Future<List<FinanceDriver>> getRecipients(String senderId);
 
+  /// Spendable cash after pending Withdraw reservations.
   Future<int> getAvailableBalance(String senderId);
+
+  /// Cash currently held; ignores pending Withdraw reservations.
+  Future<int> getCurrentBalance(String senderId);
 
   Future<CashTransfer> createPendingTransfer({
     required String senderId,

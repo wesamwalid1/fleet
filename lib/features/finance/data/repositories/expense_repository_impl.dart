@@ -18,7 +18,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
 
   @override
   Future<int> getAvailableBalance(String driverId) async {
-    return _ledger.balanceOf(driverId);
+    return _ledger.availableBalance(driverId);
   }
 
   @override

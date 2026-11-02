@@ -27,12 +27,15 @@ class LedgerNotificationBridge {
       event,
       nameOf: _ledger.nameOf,
     );
+    final updates = financeEventUpdatesCashRequestNotification(event);
     for (final notification in notifications) {
       late final Future<void> write;
-      write = _repository
-          .add(notification)
-          .then<void>((_) {}, onError: (_) {})
-          .whenComplete(() => _pending.remove(write));
+      write =
+          (updates
+                  ? _repository.update(notification)
+                  : _repository.add(notification).then<void>((_) {}))
+              .then<void>((_) {}, onError: (_) {})
+              .whenComplete(() => _pending.remove(write));
       _pending.add(write);
     }
   }

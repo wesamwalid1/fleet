@@ -26,7 +26,8 @@ class SendCash {
       amountEgp: amountEgp,
       createdAt: createdAt ?? DateTime.now(),
     );
-    final balance = await _repository.getAvailableBalance(senderId);
+    // Success UI labels this as Current Balance; keep Available for validation.
+    final balance = await _repository.getCurrentBalance(senderId);
     return SendCashResult(transfer: transfer, senderBalanceEgp: balance);
   }
 }

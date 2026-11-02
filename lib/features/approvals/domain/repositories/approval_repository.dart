@@ -3,9 +3,11 @@ import '../entities/approval_item.dart';
 abstract class ApprovalRepository {
   Future<List<ApprovalItem>> getApprovals(String driverId);
 
+  /// Current Balance for Approvals display (Balance After uses this + credit).
+  /// Not Available Balance; pending Withdraw reservations are ignored here.
   Future<int> getAvailableBalance(String driverId);
 
-  /// Fires whenever approvals or the available balance may have changed.
+  /// Fires whenever approvals or the displayed balance may have changed.
   Stream<void> get changes;
 
   Future<void> approveVaultReceipt({

@@ -1,4 +1,5 @@
 import '../../../finance/data/datasources/mock_cash_ledger.dart';
+import '../../../finance/domain/entities/cash_request.dart';
 import '../../../finance/domain/entities/cash_transfer.dart';
 import '../../../finance/domain/entities/custody_receipt.dart';
 import '../../../finance/domain/entities/expense_request.dart';
@@ -30,6 +31,8 @@ class HistoryRepositoryImpl implements HistoryRepository {
         if (approval.driverId == driverId &&
             approval.status != RoadExpenseStatus.pending)
           _roadExpense(approval),
+      for (final request in _ledger.cashRequests)
+        if (request.driverId == driverId) _cashRequest(request),
     ];
     entries.sort((a, b) {
       final byTime = b.occurredAt.compareTo(a.occurredAt);
@@ -103,6 +106,24 @@ class HistoryRepositoryImpl implements HistoryRepository {
       status: _transferStatus(transfer.status, incoming: false),
       counterpartyName: _ledger.nameOf(transfer.recipientId),
       counterpartyId: transfer.recipientId,
+    );
+  }
+
+  HistoryEntry _cashRequest(CashRequest request) {
+    final isRequestCash = request.type == CashRequestType.requestCash;
+    return HistoryEntry(
+      id: request.id,
+      kind: isRequestCash ? HistoryKind.requestCash : HistoryKind.withdraw,
+      amountEgp: request.amountEgp,
+      credit: isRequestCash,
+      occurredAt: request.createdAt,
+      status: switch (request.status) {
+        CashRequestStatus.pending => HistoryDisplayStatus.pendingConfirm,
+        CashRequestStatus.approved => HistoryDisplayStatus.approved,
+        CashRequestStatus.rejected => HistoryDisplayStatus.rejected,
+      },
+      note: request.note,
+      requestNumber: request.requestNumber,
     );
   }
 

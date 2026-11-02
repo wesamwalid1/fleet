@@ -4,6 +4,8 @@ import 'cash_transfer.dart';
 
 class SendCashResult extends Equatable {
   final CashTransfer transfer;
+
+  /// Sender's Current Balance after the send (not Available Balance).
   final int senderBalanceEgp;
 
   const SendCashResult({

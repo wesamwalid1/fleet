@@ -37,6 +37,77 @@
   "requestCash": "Request Cash",
   "withdraw": "Withdraw",
   "actionComingSoon": "This action will be available soon.",
+  "requestCashTitle": "Request Cash",
+  "requestCashSubtitle": "Request money from the company vault",
+  "withdrawTitle": "Withdraw",
+  "withdrawSubtitle": "Return unused cash to the company vault",
+  "availableRequestCapacity": "Available request capacity",
+  "availableToWithdraw": "Available to withdraw",
+  "submitRequest": "Submit Request",
+  "submitWithdraw": "Submit Withdraw",
+  "exceedsRequestCapacityError": "Amount exceeds your available request capacity",
+  "exceedsAvailableBalanceError": "Amount exceeds your available balance",
+  "requestCashFailed": "Unable to submit the cash request. Please try again.",
+  "withdrawFailed": "Unable to submit the withdraw request. Please try again.",
+  "cashRequestSubmittedTitle": "Request Submitted!",
+  "cashRequestSubmittedDetail": "{amount} submitted as {number}",
+  "@cashRequestSubmittedDetail": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "number": {"type": "String"}
+    }
+  },
+  "historyRequestCash": "Request Cash",
+  "historyWithdraw": "Withdraw",
+  "historyPendingBalanceUnchanged": "Balance unchanged",
+  "notificationRequestCashPendingTitle": "Cash request submitted",
+  "notificationRequestCashApprovedTitle": "Cash request approved",
+  "notificationRequestCashRejectedTitle": "Cash request rejected",
+  "notificationWithdrawPendingTitle": "Withdraw request submitted",
+  "notificationWithdrawApprovedTitle": "Withdraw request approved",
+  "notificationWithdrawRejectedTitle": "Withdraw request rejected",
+  "notificationRequestCashPendingBody": "{amount} request {reference} is pending approval",
+  "@notificationRequestCashPendingBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationRequestCashApprovedBody": "{amount} was added for request {reference}",
+  "@notificationRequestCashApprovedBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationRequestCashRejectedBody": "{amount} request {reference} was rejected",
+  "@notificationRequestCashRejectedBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationWithdrawPendingBody": "{amount} withdraw {reference} is pending approval",
+  "@notificationWithdrawPendingBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationWithdrawApprovedBody": "{amount} was returned for withdraw {reference}",
+  "@notificationWithdrawApprovedBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
+  "notificationWithdrawRejectedBody": "{amount} withdraw {reference} was rejected",
+  "@notificationWithdrawRejectedBody": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "reference": {"type": "String"}
+    }
+  },
   "selectDriver": "Select a driver",
   "noDrivers": "No drivers available",
   "yourBalance": "Your balance: {amount}",

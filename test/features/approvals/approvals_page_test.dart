@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/core/theme/app_text_styles.dart';
+import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -83,6 +84,41 @@ void main() {
     expect(find.text('No pending approvals'), findsOneWidget);
     expect(find.text('3 pending'), findsNothing);
     expect(find.text('Action Required'), findsNothing);
+  });
+
+  testWidgets('vault sheet shows Current Balance when a Withdraw is reserved', (
+    tester,
+  ) async {
+    late MockCashLedger ledger;
+    await _openApprovals(
+      tester,
+      configureLedger: (value) {
+        ledger = value;
+        value.submitWithdraw(
+          driverId: MockCashLedger.senderId,
+          amountEgp: 500,
+          createdAt: DateTime(2026, 10, 20, 9),
+        );
+      },
+    );
+
+    expect(ledger.currentBalance(MockCashLedger.senderId), 2200);
+    expect(ledger.availableBalance(MockCashLedger.senderId), 1700);
+
+    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Approve Cash Receipt'), findsOneWidget);
+    expect(find.text('Current balance'), findsOneWidget);
+    // Must show Current 2,200 and After 4,200 — not Available 1,700 / 3,700.
+    expect(find.text('2,200 EGP'), findsWidgets);
+    expect(find.text('4,200 EGP'), findsOneWidget);
+    expect(find.text('1,700 EGP'), findsNothing);
+    expect(find.text('3,700 EGP'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('approval-cancel')));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('cancel closes a vault receipt without changing the balance', (
@@ -418,6 +454,7 @@ Future<void> _openApprovals(
   bool seedApprovals = true,
   Size surfaceSize = const Size(400, 1200),
   double textScale = 1,
+  void Function(MockCashLedger ledger)? configureLedger,
 }) async {
   tester.view.physicalSize = surfaceSize;
   tester.view.devicePixelRatio = 1;
@@ -443,6 +480,7 @@ Future<void> _openApprovals(
       home: HomeScope(
         now: () => DateTime(2026, 10, 20, 9),
         seedApprovals: seedApprovals,
+        configureLedger: configureLedger,
       ),
     ),
   );

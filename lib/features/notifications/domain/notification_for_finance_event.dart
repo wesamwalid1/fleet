@@ -1,4 +1,5 @@
 import '../../../core/localization/localized_string.dart';
+import '../../finance/domain/entities/cash_request.dart';
 import '../../finance/domain/entities/finance_event.dart';
 import 'entities/app_notification.dart';
 
@@ -9,6 +10,9 @@ import 'entities/app_notification.dart';
 /// decision: approving an incoming transfer notifies the sender. A new
 /// transfer notifies both drivers: the recipient that it awaits them, and the
 /// sender that it was sent and awaits confirmation.
+///
+/// Cash-request approval/rejection updates reuse the submission dedup key so
+/// the bridge can update the same row instead of inserting a duplicate.
 List<AppNotification> notificationsForFinanceEvent(
   FinanceEvent event, {
   required LocalizedString Function(String driverId) nameOf,
@@ -82,6 +86,75 @@ List<AppNotification> notificationsForFinanceEvent(
         amountEgp: receipt.amountEgp,
       ),
     ],
+    CashRequestCreated(:final request) => [
+      _cashRequestNotification(
+        request,
+        type: _pendingType(request.type),
+        createdAt: request.createdAt,
+      ),
+    ],
+    CashRequestApproved(:final request) => [
+      _cashRequestNotification(
+        request,
+        type: _approvedType(request.type),
+        createdAt: request.processedAt ?? request.createdAt,
+      ),
+    ],
+    CashRequestRejected(:final request) => [
+      _cashRequestNotification(
+        request,
+        type: _rejectedType(request.type),
+        createdAt: request.processedAt ?? request.createdAt,
+      ),
+    ],
+  };
+}
+
+/// Whether this outcome should update an existing cash-request notification.
+bool financeEventUpdatesCashRequestNotification(FinanceEvent event) {
+  return event is CashRequestApproved || event is CashRequestRejected;
+}
+
+AppNotification _cashRequestNotification(
+  CashRequest request, {
+  required NotificationType type,
+  required DateTime createdAt,
+}) {
+  final key = AppNotification.cashRequestDedupKey(
+    driverId: request.driverId,
+    entityId: request.id,
+  );
+  return AppNotification(
+    id: key,
+    driverId: request.driverId,
+    type: type,
+    entityType: NotificationEntityType.cashRequest,
+    entityId: request.id,
+    createdAt: createdAt,
+    dedupKey: key,
+    source: NotificationSource.event,
+    amountEgp: request.amountEgp,
+  );
+}
+
+NotificationType _pendingType(CashRequestType type) {
+  return switch (type) {
+    CashRequestType.requestCash => NotificationType.requestCashPending,
+    CashRequestType.withdraw => NotificationType.withdrawPending,
+  };
+}
+
+NotificationType _approvedType(CashRequestType type) {
+  return switch (type) {
+    CashRequestType.requestCash => NotificationType.requestCashApproved,
+    CashRequestType.withdraw => NotificationType.withdrawApproved,
+  };
+}
+
+NotificationType _rejectedType(CashRequestType type) {
+  return switch (type) {
+    CashRequestType.requestCash => NotificationType.requestCashRejected,
+    CashRequestType.withdraw => NotificationType.withdrawRejected,
   };
 }
 

@@ -176,6 +176,9 @@ class _FakeTransfers implements CashTransferRepository {
   Future<int> getAvailableBalance(String senderId) async => balance;
 
   @override
+  Future<int> getCurrentBalance(String senderId) async => balance;
+
+  @override
   Future<CashTransfer> createPendingTransfer({
     required String senderId,
     required String recipientId,

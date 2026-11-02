@@ -3,7 +3,15 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/localization/localized_string.dart';
 import '../../../finance/domain/entities/settlement_type.dart';
 
-enum HistoryKind { expense, roadExpense, vault, incoming, outgoing }
+enum HistoryKind {
+  expense,
+  roadExpense,
+  vault,
+  incoming,
+  outgoing,
+  requestCash,
+  withdraw,
+}
 
 enum HistoryFilter {
   all,
@@ -40,6 +48,8 @@ class HistoryEntry extends Equatable {
   final String tripId;
   final LocalizedString counterpartyName;
   final String counterpartyId;
+  final String? note;
+  final String requestNumber;
 
   const HistoryEntry({
     required this.id,
@@ -53,6 +63,8 @@ class HistoryEntry extends Equatable {
     this.tripId = '',
     this.counterpartyName = LocalizedString.empty,
     this.counterpartyId = '',
+    this.note,
+    this.requestNumber = '',
   });
 
   bool get isPending =>
@@ -64,7 +76,10 @@ class HistoryEntry extends Equatable {
       HistoryFilter.all => true,
       HistoryFilter.expenses =>
         kind == HistoryKind.expense || kind == HistoryKind.roadExpense,
-      HistoryFilter.vault => kind == HistoryKind.vault,
+      HistoryFilter.vault =>
+        kind == HistoryKind.vault ||
+            kind == HistoryKind.requestCash ||
+            kind == HistoryKind.withdraw,
       HistoryFilter.drivers => kind == HistoryKind.incoming,
       HistoryFilter.sent => kind == HistoryKind.outgoing,
       HistoryFilter.pending => isPending,
@@ -116,6 +131,8 @@ class HistoryEntry extends Equatable {
     tripId,
     counterpartyName,
     counterpartyId,
+    note,
+    requestNumber,
   ];
 }
 

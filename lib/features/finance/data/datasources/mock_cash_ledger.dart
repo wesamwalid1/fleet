@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import '../../../../core/localization/localized_string.dart';
+import '../../../home/domain/entities/money_transaction.dart';
 import '../../domain/entities/approval_timing.dart';
 import '../../domain/entities/assigned_trip.dart';
+import '../../domain/entities/cash_request.dart';
 import '../../domain/entities/cash_transfer.dart';
 import '../../domain/entities/custody_receipt.dart';
 import '../../domain/entities/expense_attachment.dart';
@@ -13,6 +15,7 @@ import '../../domain/entities/finance_event.dart';
 import '../../domain/entities/road_expense_approval.dart';
 import '../../domain/entities/settlement_type.dart';
 import '../../domain/failures/approval_exception.dart';
+import '../../domain/failures/cash_request_exception.dart';
 import '../../domain/failures/expense_exception.dart';
 import '../../domain/failures/send_cash_exception.dart';
 import 'mock_assigned_trips.dart';
@@ -43,14 +46,21 @@ class MockCashLedger {
   final Map<String, ApprovalTiming> _timings = {};
   final List<AssignedTrip> _trips = List.of(MockAssignedTrips.trips);
   final List<ExpenseRequest> _expenses = [];
+  final List<CashRequest> _cashRequests = [];
+  final List<MoneyTransaction> _transactions = [];
+  final int maxLimitEgp;
   int _sequence = 124;
   int _expenseSequence = 412138;
+  int _requestCashSequence = 1;
+  int _withdrawSequence = 1;
+  int _transactionSequence = 1;
   bool _approvalsSeeded = false;
   final List<void Function(FinanceEvent event)> _listeners = [];
   final StreamController<void> _changes = StreamController<void>.broadcast();
 
   /// Fires after every successful change to balances, transfers, receipts,
-  /// road expenses, or expenses. Failed operations and seeding do not fire.
+  /// road expenses, expenses, or cash requests. Failed operations and seeding
+  /// do not fire.
   Stream<void> get changes => _changes.stream;
 
   void _changed() => _changes.add(null);
@@ -70,7 +80,7 @@ class MockCashLedger {
     }
   }
 
-  MockCashLedger({required int senderBalanceEgp}) {
+  MockCashLedger({required int senderBalanceEgp, this.maxLimitEgp = 5000}) {
     const seeds = [
       _DriverSeed(
         senderId,
@@ -101,10 +111,48 @@ class MockCashLedger {
     }
   }
 
+  /// Cash currently held by the driver (not reduced by pending withdraws).
   int balanceOf(String driverId) {
     final balance = _balances[driverId];
     if (balance == null) throw UnknownDriverException(driverId);
     return balance;
+  }
+
+  int currentBalance(String driverId) => balanceOf(driverId);
+
+  int reservedWithdraw(String driverId) {
+    var total = 0;
+    for (final request in _cashRequests) {
+      if (request.driverId == driverId &&
+          request.type == CashRequestType.withdraw &&
+          request.status == CashRequestStatus.pending) {
+        total += request.amountEgp;
+      }
+    }
+    return total;
+  }
+
+  /// Spendable cash after pending withdraw reservations.
+  int availableBalance(String driverId) {
+    return currentBalance(driverId) - reservedWithdraw(driverId);
+  }
+
+  int pendingRequestCash(String driverId) {
+    var total = 0;
+    for (final request in _cashRequests) {
+      if (request.driverId == driverId &&
+          request.type == CashRequestType.requestCash &&
+          request.status == CashRequestStatus.pending) {
+        total += request.amountEgp;
+      }
+    }
+    return total;
+  }
+
+  int availableRequestCapacity(String driverId) {
+    return maxLimitEgp -
+        currentBalance(driverId) -
+        pendingRequestCash(driverId);
   }
 
   List<FinanceDriver> recipients(String senderId) {
@@ -122,6 +170,11 @@ class MockCashLedger {
       List.unmodifiable(_roads);
 
   List<ExpenseRequest> get expenses => List.unmodifiable(_expenses);
+
+  List<CashRequest> get cashRequests => List.unmodifiable(_cashRequests);
+
+  /// Financial movements created when a cash request is approved.
+  List<MoneyTransaction> get transactions => List.unmodifiable(_transactions);
 
   ApprovalTiming? timingFor(String id) => _timings[id];
 
@@ -353,7 +406,7 @@ class MockCashLedger {
     if (!tripScope.allows(trip)) throw const IneligibleTripException();
     final balance = _balances[driverId];
     if (balance == null) throw UnknownDriverException(driverId);
-    if (amountEgp > balance) {
+    if (amountEgp > availableBalance(driverId)) {
       throw const InsufficientExpenseBalanceException();
     }
 
@@ -418,7 +471,9 @@ class MockCashLedger {
     final recipientBalance = _balances[recipientId];
     if (senderBalance == null) throw UnknownDriverException(senderId);
     if (recipientBalance == null) throw UnknownDriverException(recipientId);
-    if (amountEgp > senderBalance) throw const InsufficientBalanceException();
+    if (amountEgp > availableBalance(senderId)) {
+      throw const InsufficientBalanceException();
+    }
 
     _balances[senderId] = senderBalance - amountEgp;
     final transfer = CashTransfer(
@@ -481,6 +536,170 @@ class MockCashLedger {
       (transfer) => transfer.id == transferId,
     );
     if (index < 0) throw const TransferNotFoundException();
+    return index;
+  }
+
+  CashRequest submitRequestCash({
+    required String driverId,
+    required int amountEgp,
+    required DateTime createdAt,
+    String? note,
+  }) {
+    if (amountEgp <= 0) throw InvalidCashRequestAmountException(amountEgp);
+    balanceOf(driverId);
+    if (amountEgp > availableRequestCapacity(driverId)) {
+      throw const InsufficientRequestCapacityException();
+    }
+
+    final number = 'RC-${_requestCashSequence.toString().padLeft(3, '0')}';
+    _requestCashSequence += 1;
+    final request = CashRequest(
+      id: number,
+      requestNumber: number,
+      driverId: driverId,
+      type: CashRequestType.requestCash,
+      amountEgp: amountEgp,
+      note: _trimmedNote(note),
+      status: CashRequestStatus.pending,
+      createdAt: createdAt,
+    );
+    _cashRequests.add(request);
+    _emit(CashRequestCreated(request));
+    _changed();
+    return request;
+  }
+
+  CashRequest submitWithdraw({
+    required String driverId,
+    required int amountEgp,
+    required DateTime createdAt,
+    String? note,
+  }) {
+    if (amountEgp <= 0) throw InvalidCashRequestAmountException(amountEgp);
+    balanceOf(driverId);
+    if (amountEgp > availableBalance(driverId)) {
+      throw const InsufficientWithdrawBalanceException();
+    }
+
+    final number = 'WD-${_withdrawSequence.toString().padLeft(3, '0')}';
+    _withdrawSequence += 1;
+    final request = CashRequest(
+      id: number,
+      requestNumber: number,
+      driverId: driverId,
+      type: CashRequestType.withdraw,
+      amountEgp: amountEgp,
+      note: _trimmedNote(note),
+      status: CashRequestStatus.pending,
+      createdAt: createdAt,
+    );
+    _cashRequests.add(request);
+    _emit(CashRequestCreated(request));
+    _changed();
+    return request;
+  }
+
+  /// Domain/test API for future company approval. Not exposed in the driver UI.
+  CashRequest approveCashRequest(String requestId, {DateTime? processedAt}) {
+    final index = _cashRequestIndex(requestId);
+    final request = _cashRequests[index];
+    if (request.status != CashRequestStatus.pending) {
+      throw const CashRequestAlreadyFinalizedException();
+    }
+    if (_transactionForCashRequest(request.id) != null) {
+      throw const CashRequestAlreadyFinalizedException();
+    }
+
+    final balance = _balances[request.driverId];
+    if (balance == null) throw UnknownDriverException(request.driverId);
+    final at = processedAt ?? DateTime.now();
+
+    switch (request.type) {
+      case CashRequestType.requestCash:
+        _balances[request.driverId] = balance + request.amountEgp;
+        _transactions.add(
+          MoneyTransaction(
+            type: MoneyTransactionType.cashReceived,
+            amountEgp: request.amountEgp,
+            label: request.requestNumber,
+            id: _nextTransactionId(at),
+            cashRequestId: request.id,
+            createdAt: at,
+          ),
+        );
+      case CashRequestType.withdraw:
+        if (request.amountEgp > balance) {
+          throw const InsufficientWithdrawBalanceException();
+        }
+        _balances[request.driverId] = balance - request.amountEgp;
+        _transactions.add(
+          MoneyTransaction(
+            type: MoneyTransactionType.expense,
+            amountEgp: request.amountEgp,
+            label: request.requestNumber,
+            id: _nextTransactionId(at),
+            cashRequestId: request.id,
+            createdAt: at,
+          ),
+        );
+    }
+
+    final updated = request.copyWith(
+      status: CashRequestStatus.approved,
+      processedAt: at,
+    );
+    _cashRequests[index] = updated;
+    _emit(CashRequestApproved(updated));
+    _changed();
+    return updated;
+  }
+
+  /// Domain/test API for future company rejection. Not exposed in the driver UI.
+  CashRequest rejectCashRequest(String requestId, {DateTime? processedAt}) {
+    final index = _cashRequestIndex(requestId);
+    final request = _cashRequests[index];
+    if (request.status != CashRequestStatus.pending) {
+      throw const CashRequestAlreadyFinalizedException();
+    }
+    if (_transactionForCashRequest(request.id) != null) {
+      throw const CashRequestAlreadyFinalizedException();
+    }
+
+    final updated = request.copyWith(
+      status: CashRequestStatus.rejected,
+      processedAt: processedAt ?? DateTime.now(),
+    );
+    _cashRequests[index] = updated;
+    _emit(CashRequestRejected(updated));
+    _changed();
+    return updated;
+  }
+
+  String? _trimmedNote(String? note) {
+    final trimmed = note?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
+  String _nextTransactionId(DateTime at) {
+    final id =
+        'TXN-${at.year}-${_transactionSequence.toString().padLeft(4, '0')}';
+    _transactionSequence += 1;
+    return id;
+  }
+
+  MoneyTransaction? _transactionForCashRequest(String cashRequestId) {
+    for (final transaction in _transactions) {
+      if (transaction.cashRequestId == cashRequestId) return transaction;
+    }
+    return null;
+  }
+
+  int _cashRequestIndex(String requestId) {
+    final index = _cashRequests.indexWhere(
+      (request) => request.id == requestId,
+    );
+    if (index < 0) throw const CashRequestNotFoundException();
     return index;
   }
 

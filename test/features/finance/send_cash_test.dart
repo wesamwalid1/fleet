@@ -1,4 +1,5 @@
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
+import 'package:driver_portal_app/features/finance/data/repositories/cash_request_repository_impl.dart';
 import 'package:driver_portal_app/features/finance/data/repositories/cash_transfer_repository_impl.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/cash_transfer.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/finance_driver.dart';
@@ -7,6 +8,7 @@ import 'package:driver_portal_app/features/finance/domain/repositories/cash_tran
 import 'package:driver_portal_app/features/finance/domain/usecases/approve_cash_transfer.dart';
 import 'package:driver_portal_app/features/finance/domain/usecases/reject_cash_transfer.dart';
 import 'package:driver_portal_app/features/finance/domain/usecases/send_cash.dart';
+import 'package:driver_portal_app/features/finance/domain/usecases/withdraw_cash.dart';
 import 'package:driver_portal_app/features/home/data/datasources/mock_finance_data_source.dart';
 import 'package:driver_portal_app/features/home/data/repositories/session_finance_repository.dart';
 import 'package:driver_portal_app/features/home/domain/summarize_transactions.dart';
@@ -214,6 +216,39 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+    'success result reports Current Balance when a Withdraw is reserved',
+    () async {
+      final ledger = MockCashLedger(senderBalanceEgp: 2200);
+      final requests = CashRequestRepositoryImpl(ledger);
+      final transfers = CashTransferRepositoryImpl(ledger);
+
+      await WithdrawCash(requests)(
+        driverId: MockCashLedger.senderId,
+        amountEgp: 500,
+        createdAt: createdAt,
+      );
+      expect(ledger.currentBalance(MockCashLedger.senderId), 2200);
+      expect(ledger.availableBalance(MockCashLedger.senderId), 1700);
+
+      final result = await SendCash(transfers)(
+        senderId: MockCashLedger.senderId,
+        recipientId: 'DR-003',
+        amountEgp: 200,
+        createdAt: createdAt.add(const Duration(minutes: 1)),
+      );
+
+      // Current after send: 2000; Available: 1500. Success UI needs Current.
+      expect(ledger.currentBalance(MockCashLedger.senderId), 2000);
+      expect(ledger.availableBalance(MockCashLedger.senderId), 1500);
+      expect(result.senderBalanceEgp, 2000);
+      expect(
+        await transfers.getAvailableBalance(MockCashLedger.senderId),
+        1500,
+      );
+    },
+  );
 }
 
 class _Harness {
@@ -253,6 +288,9 @@ class _ThrowingRepository implements CashTransferRepository {
 
   @override
   Future<int> getAvailableBalance(String senderId) async => 0;
+
+  @override
+  Future<int> getCurrentBalance(String senderId) async => 0;
 
   @override
   Future<CashTransfer> approve(String transferId) => throw UnimplementedError();

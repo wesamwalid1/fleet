@@ -156,10 +156,10 @@ void main() {
   testWidgets('send cash blocks tab swipes until the sheet closes', (
     tester,
   ) async {
-    await _pump(tester);
+    await _pump(tester, const Locale('en'), const Size(400, 1400));
+    await tester.ensureVisible(find.byKey(const Key('send-cash')));
     await tester.tap(find.byKey(const Key('send-cash')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
 
     await tester.drag(
       find.byKey(const Key('send-cash-amount')),
@@ -183,10 +183,10 @@ void main() {
   testWidgets('record expense blocks tab swipes through confirmation', (
     tester,
   ) async {
-    await _pump(tester);
+    await _pump(tester, const Locale('en'), const Size(400, 1400));
+    await tester.ensureVisible(find.byKey(const Key('record-expense')));
     await tester.tap(find.byKey(const Key('record-expense')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
 
     expect(find.text('Confirm Expense'), findsNothing);
 

@@ -33,6 +33,15 @@ String notificationTitle(
     ),
     NotificationType.roadExpensePending => l10n.notificationRoadPendingTitle,
     NotificationType.expenseRecorded => l10n.notificationExpenseRecordedTitle,
+    NotificationType.requestCashPending =>
+      l10n.notificationRequestCashPendingTitle,
+    NotificationType.requestCashApproved =>
+      l10n.notificationRequestCashApprovedTitle,
+    NotificationType.requestCashRejected =>
+      l10n.notificationRequestCashRejectedTitle,
+    NotificationType.withdrawPending => l10n.notificationWithdrawPendingTitle,
+    NotificationType.withdrawApproved => l10n.notificationWithdrawApprovedTitle,
+    NotificationType.withdrawRejected => l10n.notificationWithdrawRejectedTitle,
   };
 }
 
@@ -53,6 +62,24 @@ String notificationBody(
       n.entityId,
     ),
     NotificationType.expenseRecorded => l10n.notificationDeductedBody(
+      amount,
+      n.entityId,
+    ),
+    NotificationType.requestCashPending =>
+      l10n.notificationRequestCashPendingBody(amount, n.entityId),
+    NotificationType.requestCashApproved =>
+      l10n.notificationRequestCashApprovedBody(amount, n.entityId),
+    NotificationType.requestCashRejected =>
+      l10n.notificationRequestCashRejectedBody(amount, n.entityId),
+    NotificationType.withdrawPending => l10n.notificationWithdrawPendingBody(
+      amount,
+      n.entityId,
+    ),
+    NotificationType.withdrawApproved => l10n.notificationWithdrawApprovedBody(
+      amount,
+      n.entityId,
+    ),
+    NotificationType.withdrawRejected => l10n.notificationWithdrawRejectedBody(
       amount,
       n.entityId,
     ),
@@ -128,6 +155,30 @@ String notificationWhen(
     NotificationType.expenseRecorded => (
       asset: AppIcons.money,
       tint: AppColors.pinkBackground,
+    ),
+    NotificationType.requestCashPending => (
+      asset: AppIcons.vault,
+      tint: AppColors.warningBackground,
+    ),
+    NotificationType.requestCashApproved => (
+      asset: AppIcons.vault,
+      tint: AppColors.successBackground,
+    ),
+    NotificationType.requestCashRejected => (
+      asset: AppIcons.vault,
+      tint: AppColors.dangerBackground,
+    ),
+    NotificationType.withdrawPending => (
+      asset: AppIcons.vault,
+      tint: AppColors.warningBackground,
+    ),
+    NotificationType.withdrawApproved => (
+      asset: AppIcons.vault,
+      tint: AppColors.successBackground,
+    ),
+    NotificationType.withdrawRejected => (
+      asset: AppIcons.vault,
+      tint: AppColors.dangerBackground,
     ),
   };
 }

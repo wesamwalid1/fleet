@@ -15,7 +15,12 @@ class CashTransferRepositoryImpl implements CashTransferRepository {
 
   @override
   Future<int> getAvailableBalance(String senderId) async {
-    return _ledger.balanceOf(senderId);
+    return _ledger.availableBalance(senderId);
+  }
+
+  @override
+  Future<int> getCurrentBalance(String senderId) async {
+    return _ledger.currentBalance(senderId);
   }
 
   @override

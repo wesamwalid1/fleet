@@ -12,9 +12,21 @@ enum NotificationType {
 
   /// The driver sent cash; it waits for the recipient's confirmation.
   transferSent,
+  requestCashPending,
+  requestCashApproved,
+  requestCashRejected,
+  withdrawPending,
+  withdrawApproved,
+  withdrawRejected,
 }
 
-enum NotificationEntityType { vaultReceipt, transfer, roadExpense, expense }
+enum NotificationEntityType {
+  vaultReceipt,
+  transfer,
+  roadExpense,
+  expense,
+  cashRequest,
+}
 
 /// Where a record came from. Seed records are demo data written once on the
 /// driver's first initialization; event records come from business outcomes.
@@ -49,20 +61,34 @@ class AppNotification extends Equatable {
     this.counterpartyName = LocalizedString.empty,
   });
 
-  AppNotification copyWith({bool? read}) {
+  AppNotification copyWith({
+    bool? read,
+    NotificationType? type,
+    DateTime? createdAt,
+    int? amountEgp,
+    LocalizedString? counterpartyName,
+  }) {
     return AppNotification(
       id: id,
       driverId: driverId,
-      type: type,
+      type: type ?? this.type,
       entityType: entityType,
       entityId: entityId,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
       dedupKey: dedupKey,
       source: source,
       read: read ?? this.read,
-      amountEgp: amountEgp,
-      counterpartyName: counterpartyName,
+      amountEgp: amountEgp ?? this.amountEgp,
+      counterpartyName: counterpartyName ?? this.counterpartyName,
     );
+  }
+
+  /// Stable across pending → approved/rejected so the same row is updated.
+  static String cashRequestDedupKey({
+    required String driverId,
+    required String entityId,
+  }) {
+    return '$driverId|cashRequest|$entityId';
   }
 
   @override

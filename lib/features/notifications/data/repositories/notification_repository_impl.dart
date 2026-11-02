@@ -45,6 +45,42 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
+  Future<void> update(AppNotification notification) async {
+    await _serial(() async {
+      final driverId = notification.driverId;
+      await _ensureSeeded(driverId);
+      final current = await _local.read(driverId);
+      final index = current.indexWhere(
+        (item) => item.dedupKey == notification.dedupKey,
+      );
+      if (index < 0) {
+        await _local.write(driverId, [
+          ...current,
+          notification.copyWith(read: false),
+        ]);
+        return;
+      }
+      final existing = current[index];
+      final next = [...current];
+      next[index] = AppNotification(
+        id: existing.id,
+        driverId: notification.driverId,
+        type: notification.type,
+        entityType: notification.entityType,
+        entityId: notification.entityId,
+        createdAt: existing.createdAt,
+        dedupKey: existing.dedupKey,
+        source: existing.source,
+        read: false,
+        amountEgp: notification.amountEgp,
+        counterpartyName: notification.counterpartyName,
+      );
+      await _local.write(driverId, next);
+    });
+    _notify(notification.driverId);
+  }
+
+  @override
   Future<void> markRead({required String driverId, required String id}) async {
     final changed = await _serial(() async {
       final current = await _local.read(driverId);

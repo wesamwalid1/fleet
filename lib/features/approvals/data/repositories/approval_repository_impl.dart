@@ -41,7 +41,9 @@ class ApprovalRepositoryImpl implements ApprovalRepository {
 
   @override
   Future<int> getAvailableBalance(String driverId) async {
-    return _ledger.balanceOf(driverId);
+    // Approvals sheets label this as Current Balance and compute Balance After
+    // from it. Pending Withdraw reservations must not reduce the displayed value.
+    return _ledger.currentBalance(driverId);
   }
 
   @override

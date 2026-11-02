@@ -130,5 +130,13 @@ TypeAvatar historyAvatar(HistoryEntry entry) {
         color: AppColors.primary,
       ),
     ),
+    HistoryKind.requestCash => TypeAvatar.asset(
+      AppIcons.vault,
+      tint: AppColors.successBackground,
+    ),
+    HistoryKind.withdraw => TypeAvatar.asset(
+      AppIcons.vault,
+      tint: AppColors.pinkBackground,
+    ),
   };
 }

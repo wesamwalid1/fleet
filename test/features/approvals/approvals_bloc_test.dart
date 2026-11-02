@@ -65,6 +65,32 @@ void main() {
     expect(state.balanceEgp, 2200);
   });
 
+  test(
+    'balanceEgp stays Current Balance when a Withdraw is reserved',
+    () async {
+      final harness = _Harness(
+        seed: true,
+        beforeBloc: (ledger) {
+          ledger.submitWithdraw(
+            driverId: MockCashLedger.senderId,
+            amountEgp: 500,
+            createdAt: DateTime(2026, 10, 20, 9),
+          );
+        },
+      );
+      expect(harness.ledger.currentBalance('DR-001'), 2200);
+      expect(harness.ledger.availableBalance('DR-001'), 1700);
+
+      final bloc = harness.bloc;
+      addTearDown(bloc.close);
+      bloc.add(const ApprovalsStarted());
+      final state = await bloc.stream.firstWhere((s) => !s.loading);
+
+      expect(state.balanceEgp, 2200);
+      expect(await harness.repository.getAvailableBalance('DR-001'), 2200);
+    },
+  );
+
   test('a finalized vault receipt cannot be approved again', () async {
     final harness = _Harness(seed: true);
     final bloc = harness.bloc;
@@ -109,12 +135,17 @@ void main() {
 
 class _Harness {
   late final MockCashLedger ledger;
+  late final ApprovalRepositoryImpl repository;
   late final ApprovalsBloc bloc;
 
-  _Harness({required bool seed}) {
+  _Harness({
+    required bool seed,
+    void Function(MockCashLedger ledger)? beforeBloc,
+  }) {
     ledger = MockCashLedger(senderBalanceEgp: 2200);
     if (seed) ledger.seedDriverApprovals();
-    final repository = ApprovalRepositoryImpl(ledger);
+    beforeBloc?.call(ledger);
+    repository = ApprovalRepositoryImpl(ledger);
     bloc = ApprovalsBloc(
       driverId: MockCashLedger.senderId,
       repository: repository,

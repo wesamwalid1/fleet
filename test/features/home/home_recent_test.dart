@@ -270,7 +270,7 @@ Future<void> _pump(
   DateTime Function()? now,
   void Function(MockCashLedger ledger)? configureLedger,
 }) async {
-  await tester.binding.setSurfaceSize(const Size(400, 1400));
+  await tester.binding.setSurfaceSize(const Size(400, 2400));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     MaterialApp(

@@ -66,6 +66,8 @@ String historyTitle(AppLocalizations l10n, HistoryEntry entry) {
     HistoryKind.incoming when entry.isPending => l10n.pendingFrom(name),
     HistoryKind.incoming => l10n.receivedFromDriver(name),
     HistoryKind.outgoing => l10n.sentTo(name),
+    HistoryKind.requestCash => l10n.historyRequestCash,
+    HistoryKind.withdraw => l10n.historyWithdraw,
   };
 }
 
@@ -90,6 +92,8 @@ bool historyMatches(AppLocalizations l10n, HistoryEntry entry, String query) {
       hit(entry.id) ||
       hit(entry.tripCode) ||
       hit(entry.tripId) ||
+      hit(entry.requestNumber) ||
+      hit(entry.note ?? '') ||
       entry.counterpartyName.matchesQuery(needle) ||
       hit(entry.counterpartyId);
 }
@@ -110,6 +114,14 @@ String historySubtitle(AppLocalizations l10n, HistoryEntry entry) {
     HistoryKind.expense || HistoryKind.roadExpense => entry.tripCode,
     HistoryKind.vault => l10n.driversVault,
     HistoryKind.incoming || HistoryKind.outgoing => entry.counterpartyId,
+    HistoryKind.requestCash || HistoryKind.withdraw =>
+      entry.requestNumber.isEmpty ? entry.id : entry.requestNumber,
   };
-  return '$reference · $marked';
+  final pendingHint =
+      entry.isPending &&
+          (entry.kind == HistoryKind.requestCash ||
+              entry.kind == HistoryKind.withdraw)
+      ? ' · ${l10n.historyPendingBalanceUnchanged}'
+      : '';
+  return '$reference · $marked$pendingHint';
 }
