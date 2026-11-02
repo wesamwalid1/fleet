@@ -28,18 +28,18 @@ class HistoryRepositoryImpl implements HistoryRepository {
         else if (transfer.senderId == driverId)
           _outgoing(transfer),
       for (final approval in _ledger.roadExpenseApprovals)
-        if (approval.driverId == driverId &&
-            approval.status != RoadExpenseStatus.pending)
-          _roadExpense(approval),
+        if (approval.driverId == driverId) _roadExpense(approval),
       for (final request in _ledger.cashRequests)
         if (request.driverId == driverId) _cashRequest(request),
     ];
-    entries.sort((a, b) {
-      final byTime = b.occurredAt.compareTo(a.occurredAt);
-      if (byTime != 0) return byTime;
-      return b.id.compareTo(a.id);
-    });
+    entries.sort(_byUpdatedAtDesc);
     return entries;
+  }
+
+  static int _byUpdatedAtDesc(HistoryEntry a, HistoryEntry b) {
+    final byTime = b.updatedAt.compareTo(a.updatedAt);
+    if (byTime != 0) return byTime;
+    return b.id.compareTo(a.id);
   }
 
   HistoryEntry _expense(ExpenseRequest expense) {
@@ -48,75 +48,114 @@ class HistoryRepositoryImpl implements HistoryRepository {
       kind: HistoryKind.expense,
       amountEgp: expense.amountEgp,
       credit: false,
-      occurredAt: expense.createdAt,
+      createdAt: expense.createdAt,
+      updatedAt: expense.createdAt,
       status: HistoryDisplayStatus.recorded,
       settlementType: expense.settlementType,
       tripCode: _ledger.codeForTrip(expense.tripId),
       tripId: expense.tripId,
+      note: expense.notes,
+      balanceBeforeEgp: expense.balanceBeforeEgp,
+      balanceAfterEgp: expense.balanceAfterEgp,
     );
   }
 
   HistoryEntry _vault(CustodyReceipt receipt) {
+    final createdAt = receipt.createdAt;
     return HistoryEntry(
       id: receipt.id,
       kind: HistoryKind.vault,
       amountEgp: receipt.amountEgp,
       credit: true,
-      occurredAt: receipt.createdAt,
+      createdAt: createdAt,
+      updatedAt: historyActivityAt(
+        createdAt: createdAt,
+        updatedAt: receipt.finalizedAt,
+      ),
       status: receipt.status == CustodyReceiptStatus.pending
           ? HistoryDisplayStatus.awaitingApproval
           : HistoryDisplayStatus.approved,
+      balanceBeforeEgp: receipt.balanceBeforeEgp,
+      balanceAfterEgp: receipt.balanceAfterEgp,
     );
   }
 
   HistoryEntry _incoming(CashTransfer transfer) {
+    final createdAt = transfer.createdAt;
     return HistoryEntry(
       id: transfer.id,
       kind: HistoryKind.incoming,
       amountEgp: transfer.amountEgp,
       credit: true,
-      occurredAt: transfer.createdAt,
+      createdAt: createdAt,
+      updatedAt: historyActivityAt(
+        createdAt: createdAt,
+        updatedAt: transfer.finalizedAt,
+      ),
       status: _transferStatus(transfer.status, incoming: true),
       counterpartyName: _ledger.nameOf(transfer.senderId),
       counterpartyId: transfer.senderId,
+      balanceBeforeEgp: transfer.recipientBalanceBeforeEgp,
+      balanceAfterEgp: transfer.recipientBalanceAfterEgp,
     );
   }
 
   HistoryEntry _roadExpense(RoadExpenseApproval approval) {
+    final createdAt = approval.submittedAt;
     return HistoryEntry(
       id: approval.id,
       kind: HistoryKind.roadExpense,
       amountEgp: approval.amountEgp,
       credit: false,
-      occurredAt: approval.submittedAt,
-      status: approval.status == RoadExpenseStatus.rejected
-          ? HistoryDisplayStatus.rejected
-          : HistoryDisplayStatus.approved,
+      createdAt: createdAt,
+      updatedAt: historyActivityAt(
+        createdAt: createdAt,
+        updatedAt: approval.finalizedAt,
+      ),
+      status: switch (approval.status) {
+        RoadExpenseStatus.pending => HistoryDisplayStatus.awaitingApproval,
+        RoadExpenseStatus.rejected => HistoryDisplayStatus.rejected,
+        RoadExpenseStatus.approved => HistoryDisplayStatus.approved,
+      },
       tripCode: approval.id,
+      note: approval.submittedBy,
+      // Road expense confirm/reject does not move the driver balance.
     );
   }
 
   HistoryEntry _outgoing(CashTransfer transfer) {
+    final createdAt = transfer.createdAt;
     return HistoryEntry(
       id: transfer.id,
       kind: HistoryKind.outgoing,
       amountEgp: transfer.amountEgp,
       credit: false,
-      occurredAt: transfer.createdAt,
+      createdAt: createdAt,
+      updatedAt: historyActivityAt(
+        createdAt: createdAt,
+        updatedAt: transfer.finalizedAt,
+      ),
       status: _transferStatus(transfer.status, incoming: false),
       counterpartyName: _ledger.nameOf(transfer.recipientId),
       counterpartyId: transfer.recipientId,
+      balanceBeforeEgp: transfer.senderBalanceBeforeEgp,
+      balanceAfterEgp: transfer.senderBalanceAfterEgp,
     );
   }
 
   HistoryEntry _cashRequest(CashRequest request) {
     final isRequestCash = request.type == CashRequestType.requestCash;
+    final createdAt = request.createdAt;
     return HistoryEntry(
       id: request.id,
       kind: isRequestCash ? HistoryKind.requestCash : HistoryKind.withdraw,
       amountEgp: request.amountEgp,
       credit: isRequestCash,
-      occurredAt: request.createdAt,
+      createdAt: createdAt,
+      updatedAt: historyActivityAt(
+        createdAt: createdAt,
+        updatedAt: request.processedAt,
+      ),
       status: switch (request.status) {
         CashRequestStatus.pending => HistoryDisplayStatus.pendingConfirm,
         CashRequestStatus.approved => HistoryDisplayStatus.approved,
@@ -124,6 +163,8 @@ class HistoryRepositoryImpl implements HistoryRepository {
       },
       note: request.note,
       requestNumber: request.requestNumber,
+      balanceBeforeEgp: request.balanceBeforeEgp,
+      balanceAfterEgp: request.balanceAfterEgp,
     );
   }
 

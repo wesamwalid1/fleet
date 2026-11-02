@@ -43,7 +43,8 @@ HistoryEntry _entry(
         kind != HistoryKind.expense &&
         kind != HistoryKind.roadExpense &&
         kind != HistoryKind.outgoing,
-    occurredAt: occurredAt,
+    createdAt: occurredAt,
+    updatedAt: occurredAt,
     status: HistoryDisplayStatus.approved,
   );
 }

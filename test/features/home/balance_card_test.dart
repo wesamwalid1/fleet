@@ -64,13 +64,13 @@ void main() {
     expect(
       find.descendant(
         of: recent,
-        matching: find.textContaining('DR-004 · Approved'),
+        matching: find.text('Pending — from Khaled Ramadan'),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(of: recent, matching: find.text('Road Expense Approval')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       tester.getCenter(find.text('Remaining Limit')).dx,

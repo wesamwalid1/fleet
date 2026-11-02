@@ -437,6 +437,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get balanceAfter => 'Balance After';
 
   @override
+  String get balanceBefore => 'Balance Before';
+
+  @override
+  String get balanceSnapshotTitle => 'Balance change';
+
+  @override
+  String get balanceSnapshotUnavailable => 'Not available';
+
+  @override
   String get back => 'Back';
 
   @override
@@ -677,7 +686,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseDetails => 'Expense Details';
 
   @override
+  String get transactionDetails => 'Transaction Details';
+
+  @override
   String get historyDeducted => 'DEDUCTED';
+
+  @override
+  String get historyDebit => 'DEBIT';
+
+  @override
+  String get historyCredit => 'CREDIT';
+
+  @override
+  String get historyTimeline => 'Timeline';
+
+  @override
+  String get timelineCreated => 'Created';
+
+  @override
+  String get timelineStillPending => 'Still pending';
+
+  @override
+  String timelineStatusUpdated(String status) {
+    return 'Status updated — $status';
+  }
+
+  @override
+  String get createdAtLabel => 'Created';
+
+  @override
+  String get updatedAtLabel => 'Last updated';
+
+  @override
+  String get recipient => 'Recipient';
+
+  @override
+  String get driverId => 'Driver ID';
+
+  @override
+  String get requestNumber => 'Request number';
+
+  @override
+  String get source => 'Source';
+
+  @override
+  String get expenseType => 'Expense type';
+
+  @override
+  String get note => 'Note';
+
+  @override
+  String get status => 'Status';
 
   @override
   String get noTransactions => 'No transactions';

@@ -16,6 +16,12 @@ class CashRequest extends Equatable {
   final DateTime createdAt;
   final DateTime? processedAt;
 
+  /// Driver balance immediately before the approval movement. Set on approve.
+  final int? balanceBeforeEgp;
+
+  /// Driver balance immediately after the approval movement. Set on approve.
+  final int? balanceAfterEgp;
+
   const CashRequest({
     required this.id,
     required this.requestNumber,
@@ -26,9 +32,16 @@ class CashRequest extends Equatable {
     required this.status,
     this.note,
     this.processedAt,
+    this.balanceBeforeEgp,
+    this.balanceAfterEgp,
   });
 
-  CashRequest copyWith({CashRequestStatus? status, DateTime? processedAt}) {
+  CashRequest copyWith({
+    CashRequestStatus? status,
+    DateTime? processedAt,
+    int? balanceBeforeEgp,
+    int? balanceAfterEgp,
+  }) {
     return CashRequest(
       id: id,
       requestNumber: requestNumber,
@@ -39,6 +52,8 @@ class CashRequest extends Equatable {
       status: status ?? this.status,
       createdAt: createdAt,
       processedAt: processedAt ?? this.processedAt,
+      balanceBeforeEgp: balanceBeforeEgp ?? this.balanceBeforeEgp,
+      balanceAfterEgp: balanceAfterEgp ?? this.balanceAfterEgp,
     );
   }
 
@@ -53,5 +68,7 @@ class CashRequest extends Equatable {
     status,
     createdAt,
     processedAt,
+    balanceBeforeEgp,
+    balanceAfterEgp,
   ];
 }

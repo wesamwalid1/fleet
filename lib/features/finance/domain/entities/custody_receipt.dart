@@ -10,6 +10,12 @@ class CustodyReceipt extends Equatable {
   final CustodyReceiptStatus status;
   final DateTime? finalizedAt;
 
+  /// Driver balance immediately before the vault credit. Set on approval.
+  final int? balanceBeforeEgp;
+
+  /// Driver balance immediately after the vault credit. Set on approval.
+  final int? balanceAfterEgp;
+
   const CustodyReceipt({
     required this.id,
     required this.driverId,
@@ -17,11 +23,15 @@ class CustodyReceipt extends Equatable {
     required this.createdAt,
     required this.status,
     this.finalizedAt,
+    this.balanceBeforeEgp,
+    this.balanceAfterEgp,
   });
 
   CustodyReceipt copyWith({
     CustodyReceiptStatus? status,
     DateTime? finalizedAt,
+    int? balanceBeforeEgp,
+    int? balanceAfterEgp,
   }) {
     return CustodyReceipt(
       id: id,
@@ -30,6 +40,8 @@ class CustodyReceipt extends Equatable {
       createdAt: createdAt,
       status: status ?? this.status,
       finalizedAt: finalizedAt ?? this.finalizedAt,
+      balanceBeforeEgp: balanceBeforeEgp ?? this.balanceBeforeEgp,
+      balanceAfterEgp: balanceAfterEgp ?? this.balanceAfterEgp,
     );
   }
 
@@ -41,5 +53,7 @@ class CustodyReceipt extends Equatable {
     createdAt,
     status,
     finalizedAt,
+    balanceBeforeEgp,
+    balanceAfterEgp,
   ];
 }

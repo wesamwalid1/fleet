@@ -33,8 +33,8 @@ import '../../../history/presentation/bloc/history_bloc.dart';
 import '../../../history/presentation/bloc/history_event.dart';
 import '../../../history/presentation/bloc/history_state.dart';
 import '../../../history/presentation/history_format.dart';
-import '../../../history/presentation/widgets/expense_detail_sheet.dart';
 import '../../../history/presentation/widgets/history_entry_tile.dart';
+import '../../../history/presentation/widgets/transaction_detail_sheet.dart';
 import '../../../notifications/presentation/bloc/notifications_bloc.dart';
 import '../../../notifications/presentation/bloc/notifications_state.dart';
 import '../../domain/entities/financial_summary.dart';
@@ -1621,10 +1621,8 @@ class _RecentSection extends StatelessWidget {
                           now(),
                           locale,
                         ),
-                        onTap: entry.kind == HistoryKind.expense
-                            ? () =>
-                                  showExpenseDetailSheet(context, entry: entry)
-                            : null,
+                        onTap: () =>
+                            showTransactionDetailSheet(context, entry: entry),
                       ),
                 ],
               );

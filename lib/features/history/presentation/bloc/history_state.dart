@@ -29,11 +29,13 @@ class HistoryState extends Equatable {
     this.highlightedId,
   });
 
+  /// Confirmed expense totals: recorded expenses + approved road expenses only.
   int get expenseCount => entries
       .where(
         (entry) =>
             entry.kind == HistoryKind.expense ||
-            entry.kind == HistoryKind.roadExpense,
+            (entry.kind == HistoryKind.roadExpense &&
+                entry.status == HistoryDisplayStatus.approved),
       )
       .length;
 

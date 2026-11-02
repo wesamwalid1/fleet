@@ -381,7 +381,10 @@ void main() {
       expect(state.filter, HistoryFilter.expenses);
       expect(state.highlightedId, 'DSB-2025-0441');
       expect(state.loading, isFalse);
-      expect(state.visible.single.id, expense.id);
+      expect(
+        state.visible.map((entry) => entry.id),
+        containsAll([expense.id, 'RE-2026-1041']),
+      );
       expect(state.entries.first.id, expense.id);
       await bloc.close();
     });

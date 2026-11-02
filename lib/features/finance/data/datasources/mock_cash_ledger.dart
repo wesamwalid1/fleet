@@ -314,10 +314,13 @@ class MockCashLedger {
     }
     final balance = _balances[receipt.driverId];
     if (balance == null) throw UnknownDriverException(receipt.driverId);
-    _balances[receipt.driverId] = balance + receipt.amountEgp;
+    final after = balance + receipt.amountEgp;
+    _balances[receipt.driverId] = after;
     final updated = receipt.copyWith(
       status: CustodyReceiptStatus.approved,
       finalizedAt: finalizedAt ?? DateTime.now(),
+      balanceBeforeEgp: balance,
+      balanceAfterEgp: after,
     );
     _receipts[index] = updated;
     _changed();
@@ -412,7 +415,8 @@ class MockCashLedger {
 
     final trimmed = notes?.trim();
     final storedNotes = trimmed == null || trimmed.isEmpty ? null : trimmed;
-    _balances[driverId] = balance - amountEgp;
+    final after = balance - amountEgp;
+    _balances[driverId] = after;
     final expense = ExpenseRequest(
       id: 'EXP-$_expenseSequence',
       driverId: driverId,
@@ -423,6 +427,8 @@ class MockCashLedger {
       attachments: List.unmodifiable(attachments),
       createdAt: createdAt,
       status: ExpenseStatus.recorded,
+      balanceBeforeEgp: balance,
+      balanceAfterEgp: after,
     );
     _expenseSequence += 1;
     _expenses.add(expense);
@@ -475,7 +481,8 @@ class MockCashLedger {
       throw const InsufficientBalanceException();
     }
 
-    _balances[senderId] = senderBalance - amountEgp;
+    final senderAfter = senderBalance - amountEgp;
+    _balances[senderId] = senderAfter;
     final transfer = CashTransfer(
       id: 'TRF-${createdAt.year}-${_sequence.toString().padLeft(4, '0')}',
       senderId: senderId,
@@ -483,6 +490,8 @@ class MockCashLedger {
       amountEgp: amountEgp,
       createdAt: createdAt,
       status: TransferStatus.pending,
+      senderBalanceBeforeEgp: senderBalance,
+      senderBalanceAfterEgp: senderAfter,
     );
     _sequence += 1;
     _transfers.add(transfer);
@@ -501,10 +510,13 @@ class MockCashLedger {
     if (recipientBalance == null) {
       throw UnknownDriverException(transfer.recipientId);
     }
-    _balances[transfer.recipientId] = recipientBalance + transfer.amountEgp;
+    final recipientAfter = recipientBalance + transfer.amountEgp;
+    _balances[transfer.recipientId] = recipientAfter;
     final updated = transfer.copyWith(
       status: TransferStatus.approved,
       finalizedAt: finalizedAt ?? DateTime.now(),
+      recipientBalanceBeforeEgp: recipientBalance,
+      recipientBalanceAfterEgp: recipientAfter,
     );
     _transfers[index] = updated;
     _emit(TransferApproved(updated));
@@ -520,6 +532,7 @@ class MockCashLedger {
     }
     final senderBalance = _balances[transfer.senderId];
     if (senderBalance == null) throw UnknownDriverException(transfer.senderId);
+    // Refund restores sender funds. Preserve the original send debit snapshots.
     _balances[transfer.senderId] = senderBalance + transfer.amountEgp;
     final updated = transfer.copyWith(
       status: TransferStatus.rejected,
@@ -614,9 +627,11 @@ class MockCashLedger {
     if (balance == null) throw UnknownDriverException(request.driverId);
     final at = processedAt ?? DateTime.now();
 
+    late final int after;
     switch (request.type) {
       case CashRequestType.requestCash:
-        _balances[request.driverId] = balance + request.amountEgp;
+        after = balance + request.amountEgp;
+        _balances[request.driverId] = after;
         _transactions.add(
           MoneyTransaction(
             type: MoneyTransactionType.cashReceived,
@@ -631,7 +646,8 @@ class MockCashLedger {
         if (request.amountEgp > balance) {
           throw const InsufficientWithdrawBalanceException();
         }
-        _balances[request.driverId] = balance - request.amountEgp;
+        after = balance - request.amountEgp;
+        _balances[request.driverId] = after;
         _transactions.add(
           MoneyTransaction(
             type: MoneyTransactionType.expense,
@@ -647,6 +663,8 @@ class MockCashLedger {
     final updated = request.copyWith(
       status: CashRequestStatus.approved,
       processedAt: at,
+      balanceBeforeEgp: balance,
+      balanceAfterEgp: after,
     );
     _cashRequests[index] = updated;
     _emit(CashRequestApproved(updated));

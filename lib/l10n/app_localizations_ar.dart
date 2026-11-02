@@ -432,7 +432,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get trip => 'الرحلة';
 
   @override
-  String get balanceAfter => 'الرصيد بعد الخصم';
+  String get balanceAfter => 'الرصيد بعد';
+
+  @override
+  String get balanceBefore => 'الرصيد قبل';
+
+  @override
+  String get balanceSnapshotTitle => 'تغيّر الرصيد';
+
+  @override
+  String get balanceSnapshotUnavailable => 'غير متاح';
 
   @override
   String get back => 'رجوع';
@@ -674,7 +683,57 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseDetails => 'تفاصيل المصروف';
 
   @override
+  String get transactionDetails => 'تفاصيل الحركة';
+
+  @override
   String get historyDeducted => 'تم الخصم';
+
+  @override
+  String get historyDebit => 'مدين';
+
+  @override
+  String get historyCredit => 'دائن';
+
+  @override
+  String get historyTimeline => 'الجدول الزمني';
+
+  @override
+  String get timelineCreated => 'تم الإنشاء';
+
+  @override
+  String get timelineStillPending => 'ما زال معلقاً';
+
+  @override
+  String timelineStatusUpdated(String status) {
+    return 'تم تحديث الحالة — $status';
+  }
+
+  @override
+  String get createdAtLabel => 'تاريخ الإنشاء';
+
+  @override
+  String get updatedAtLabel => 'آخر تحديث';
+
+  @override
+  String get recipient => 'المستلم';
+
+  @override
+  String get driverId => 'رقم السائق';
+
+  @override
+  String get requestNumber => 'رقم الطلب';
+
+  @override
+  String get source => 'المصدر';
+
+  @override
+  String get expenseType => 'نوع المصروف';
+
+  @override
+  String get note => 'ملاحظة';
+
+  @override
+  String get status => 'الحالة';
 
   @override
   String get noTransactions => 'لا توجد حركات';

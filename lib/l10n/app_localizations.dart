@@ -866,6 +866,24 @@ abstract class AppLocalizations {
   /// **'Balance After'**
   String get balanceAfter;
 
+  /// No description provided for @balanceBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance Before'**
+  String get balanceBefore;
+
+  /// No description provided for @balanceSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance change'**
+  String get balanceSnapshotTitle;
+
+  /// No description provided for @balanceSnapshotUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get balanceSnapshotUnavailable;
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:
@@ -1280,11 +1298,107 @@ abstract class AppLocalizations {
   /// **'Expense Details'**
   String get expenseDetails;
 
+  /// No description provided for @transactionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction Details'**
+  String get transactionDetails;
+
   /// No description provided for @historyDeducted.
   ///
   /// In en, this message translates to:
   /// **'DEDUCTED'**
   String get historyDeducted;
+
+  /// No description provided for @historyDebit.
+  ///
+  /// In en, this message translates to:
+  /// **'DEBIT'**
+  String get historyDebit;
+
+  /// No description provided for @historyCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'CREDIT'**
+  String get historyCredit;
+
+  /// No description provided for @historyTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get historyTimeline;
+
+  /// No description provided for @timelineCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get timelineCreated;
+
+  /// No description provided for @timelineStillPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Still pending'**
+  String get timelineStillPending;
+
+  /// No description provided for @timelineStatusUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Status updated — {status}'**
+  String timelineStatusUpdated(String status);
+
+  /// No description provided for @createdAtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get createdAtLabel;
+
+  /// No description provided for @updatedAtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated'**
+  String get updatedAtLabel;
+
+  /// No description provided for @recipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient'**
+  String get recipient;
+
+  /// No description provided for @driverId.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver ID'**
+  String get driverId;
+
+  /// No description provided for @requestNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Request number'**
+  String get requestNumber;
+
+  /// No description provided for @source.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get source;
+
+  /// No description provided for @expenseType.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense type'**
+  String get expenseType;
+
+  /// No description provided for @note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get note;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
 
   /// No description provided for @noTransactions.
   ///

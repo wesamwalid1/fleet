@@ -18,9 +18,9 @@ import '../bloc/history_bloc.dart';
 import '../bloc/history_event.dart';
 import '../bloc/history_state.dart';
 import '../history_format.dart';
-import '../widgets/expense_detail_sheet.dart';
 import '../widgets/history_entry_tile.dart';
 import '../widgets/history_filter_sheet.dart';
+import '../widgets/transaction_detail_sheet.dart';
 
 class HistoryPage extends StatefulWidget {
   final DateTime Function() now;
@@ -238,16 +238,11 @@ class _HistoryPageState extends State<HistoryPage> {
                                     showDivider: true,
                                     highlighted:
                                         state.highlightedId == entry.id,
-                                    when: historyClock(
-                                      entry.occurredAt,
-                                      locale,
+                                    when: historyClock(entry.updatedAt, locale),
+                                    onTap: () => showTransactionDetailSheet(
+                                      context,
+                                      entry: entry,
                                     ),
-                                    onTap: entry.kind == HistoryKind.expense
-                                        ? () => showExpenseDetailSheet(
-                                            context,
-                                            entry: entry,
-                                          )
-                                        : null,
                                   ),
                               ],
                           ],

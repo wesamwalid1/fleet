@@ -43,9 +43,7 @@ class HistoryEntryTile extends StatelessWidget {
         subtitle: historySubtitle(l10n, entry),
         subtitleColor: historyStatusColor(entry.status),
         amount: signedHistoryAmount(entry, locale: locale, currency: l10n.egp),
-        amountColor: entry.credit
-            ? AppColors.creditText
-            : AppSurfaces.of(context).title,
+        amountColor: historyAmountColor(entry),
         when: when,
         detailsKey: Key('$keyPrefix-details-$id'),
         valuesKey: Key('$keyPrefix-values-$id'),
@@ -98,6 +96,11 @@ Color historyStatusColor(HistoryDisplayStatus status) {
     HistoryDisplayStatus.rejected => AppColors.rejectedText,
     _ => AppColors.creditText,
   };
+}
+
+/// Debit = red, credit = green, based on financial direction (not status).
+Color historyAmountColor(HistoryEntry entry) {
+  return entry.credit ? AppColors.creditText : AppColors.error;
 }
 
 TypeAvatar historyAvatar(HistoryEntry entry) {

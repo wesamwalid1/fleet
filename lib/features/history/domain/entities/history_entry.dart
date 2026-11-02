@@ -41,7 +41,6 @@ class HistoryEntry extends Equatable {
   final HistoryKind kind;
   final int amountEgp;
   final bool credit;
-  final DateTime occurredAt;
   final HistoryDisplayStatus status;
   final SettlementType? settlementType;
   final String tripCode;
@@ -51,12 +50,27 @@ class HistoryEntry extends Equatable {
   final String? note;
   final String requestNumber;
 
+  /// Original operation creation time. Never changes after creation.
+  final DateTime createdAt;
+
+  /// Latest status-change / activity time. Equals [createdAt] while pending.
+  final DateTime updatedAt;
+
+  /// Driver balance immediately before this entry's financial effect.
+  /// Null when no effect has occurred yet or legacy data has no snapshot.
+  final int? balanceBeforeEgp;
+
+  /// Driver balance immediately after this entry's financial effect.
+  /// Null when no effect has occurred yet or legacy data has no snapshot.
+  final int? balanceAfterEgp;
+
   const HistoryEntry({
     required this.id,
     required this.kind,
     required this.amountEgp,
     required this.credit,
-    required this.occurredAt,
+    required this.createdAt,
+    required this.updatedAt,
     required this.status,
     this.settlementType,
     this.tripCode = '',
@@ -65,11 +79,33 @@ class HistoryEntry extends Equatable {
     this.counterpartyId = '',
     this.note,
     this.requestNumber = '',
+    this.balanceBeforeEgp,
+    this.balanceAfterEgp,
   });
+
+  bool get hasBalanceSnapshot =>
+      balanceBeforeEgp != null && balanceAfterEgp != null;
+
+  /// Latest activity timestamp used for list display, grouping, and sorting.
+  DateTime get occurredAt => updatedAt;
 
   bool get isPending =>
       status == HistoryDisplayStatus.pendingConfirm ||
       status == HistoryDisplayStatus.awaitingApproval;
+
+  /// Operations that start Pending and later change status.
+  bool get hasPendingLifecycle => switch (kind) {
+    HistoryKind.outgoing ||
+    HistoryKind.incoming ||
+    HistoryKind.vault ||
+    HistoryKind.roadExpense ||
+    HistoryKind.requestCash ||
+    HistoryKind.withdraw => true,
+    HistoryKind.expense => false,
+  };
+
+  bool get hasStatusUpdate =>
+      hasPendingLifecycle && !isPending && updatedAt != createdAt;
 
   bool matches(HistoryFilter filter) {
     return switch (filter) {
@@ -94,7 +130,7 @@ class HistoryEntry extends Equatable {
     DateTime? endDate,
   }) {
     if (mode == HistoryDateMode.all) return true;
-    final day = DateTime(occurredAt.year, occurredAt.month, occurredAt.day);
+    final day = DateTime(updatedAt.year, updatedAt.month, updatedAt.day);
     if (mode == HistoryDateMode.day) {
       if (startDate == null) return true;
       final selected = DateTime(startDate.year, startDate.month, startDate.day);
@@ -124,7 +160,8 @@ class HistoryEntry extends Equatable {
     kind,
     amountEgp,
     credit,
-    occurredAt,
+    createdAt,
+    updatedAt,
     status,
     settlementType,
     tripCode,
@@ -133,6 +170,8 @@ class HistoryEntry extends Equatable {
     counterpartyId,
     note,
     requestNumber,
+    balanceBeforeEgp,
+    balanceAfterEgp,
   ];
 }
 
@@ -146,13 +185,14 @@ class HistoryDay extends Equatable {
   List<Object?> get props => [day, entries];
 }
 
+/// Groups by latest activity day ([HistoryEntry.updatedAt]).
 List<HistoryDay> groupHistoryByDay(List<HistoryEntry> newestFirst) {
   final groups = <HistoryDay>[];
   for (final entry in newestFirst) {
     final day = DateTime(
-      entry.occurredAt.year,
-      entry.occurredAt.month,
-      entry.occurredAt.day,
+      entry.updatedAt.year,
+      entry.updatedAt.month,
+      entry.updatedAt.day,
     );
     if (groups.isEmpty || groups.last.day != day) {
       groups.add(HistoryDay(day: day, entries: [entry]));
@@ -161,4 +201,9 @@ List<HistoryDay> groupHistoryByDay(List<HistoryEntry> newestFirst) {
     }
   }
   return groups;
+}
+
+/// Latest activity time with safe fallback for legacy/missing update stamps.
+DateTime historyActivityAt({required DateTime createdAt, DateTime? updatedAt}) {
+  return updatedAt ?? createdAt;
 }

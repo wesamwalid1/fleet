@@ -11,6 +11,18 @@ class CashTransfer extends Equatable {
   final TransferStatus status;
   final DateTime? finalizedAt;
 
+  /// Sender balance immediately before the send debit. Set at creation.
+  final int? senderBalanceBeforeEgp;
+
+  /// Sender balance immediately after the send debit. Set at creation.
+  final int? senderBalanceAfterEgp;
+
+  /// Recipient balance immediately before the approve credit. Null until approved.
+  final int? recipientBalanceBeforeEgp;
+
+  /// Recipient balance immediately after the approve credit. Null until approved.
+  final int? recipientBalanceAfterEgp;
+
   const CashTransfer({
     required this.id,
     required this.senderId,
@@ -19,9 +31,20 @@ class CashTransfer extends Equatable {
     required this.createdAt,
     required this.status,
     this.finalizedAt,
+    this.senderBalanceBeforeEgp,
+    this.senderBalanceAfterEgp,
+    this.recipientBalanceBeforeEgp,
+    this.recipientBalanceAfterEgp,
   });
 
-  CashTransfer copyWith({TransferStatus? status, DateTime? finalizedAt}) {
+  CashTransfer copyWith({
+    TransferStatus? status,
+    DateTime? finalizedAt,
+    int? senderBalanceBeforeEgp,
+    int? senderBalanceAfterEgp,
+    int? recipientBalanceBeforeEgp,
+    int? recipientBalanceAfterEgp,
+  }) {
     return CashTransfer(
       id: id,
       senderId: senderId,
@@ -30,6 +53,14 @@ class CashTransfer extends Equatable {
       createdAt: createdAt,
       status: status ?? this.status,
       finalizedAt: finalizedAt ?? this.finalizedAt,
+      senderBalanceBeforeEgp:
+          senderBalanceBeforeEgp ?? this.senderBalanceBeforeEgp,
+      senderBalanceAfterEgp:
+          senderBalanceAfterEgp ?? this.senderBalanceAfterEgp,
+      recipientBalanceBeforeEgp:
+          recipientBalanceBeforeEgp ?? this.recipientBalanceBeforeEgp,
+      recipientBalanceAfterEgp:
+          recipientBalanceAfterEgp ?? this.recipientBalanceAfterEgp,
     );
   }
 
@@ -42,5 +73,9 @@ class CashTransfer extends Equatable {
     createdAt,
     status,
     finalizedAt,
+    senderBalanceBeforeEgp,
+    senderBalanceAfterEgp,
+    recipientBalanceBeforeEgp,
+    recipientBalanceAfterEgp,
   ];
 }

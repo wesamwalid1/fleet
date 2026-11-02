@@ -19,12 +19,12 @@ void main() {
     expect(find.text('0 expenses'), findsOneWidget);
     expect(find.text('Received from Vault'), findsWidgets);
     expect(find.text('Pending — from Khaled Ramadan'), findsOneWidget);
-    expect(find.text('Road Expense Approval'), findsNothing);
+    expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.text('13 May 2025'), findsOneWidget);
     expect(find.textContaining('Today'), findsNothing);
 
     await _selectHistoryType(tester, const Key('history-filter-expenses'));
-    expect(find.byKey(const Key('history-no-results')), findsOneWidget);
+    expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.text('Received from Vault'), findsNothing);
     expect(find.text('0 expenses'), findsOneWidget);
 
@@ -83,13 +83,13 @@ void main() {
 
     await _selectHistoryType(tester, const Key('history-filter-expenses'));
     expect(find.text('Cross Border'), findsOneWidget);
+    expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.text('Sent to Mohamed Said'), findsNothing);
 
     await tester.tap(find.byKey(const Key('history-entry-EXP-412138')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Expense Details'), findsOneWidget);
-    expect(find.text('DEDUCTED'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Transaction Details'), findsOneWidget);
+    expect(find.text('DEBIT'), findsOneWidget);
     expect(find.text('EXP-412138'), findsWidgets);
     await tester.tap(find.byKey(const Key('history-expense-close')));
     await tester.pumpAndSettle();
@@ -197,11 +197,15 @@ void main() {
     expect(find.text('2,200 EGP'), findsOneWidget);
   });
 
-  testWidgets('confirming a road expense makes it appear in history', (
+  testWidgets('confirming a road expense updates the same history row', (
     tester,
   ) async {
     await _openHistory(tester);
-    expect(find.text('Road Expense Approval'), findsNothing);
+    expect(find.text('Road Expense Approval'), findsOneWidget);
+    expect(
+      find.textContaining('RE-2026-1041 · Awaiting your approval'),
+      findsOneWidget,
+    );
     expect(find.text('0 expenses'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-approvals')));
@@ -253,6 +257,7 @@ void main() {
     expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.byKey(const Key('history-entry-RE-2026-1041')), findsOneWidget);
     expect(find.textContaining('RE-2026-1041 · Rejected'), findsOneWidget);
+    expect(find.text('0 expenses'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
@@ -341,6 +346,7 @@ void main() {
     await _openHistory(tester);
 
     const ids = [
+      'RE-2026-1041',
       'TRF-2025-0123',
       'DSB-2025-0441',
       'TRF-2025-0090',

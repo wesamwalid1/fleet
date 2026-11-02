@@ -2,14 +2,14 @@ import 'entities/history_entry.dart';
 
 const latestHistoryLimit = 3;
 
-/// Newest ledger rows for Home. Sorting uses the transaction timestamp, then id.
+/// Newest ledger rows for Home. Sorting uses latest activity ([updatedAt]).
 List<HistoryEntry> latestHistoryEntries(
   Iterable<HistoryEntry> entries, {
   int limit = latestHistoryLimit,
 }) {
   final sorted = [...entries]
     ..sort((a, b) {
-      final byTime = b.occurredAt.compareTo(a.occurredAt);
+      final byTime = b.updatedAt.compareTo(a.updatedAt);
       if (byTime != 0) return byTime;
       return b.id.compareTo(a.id);
     });

@@ -5,14 +5,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../approvals/presentation/bloc/approvals_bloc.dart';
 import '../../../approvals/presentation/bloc/approvals_state.dart';
-import '../../../history/domain/entities/history_entry.dart';
 import '../../../history/domain/latest_history.dart';
 import '../../../history/presentation/bloc/history_bloc.dart';
 import '../../../history/presentation/bloc/history_event.dart';
 import '../../../history/presentation/bloc/history_state.dart';
 import '../../../history/presentation/history_format.dart';
-import '../../../history/presentation/widgets/expense_detail_sheet.dart';
 import '../../../history/presentation/widgets/history_entry_tile.dart';
+import '../../../history/presentation/widgets/transaction_detail_sheet.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_state.dart';
 
@@ -125,9 +124,8 @@ class RecentTransactionsSection extends StatelessWidget {
                         now(),
                         locale,
                       ),
-                      onTap: entry.kind == HistoryKind.expense
-                          ? () => showExpenseDetailSheet(context, entry: entry)
-                          : null,
+                      onTap: () =>
+                          showTransactionDetailSheet(context, entry: entry),
                     ),
               ],
             );

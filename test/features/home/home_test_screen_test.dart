@@ -112,17 +112,17 @@ void main() {
     expect(find.text('Recent Transactions'), findsOneWidget);
     final recent = find.byKey(const Key('home-recent-card'));
     expect(
-      find.descendant(of: recent, matching: find.text('+800 EGP')),
+      find.descendant(of: recent, matching: find.text('-300 EGP')),
       findsOneWidget,
     );
     expect(
-      find.descendant(of: recent, matching: find.text('12 May 2025')),
+      find.descendant(of: recent, matching: find.text('Road Expense Approval')),
       findsOneWidget,
     );
     expect(
       find.descendant(
         of: recent,
-        matching: find.text('Received from Sami Hassan'),
+        matching: find.text('Pending — from Khaled Ramadan'),
       ),
       findsOneWidget,
     );

@@ -15,7 +15,7 @@ void main() {
     expect(find.byKey(const Key('home-pending-TRF-2025-0123')), findsOneWidget);
     expect(find.byKey(const Key('home-pending-RE-2026-1041')), findsNothing);
     expect(find.byKey(const Key('home-pending-DSB-2025-0301')), findsNothing);
-    expect(find.byKey(const Key('home-recent-TRF-2025-0090')), findsOneWidget);
+    expect(find.byKey(const Key('home-recent-RE-2026-1041')), findsOneWidget);
     expect(find.textContaining('EXP-'), findsNothing);
 
     expect(

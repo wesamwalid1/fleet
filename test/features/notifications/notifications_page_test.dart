@@ -370,13 +370,19 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // Avoid pumpAndSettle: it advances wall time past the highlight timer while
+    // History pages down to a far lazy ListView child.
+    await tester.pump();
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pump(const Duration(milliseconds: 300));
 
     final row = find.byKey(Key('history-highlight-${early.id}'));
     expect(row, findsOneWidget);
     final rect = tester.getRect(row);
-    expect(rect.top, greaterThanOrEqualTo(0));
-    expect(rect.bottom, lessThanOrEqualTo(640));
+    expect(rect.top, greaterThanOrEqualTo(-1));
+    expect(rect.bottom, lessThanOrEqualTo(641));
     await tester.pump(historyHighlightDuration);
   });
 

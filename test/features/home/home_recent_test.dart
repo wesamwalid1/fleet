@@ -20,9 +20,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('See all'), findsOneWidget);
+    expect(find.byKey(const Key('home-recent-RE-2026-1041')), findsOneWidget);
     expect(find.byKey(const Key('home-recent-TRF-2025-0123')), findsOneWidget);
     expect(find.byKey(const Key('home-recent-DSB-2025-0441')), findsOneWidget);
-    expect(find.byKey(const Key('home-recent-TRF-2025-0090')), findsOneWidget);
+    expect(find.byKey(const Key('home-recent-TRF-2025-0090')), findsNothing);
     expect(find.byKey(const Key('home-recent-DSB-2025-0301')), findsNothing);
     expect(
       find.descendant(
@@ -43,12 +44,12 @@ void main() {
         of: recent,
         matching: find.textContaining('DR-004 · Approved'),
       ),
-      findsOneWidget,
+      findsNothing,
     );
-    // Road expense is pending on Home, not among the three newest ledger rows.
+    // Pending road expense is the newest history row (2026) among seed data.
     expect(
       find.descendant(of: recent, matching: find.text('Road Expense Approval')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       find.descendant(
@@ -58,7 +59,7 @@ void main() {
       findsNothing,
     );
     expect(
-      find.descendant(of: recent, matching: find.text('+800 EGP')),
+      find.descendant(of: recent, matching: find.text('-300 EGP')),
       findsOneWidget,
     );
     expect(
@@ -67,9 +68,17 @@ void main() {
     );
     expect(
       find.descendant(of: recent, matching: find.text('12 May 2025')),
-      findsOneWidget,
+      findsNothing,
     );
 
+    expect(
+      tester.getTopLeft(find.byKey(const Key('home-recent-RE-2026-1041'))).dy,
+      lessThan(
+        tester
+            .getTopLeft(find.byKey(const Key('home-recent-TRF-2025-0123')))
+            .dy,
+      ),
+    );
     expect(
       tester.getTopLeft(find.byKey(const Key('home-recent-TRF-2025-0123'))).dy,
       lessThan(
@@ -78,23 +87,17 @@ void main() {
             .dy,
       ),
     );
-    expect(
-      tester.getTopLeft(find.byKey(const Key('home-recent-DSB-2025-0441'))).dy,
-      lessThan(
-        tester
-            .getTopLeft(find.byKey(const Key('home-recent-TRF-2025-0090')))
-            .dy,
-      ),
-    );
 
     await tester.ensureVisible(
-      find.byKey(const Key('home-recent-TRF-2025-0090')),
+      find.byKey(const Key('home-recent-DSB-2025-0441')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('home-recent-TRF-2025-0090')));
+    await tester.tap(find.byKey(const Key('home-recent-DSB-2025-0441')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('history-title')), findsNothing);
-    expect(find.text('Expense Details'), findsNothing);
+    expect(find.text('Transaction Details'), findsOneWidget);
+    expect(find.text('CREDIT'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
+    await tester.pumpAndSettle();
     expect(_text(tester, 'home-balance'), '2,200 EGP');
 
     await tester.ensureVisible(find.byKey(const Key('home-recent-see-all')));
@@ -161,15 +164,14 @@ void main() {
     expect(_text(tester, 'home-balance'), '2,100 EGP');
     await tester.ensureVisible(find.byKey(const Key('home-recent-EXP-412138')));
     await tester.tap(find.byKey(const Key('home-recent-EXP-412138')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Expense Details'), findsOneWidget);
-    expect(find.text('DEDUCTED'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Transaction Details'), findsOneWidget);
+    expect(find.text('DEBIT'), findsOneWidget);
     expect(find.text('EXP-412138'), findsWidgets);
 
     await tester.tap(find.byKey(const Key('history-expense-close')));
     await tester.pumpAndSettle();
-    expect(find.text('Expense Details'), findsNothing);
+    expect(find.text('Transaction Details'), findsNothing);
     expect(_text(tester, 'home-balance'), '2,100 EGP');
     expect(_text(tester, 'home-charge'), '3,200 EGP');
     expect(_text(tester, 'home-max-limit'), '5,000 EGP');
@@ -229,7 +231,7 @@ void main() {
   ) async {
     await _pump(tester);
 
-    const ids = ['TRF-2025-0123', 'DSB-2025-0441', 'TRF-2025-0090'];
+    const ids = ['RE-2026-1041', 'TRF-2025-0123', 'DSB-2025-0441'];
     final recent = find.byKey(const Key('home-recent-card'));
     expect(
       find.descendant(of: recent, matching: find.byType(HistoryEntryDivider)),

@@ -16,6 +16,12 @@ class ExpenseRequest extends Equatable {
   final DateTime createdAt;
   final ExpenseStatus status;
 
+  /// Driver balance immediately before the expense debit.
+  final int? balanceBeforeEgp;
+
+  /// Driver balance immediately after the expense debit.
+  final int? balanceAfterEgp;
+
   const ExpenseRequest({
     required this.id,
     required this.driverId,
@@ -26,9 +32,15 @@ class ExpenseRequest extends Equatable {
     required this.attachments,
     required this.createdAt,
     required this.status,
+    this.balanceBeforeEgp,
+    this.balanceAfterEgp,
   });
 
-  ExpenseRequest copyWith({ExpenseStatus? status}) {
+  ExpenseRequest copyWith({
+    ExpenseStatus? status,
+    int? balanceBeforeEgp,
+    int? balanceAfterEgp,
+  }) {
     return ExpenseRequest(
       id: id,
       driverId: driverId,
@@ -39,6 +51,8 @@ class ExpenseRequest extends Equatable {
       attachments: attachments,
       createdAt: createdAt,
       status: status ?? this.status,
+      balanceBeforeEgp: balanceBeforeEgp ?? this.balanceBeforeEgp,
+      balanceAfterEgp: balanceAfterEgp ?? this.balanceAfterEgp,
     );
   }
 
@@ -53,5 +67,7 @@ class ExpenseRequest extends Equatable {
     attachments,
     createdAt,
     status,
+    balanceBeforeEgp,
+    balanceAfterEgp,
   ];
 }
