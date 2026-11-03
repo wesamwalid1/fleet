@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import 'package:driver_portal_app/features/auth/domain/usecases/login_use_case.dart';
+import 'package:driver_portal_app/features/auth/domain/usecases/restore_session_use_case.dart';
 import 'package:driver_portal_app/features/auth/presentation/bloc/login_bloc.dart';
 import 'package:driver_portal_app/features/auth/presentation/pages/login_page.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
@@ -11,6 +12,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 abstract final class AppRoute {
   static const String login = '/login';
   static const String home = '/home';
+
+  static const sessionRestoreTimeout = Duration(seconds: 3);
+
+  /// Cold-start destination: Home for a valid persisted session, else Login.
+  ///
+  /// Never throws: any restore error, or no answer within [timeout], means
+  /// Login. A restore that finishes after the timeout is ignored.
+  static Future<String> initialRouteFor(
+    RestoreSessionUseCase restore, {
+    Duration timeout = sessionRestoreTimeout,
+  }) async {
+    try {
+      final user = await restore().timeout(timeout);
+      return user == null ? login : home;
+    } catch (_) {
+      return login;
+    }
+  }
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {

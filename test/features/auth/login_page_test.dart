@@ -1,10 +1,13 @@
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('shows validation messages and does not leave login', (
     tester,
   ) async {

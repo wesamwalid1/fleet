@@ -775,6 +775,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logoutMessage => 'ستحتاج إلى تسجيل الدخول مرة أخرى.';
 
   @override
+  String get logoutFailed =>
+      'تعذر تسجيل الخروج. ما زلت مسجلاً الدخول. يرجى المحاولة مرة أخرى.';
+
+  @override
   String get language => 'اللغة';
 
   @override

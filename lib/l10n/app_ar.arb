@@ -230,6 +230,7 @@
   "logout": "تسجيل الخروج",
   "logoutTitle": "تسجيل الخروج؟",
   "logoutMessage": "ستحتاج إلى تسجيل الدخول مرة أخرى.",
+  "logoutFailed": "تعذر تسجيل الخروج. ما زلت مسجلاً الدخول. يرجى المحاولة مرة أخرى.",
   "language": "اللغة",
   "chooseLanguage": "اختر اللغة",
   "languageEnglish": "English",

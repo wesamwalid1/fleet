@@ -26,4 +26,10 @@ class MockAuthDataSource {
 
     return const UserModel(email: MockAuthDataSource.email);
   }
+
+  /// The mock account for a stored session, or null if it is not a known one.
+  UserModel? restore(String email) {
+    if (email != MockAuthDataSource.email) return null;
+    return const UserModel(email: MockAuthDataSource.email);
+  }
 }

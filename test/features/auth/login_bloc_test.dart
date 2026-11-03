@@ -137,4 +137,10 @@ class _FakeAuthRepository implements AuthRepository {
     lastEmail = email;
     return onLogin(email, password);
   }
+
+  @override
+  Future<User?> restoreSession() async => null;
+
+  @override
+  Future<void> logout() async {}
 }

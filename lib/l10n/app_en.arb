@@ -391,6 +391,7 @@
   "logout": "Logout",
   "logoutTitle": "Log out?",
   "logoutMessage": "You will need to sign in again.",
+  "logoutFailed": "Couldn't log out. You are still signed in. Please try again.",
   "language": "Language",
   "chooseLanguage": "Choose Language",
   "languageEnglish": "English",

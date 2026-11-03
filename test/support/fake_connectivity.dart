@@ -4,7 +4,9 @@ import 'package:driver_portal_app/core/connectivity/domain/internet_reachability
 import 'package:driver_portal_app/core/connectivity/domain/network_interface_monitor.dart';
 import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_event.dart';
+import 'package:driver_portal_app/core/routing/app_router.dart';
 import 'package:driver_portal_app/core/theme/domain/theme_repository.dart';
+import 'package:driver_portal_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -85,10 +87,14 @@ Widget testPortalApp({
   FakeNetworkInterfaceMonitor? networkMonitor,
   FakeInternetReachability? internetReachability,
   bool online = true,
+  AuthRepository? authRepository,
+  String initialRoute = AppRoute.login,
 }) {
   return DriverPortalApp(
     locale: locale,
     themeRepository: themeRepository,
+    authRepository: authRepository,
+    initialRoute: initialRoute,
     networkMonitor:
         networkMonitor ?? FakeNetworkInterfaceMonitor(hasInterface: online),
     internetReachability:

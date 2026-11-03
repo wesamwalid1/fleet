@@ -1478,6 +1478,12 @@ abstract class AppLocalizations {
   /// **'You will need to sign in again.'**
   String get logoutMessage;
 
+  /// No description provided for @logoutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out. You are still signed in. Please try again.'**
+  String get logoutFailed;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:

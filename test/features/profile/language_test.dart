@@ -3,10 +3,13 @@ import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_
 import 'package:driver_portal_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets(
     'the language sheet marks the active language and switches immediately',
     (tester) async {

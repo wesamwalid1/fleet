@@ -780,6 +780,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutMessage => 'You will need to sign in again.';
 
   @override
+  String get logoutFailed =>
+      'Couldn\'t log out. You are still signed in. Please try again.';
+
+  @override
   String get language => 'Language';
 
   @override

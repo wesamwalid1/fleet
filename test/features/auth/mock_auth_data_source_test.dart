@@ -1,11 +1,18 @@
+import 'package:driver_portal_app/features/auth/data/datasources/auth_session_local_data_source.dart';
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
 import 'package:driver_portal_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:driver_portal_app/features/auth/domain/failures/auth_failure.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   const dataSource = MockAuthDataSource();
-  const repository = AuthRepositoryImpl(dataSource);
+  const repository = AuthRepositoryImpl(
+    dataSource,
+    SharedPreferencesAuthSessionDataSource(),
+  );
+
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('accepts the mock driver account', () async {
     final user = await repository.login(

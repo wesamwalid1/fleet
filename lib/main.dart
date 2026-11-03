@@ -16,17 +16,34 @@ import 'package:driver_portal_app/core/theme/domain/theme_repository.dart';
 import 'package:driver_portal_app/core/theme/presentation/bloc/theme_bloc.dart';
 import 'package:driver_portal_app/core/theme/presentation/bloc/theme_event.dart';
 import 'package:driver_portal_app/core/theme/presentation/bloc/theme_state.dart';
+import 'package:driver_portal_app/features/auth/data/datasources/auth_session_local_data_source.dart';
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
 import 'package:driver_portal_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:driver_portal_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:driver_portal_app/features/auth/domain/usecases/login_use_case.dart';
+import 'package:driver_portal_app/features/auth/domain/usecases/logout_use_case.dart';
+import 'package:driver_portal_app/features/auth/domain/usecases/restore_session_use_case.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-void main() {
-  runApp(const DriverPortalApp());
+/// The session is checked before [runApp], so the platform's default launch
+/// screen stays up until the first frame and no extra startup screen shows.
+/// The check is time-bounded and falls back to Login on any failure, so
+/// [runApp] is always reached.
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  const authRepository = AuthRepositoryImpl(
+    MockAuthDataSource(),
+    SharedPreferencesAuthSessionDataSource(),
+  );
+  final initialRoute = await AppRoute.initialRouteFor(
+    const RestoreSessionUseCase(authRepository),
+  );
+  runApp(
+    DriverPortalApp(authRepository: authRepository, initialRoute: initialRoute),
+  );
 }
 
 class DriverPortalApp extends StatelessWidget {
@@ -37,6 +54,9 @@ class DriverPortalApp extends StatelessWidget {
   final NetworkInterfaceMonitor? networkMonitor;
   final InternetReachability? internetReachability;
 
+  /// Route shown at launch, resolved from the persisted session by [main].
+  final String initialRoute;
+
   const DriverPortalApp({
     super.key,
     this.locale,
@@ -45,6 +65,7 @@ class DriverPortalApp extends StatelessWidget {
     this.themeRepository,
     this.networkMonitor,
     this.internetReachability,
+    this.initialRoute = AppRoute.login,
   });
 
   @override
@@ -55,7 +76,11 @@ class DriverPortalApp extends StatelessWidget {
         create: (_) => themeRepository ?? const ThemeRepositoryImpl(),
         child: RepositoryProvider<AuthRepository>(
           create: (_) =>
-              authRepository ?? AuthRepositoryImpl(const MockAuthDataSource()),
+              authRepository ??
+              const AuthRepositoryImpl(
+                MockAuthDataSource(),
+                SharedPreferencesAuthSessionDataSource(),
+              ),
           child: RepositoryProvider<NetworkInterfaceMonitor>(
             // Disposal is owned by [ConnectivityBloc.close], after in-flight
             // probes finish — do not dispose here (avoids double-dispose).
@@ -86,7 +111,14 @@ class DriverPortalApp extends StatelessWidget {
                     child: RepositoryProvider<LoginUseCase>(
                       create: (_) =>
                           LoginUseCase(context.read<AuthRepository>()),
-                      child: _DriverMaterialApp(locale: locale),
+                      child: RepositoryProvider<LogoutUseCase>(
+                        create: (_) =>
+                            LogoutUseCase(context.read<AuthRepository>()),
+                        child: _DriverMaterialApp(
+                          locale: locale,
+                          initialRoute: initialRoute,
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -101,8 +133,9 @@ class DriverPortalApp extends StatelessWidget {
 
 class _DriverMaterialApp extends StatelessWidget {
   final Locale? locale;
+  final String initialRoute;
 
-  const _DriverMaterialApp({required this.locale});
+  const _DriverMaterialApp({required this.locale, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -121,9 +154,10 @@ class _DriverMaterialApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: AppLocalizations.supportedLocales,
-              initialRoute: AppRoute.login,
-              // Without this, '/login' also builds a '/' route beneath it, which
-              // is unknown and shows Page Not Found when navigated back to.
+              initialRoute: initialRoute,
+              // Without this, '/login' or '/home' also builds a '/' route beneath
+              // it, which is unknown and shows Page Not Found when navigated back
+              // to.
               onGenerateInitialRoutes: (initialRoute) => [
                 AppRoute.onGenerateRoute(RouteSettings(name: initialRoute)),
               ],
