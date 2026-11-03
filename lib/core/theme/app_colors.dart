@@ -36,4 +36,36 @@ abstract final class AppColors {
   static const creditText = Color(0xFF116F4C);
   static const pendingText = Color(0xFF954C10);
   static const rejectedText = Color(0xFFAD3733);
+
+  // Official Driver Portal palette, the foundation of the redesign. Redesigned
+  // screens read it through [AppPalette]; the rest keep the tokens above until
+  // their turn.
+  static const ink950 = Color(0xFF111522);
+  static const ink900 = Color(0xFF1E263B);
+  static const ink800 = Color(0xFF303D59);
+  static const slate600 = Color(0xFF536684);
+  static const slate300 = Color(0xFF98A9C4);
+  static const slate100 = Color(0xFFDCE3EF);
+
+  /// [slate100] halfway to white: the light page ground.
+  static const mist50 = Color(0xFFEEF1F7);
+
+  /// [slate100] a quarter of the way to white: light field fill.
+  static const mist25 = Color(0xFFF6F8FB);
+
+  /// Between [slate600] and [slate300]: light field outline, 3.4:1 or more on
+  /// [mist25] and white.
+  static const slate450 = Color(0xFF7687A4);
+
+  /// [slate300] 30% toward [slate600]: dark-mode hints, 4.9:1 or more on
+  /// [ink900] and [ink950].
+  static const slate350 = Color(0xFF8395B1);
+
+  /// Muted error text on light surfaces (5.7:1 on [errorSurfaceLight]).
+  static const errorLight = Color(0xFFB42318);
+  static const errorSurfaceLight = Color(0xFFFBEEEC);
+
+  /// Error text on dark surfaces (6.4:1 on [errorSurfaceDark]).
+  static const errorDark = Color(0xFFFDA29B);
+  static const errorSurfaceDark = Color(0xFF3D3041);
 }

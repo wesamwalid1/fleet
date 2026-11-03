@@ -104,4 +104,64 @@ abstract final class AppTextStyles {
   );
 
   static const link = TextStyle(fontSize: 14, fontWeight: FontWeight.w700);
+
+  // Redesign type scale for screens on [AppPalette], mapped to Material 3
+  // roles; callers set the color. No negative tracking, so Arabic letters
+  // stay joined.
+
+  /// headlineMedium: screen headline, such as the sign-in welcome.
+  static const display = TextStyle(
+    fontSize: 28,
+    height: 1.2,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// titleMedium: product name in a brand row.
+  static const brand = TextStyle(
+    fontSize: 16,
+    height: 1.25,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// bodyLarge.
+  static const bodyLarge = TextStyle(
+    fontSize: 16,
+    height: 1.45,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// bodyMedium: notices and help lines.
+  static const bodyMedium = TextStyle(
+    fontSize: 14,
+    height: 1.4,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// labelLarge: label above a field.
+  static const label = TextStyle(
+    fontSize: 14,
+    height: 1.3,
+    fontWeight: FontWeight.w600,
+  );
+
+  /// Text typed into a field.
+  static const input = TextStyle(
+    fontSize: 16,
+    height: 1.3,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// bodySmall: field errors and small data fields.
+  static const helper = TextStyle(
+    fontSize: 12,
+    height: 1.4,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// labelLarge, emphasised: primary action text.
+  static const buttonLarge = TextStyle(
+    fontSize: 16,
+    height: 1.2,
+    fontWeight: FontWeight.w700,
+  );
 }

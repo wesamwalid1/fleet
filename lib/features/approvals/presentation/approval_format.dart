@@ -47,8 +47,9 @@ String approvalPeriod(DateTime start, DateTime end, String locale) {
 String approvalTitle(AppLocalizations l10n, ApprovalItem item) {
   return switch (item.kind) {
     ApprovalKind.vault => l10n.receivedFromVault,
-    ApprovalKind.driver =>
-      l10n.receivedFromDriver(item.counterpartyName.tr(l10n)),
+    ApprovalKind.driver => l10n.receivedFromDriver(
+      item.counterpartyName.tr(l10n),
+    ),
     ApprovalKind.roadExpense => l10n.roadExpenseApproval,
   };
 }

@@ -1,4 +1,6 @@
 import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import 'package:driver_portal_app/core/routing/fade_through_route.dart';
+import 'package:driver_portal_app/core/theme/app_surfaces.dart';
 import 'package:driver_portal_app/features/auth/domain/usecases/login_use_case.dart';
 import 'package:driver_portal_app/features/auth/domain/usecases/restore_session_use_case.dart';
 import 'package:driver_portal_app/features/auth/presentation/bloc/login_bloc.dart';
@@ -34,8 +36,9 @@ abstract final class AppRoute {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case login:
-        return MaterialPageRoute<void>(
+        return FadeThroughRoute<void>(
           settings: settings,
+          ground: (context) => AppPalette.of(context).ground,
           builder: (context) {
             final connectivity = context.read<ConnectivityBloc>();
             return BlocProvider(
@@ -49,7 +52,7 @@ abstract final class AppRoute {
         );
 
       case home:
-        return MaterialPageRoute<void>(
+        return FadeThroughRoute<void>(
           settings: settings,
           builder: (_) => const HomeScope(resetDemoNotifications: kDebugMode),
         );

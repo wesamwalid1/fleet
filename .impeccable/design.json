@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T15:57:00+02:00",
+  "title": "Design System: Driver Portal",
+  "extensions": {
+    "scope": {
+      "world": "AppPalette (official slate-navy)",
+      "adoptedBy": ["Login"],
+      "note": "Other screens still render the previous violet system (earlier AppColors tokens and AppSurfaces) and migrate one screen at a time."
+    },
+    "colorMeta": {
+      "ink-950": { "role": "neutral", "displayName": "Night Ink", "canonical": "#111522", "source": "official", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "ink-900": { "role": "primary", "displayName": "Issuing Ink", "canonical": "#1E263B", "source": "official", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "ink-800": { "role": "neutral", "displayName": "Lifted Navy", "canonical": "#303D59", "source": "official", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "slate-600": { "role": "neutral", "displayName": "Steel Slate", "canonical": "#536684", "source": "official", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "slate-450": { "role": "neutral", "displayName": "Field Slate", "canonical": "#7687A4", "source": "derived: between slate-600 and slate-300", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "slate-350": { "role": "neutral", "displayName": "Night Hint", "canonical": "#8395B1", "source": "derived: slate-300 30% toward slate-600", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#8395B1", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "slate-300": { "role": "neutral", "displayName": "Haze Slate", "canonical": "#98A9C4", "source": "official", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "slate-100": { "role": "primary", "displayName": "Pale Slate", "canonical": "#DCE3EF", "source": "official; Dark action", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
+      "mist-50": { "role": "neutral", "displayName": "Mist", "canonical": "#EEF1F7", "source": "derived: slate-100 halfway to white", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#98A9C4", "#DCE3EF", "#EEF1F7", "#F6F8FB"] },
+      "mist-25": { "role": "neutral", "displayName": "Field Mist", "canonical": "#F6F8FB", "source": "derived: slate-100 a quarter of the way to white", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#98A9C4", "#DCE3EF", "#EEF1F7", "#F6F8FB"] },
+      "ticket-white": { "role": "neutral", "displayName": "Ticket White", "canonical": "#FFFFFF", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#98A9C4", "#DCE3EF", "#F6F8FB", "#FFFFFF"] },
+      "error-light": { "role": "error", "displayName": "Muted Error Red", "canonical": "#B42318", "tonalRamp": ["#3D0C08", "#6A140D", "#B42318", "#D8473B", "#F07B72", "#FDA29B", "#FBD5D1", "#FBEEEC"] },
+      "error-surface-light": { "role": "error", "displayName": "Error Tint", "canonical": "#FBEEEC", "tonalRamp": ["#3D0C08", "#6A140D", "#B42318", "#D8473B", "#F07B72", "#FDA29B", "#FBD5D1", "#FBEEEC"] },
+      "error-dark": { "role": "error", "displayName": "Night Error Red", "canonical": "#FDA29B", "tonalRamp": ["#3D0C08", "#6A140D", "#B42318", "#D8473B", "#F07B72", "#FDA29B", "#FBD5D1", "#FBEEEC"] },
+      "error-surface-dark": { "role": "error", "displayName": "Night Error Tint", "canonical": "#3D3041", "tonalRamp": ["#1F1822", "#3D3041", "#574559", "#725C73", "#8E758E", "#AB91AA", "#CBB3C9", "#EADBE8"] }
+    },
+    "paletteRoles": {
+      "ground": { "light": "mist-50", "dark": "ink-950" },
+      "surface": { "light": "ticket-white", "dark": "ink-900" },
+      "hairline": { "light": "slate-100", "dark": "ink-800" },
+      "field": { "light": "mist-25", "dark": "ink-950" },
+      "fieldBorder": { "light": "slate-450", "dark": "slate-600" },
+      "focus": { "light": "ink-900", "dark": "slate-100" },
+      "title": { "light": "ink-950", "dark": "mist-50" },
+      "body": { "light": "ink-800", "dark": "slate-300" },
+      "muted": { "light": "slate-600", "dark": "slate-350" },
+      "label": { "light": "ink-900", "dark": "slate-100" },
+      "action": { "light": "ink-900", "dark": "slate-100" },
+      "onAction": { "light": "ticket-white", "dark": "ink-950" },
+      "mark": { "light": "ink-900", "dark": "slate-100" },
+      "onMark": { "light": "slate-100", "dark": "ink-900" },
+      "error": { "light": "error-light", "dark": "error-dark" },
+      "errorSurface": { "light": "error-surface-light", "dark": "error-surface-dark" },
+      "systemBars": { "statusBar": "transparent", "navigationBar": "ground", "iconBrightness": "dark icons in Light, light icons in Dark" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Screen headline, such as the sign-in welcome (Material headlineMedium)." },
+      "brand": { "displayName": "Brand", "purpose": "Product name in the ticket stub (Material titleMedium)." },
+      "body-large": { "displayName": "Body Large", "purpose": "A headline's supporting line." },
+      "body-medium": { "displayName": "Body Medium", "purpose": "Notices and help lines; the error notice raises it to 600." },
+      "label": { "displayName": "Label", "purpose": "Label above a field (Material labelLarge)." },
+      "input": { "displayName": "Input", "purpose": "Text typed into a field." },
+      "helper": { "displayName": "Helper", "purpose": "Field error messages (Material bodySmall)." },
+      "data": { "displayName": "Data", "purpose": "Small tabular data fields such as the stub's issue date." },
+      "button": { "displayName": "Button", "purpose": "Primary action label." },
+      "fontNote": "Platform system fonts: Roboto on Android, SF Pro on iOS, the platform's native Arabic face. No bundled faces in this phase. Sizes are dp."
+    },
+    "shadows": [
+      { "name": "raised-light", "value": "0 12px 28px rgba(17, 21, 34, 0.07), 0 1px 4px rgba(17, 21, 34, 0.04)", "purpose": "The ticket in Light: soft ambient drop plus a faint contact edge. Flutter blurRadius values carried as CSS blur." },
+      { "name": "raised-dark", "value": "0 14px 28px rgba(0, 0, 0, 0.35)", "purpose": "The ticket in Dark." }
+    ],
+    "motion": [
+      { "name": "ticket-rise", "value": "translateY(18px) to 0, 520ms, cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Cold-start entrance of the ticket; no fade. Skipped when a route transition brings the page in or reduced motion is on." },
+      { "name": "fade-through-in", "value": "320ms; ground cover 0-35% ease-out; content fade 35-100% cubic-bezier(0.33, 1, 0.68, 1) with scale 0.96 to 1", "purpose": "Route transition between screens in this world (Login and Home). Skipped when system animations are off." },
+      { "name": "fade-through-out", "value": "260ms, the same curves in reverse", "purpose": "Popping a fade-through route." },
+      { "name": "action-swap", "value": "180ms cross-fade", "purpose": "Primary action label and arrow swap for the loading spinner." }
+    ],
+    "shapes": {
+      "ticketRadius": "20px",
+      "notchRadius": "10px",
+      "controlRadius": "12px",
+      "hairline": "1px",
+      "focusOutline": "1.6px",
+      "perforation": "1px dashed, 6px dash, 5px gap, inset 8px from each notch, hairline color"
+    },
+    "layout": {
+      "contentMaxWidth": "440px",
+      "pagePadding": "20px horizontal, 24px vertical",
+      "stubPadding": "24px horizontal, 16px vertical"
+    }
+  },
+  "components": [
+    {
+      "name": "Ticket",
+      "kind": "card",
+      "refersTo": "ticket",
+      "description": "The one raised surface: stub, perforated tear line with side notches, working body.",
+      "html": "<div class=\"ds-ticket-ground\"><div class=\"ds-ticket\"><div class=\"ds-ticket-stub\"><svg class=\"ds-ticket-mark\" viewBox=\"0 0 40 40\" width=\"40\" height=\"40\" aria-hidden=\"true\"><rect width=\"40\" height=\"40\" rx=\"12\" fill=\"#1E263B\"/><path d=\"M12 14H21Q27 14 27 20V23.5\" fill=\"none\" stroke=\"#DCE3EF\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"12\" cy=\"14\" r=\"3.4\" fill=\"#DCE3EF\"/><circle cx=\"27\" cy=\"27\" r=\"3.4\" fill=\"none\" stroke=\"#DCE3EF\" stroke-width=\"2.2\"/></svg><span class=\"ds-ticket-name\">Driver Portal</span><span class=\"ds-ticket-date\">3 Nov 2026</span></div><div class=\"ds-ticket-tear\"></div><div class=\"ds-ticket-body\"><h2 class=\"ds-ticket-title\">Welcome back!</h2><p class=\"ds-ticket-sub\">Sign in to your driver account</p></div></div></div>",
+      "css": ".ds-ticket-ground { background: #EEF1F7; padding: 24px 20px; } .ds-ticket { position: relative; max-width: 440px; margin: 0 auto; background: #FFFFFF; border: 1px solid #DCE3EF; border-radius: 20px; box-shadow: 0 12px 28px rgba(17,21,34,0.07), 0 1px 4px rgba(17,21,34,0.04); font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-ticket-stub { display: flex; align-items: center; gap: 12px; padding: 16px 24px; } .ds-ticket-name { flex: 1; font-size: 16px; line-height: 1.25; font-weight: 700; color: #111522; } .ds-ticket-date { font-size: 12px; line-height: 1.4; font-weight: 600; font-variant-numeric: tabular-nums; color: #303D59; } .ds-ticket-tear { position: relative; height: 0; margin: 0 18px; border-top: 1px solid transparent; background-image: repeating-linear-gradient(90deg, #DCE3EF 0 6px, transparent 6px 11px); background-size: 100% 1px; background-repeat: no-repeat; padding-top: 1px; } .ds-ticket-tear::before, .ds-ticket-tear::after { content: ''; position: absolute; top: -10px; width: 20px; height: 20px; border-radius: 50%; background: #EEF1F7; border: 1px solid #DCE3EF; } .ds-ticket-tear::before { left: -29px; } .ds-ticket-tear::after { right: -29px; } .ds-ticket-body { padding: 24px; } .ds-ticket-title { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 700; color: #111522; } .ds-ticket-sub { margin: 8px 0 0; font-size: 16px; line-height: 1.45; font-weight: 400; color: #303D59; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width 56dp action with label and forward arrow (Light).",
+      "html": "<button class=\"ds-btn-primary\"><span>Sign In</span><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z\" fill=\"currentColor\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; padding: 0 24px; background: #1E263B; color: #FFFFFF; border: none; border-radius: 12px; font-family: system-ui, Roboto, -apple-system, sans-serif; font-size: 16px; line-height: 1.2; font-weight: 700; cursor: pointer; transition: background-color 0.15s; } .ds-btn-primary:hover { background: #252E46; } .ds-btn-primary:active { background: #2A3450; } .ds-btn-primary:focus-visible { outline: 2px solid #1E263B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Primary Button (Dark)",
+      "kind": "button",
+      "refersTo": "button-primary-dark",
+      "description": "The Dark scheme's action: pale slate fill, ink content.",
+      "html": "<div class=\"ds-btn-dark-ground\"><button class=\"ds-btn-primary-dark\"><span>Sign In</span><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z\" fill=\"currentColor\"/></svg></button></div>",
+      "css": ".ds-btn-dark-ground { background: #1E263B; padding: 24px; } .ds-btn-primary-dark { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; padding: 0 24px; background: #DCE3EF; color: #111522; border: none; border-radius: 12px; font-family: system-ui, Roboto, -apple-system, sans-serif; font-size: 16px; line-height: 1.2; font-weight: 700; cursor: pointer; transition: background-color 0.15s; } .ds-btn-primary-dark:hover { background: #CDD5E3; } .ds-btn-primary-dark:active { background: #C2CBDB; } .ds-btn-primary-dark:focus-visible { outline: 2px solid #DCE3EF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Primary Button (Loading)",
+      "kind": "button",
+      "refersTo": "button-primary-loading",
+      "description": "Label swaps for a 22dp spinner; the button keeps its full action colors.",
+      "html": "<button class=\"ds-btn-loading\" aria-label=\"Signing in\" disabled><span class=\"ds-btn-spinner\"></span></button>",
+      "css": ".ds-btn-loading { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 56px; background: #1E263B; color: #FFFFFF; border: none; border-radius: 12px; } .ds-btn-spinner { width: 22px; height: 22px; box-sizing: border-box; border: 2.2px solid rgba(255,255,255,0.25); border-top-color: #FFFFFF; border-radius: 50%; animation: ds-spin 0.9s linear infinite; } @keyframes ds-spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .ds-btn-spinner { animation-duration: 2.4s; } }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Labelled, inset field with leading icon; 1.6dp focus outline in the focus role.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Driver Email</span><span class=\"ds-field-box\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z\" fill=\"currentColor\"/></svg><input class=\"ds-field-input\" type=\"email\"></span></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-field-label { font-size: 14px; line-height: 1.3; font-weight: 600; color: #1E263B; } .ds-field-box { display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #F6F8FB; border: 1px solid #7687A4; border-radius: 12px; color: #536684; transition: border-color 0.15s, box-shadow 0.15s; } .ds-field-box:hover { border-color: #536684; } .ds-field-box:focus-within { border-color: #1E263B; box-shadow: inset 0 0 0 0.6px #1E263B; } .ds-field-input { flex: 1; min-width: 0; padding: 16px 0; border: none; outline: none; background: transparent; font: inherit; font-size: 16px; line-height: 1.3; font-weight: 500; color: #111522; caret-color: #1E263B; }"
+    },
+    {
+      "name": "Text Field (Error)",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Error outline and helper message in the error role.",
+      "html": "<label class=\"ds-field-err\"><span class=\"ds-field-err-label\">Password</span><span class=\"ds-field-err-box\"><input class=\"ds-field-err-input\" type=\"password\"></span><span class=\"ds-field-err-help\">Please enter your password</span></label>",
+      "css": ".ds-field-err { display: flex; flex-direction: column; gap: 8px; font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-field-err-label { font-size: 14px; line-height: 1.3; font-weight: 600; color: #1E263B; } .ds-field-err-box { display: flex; padding: 0 16px; background: #F6F8FB; border: 1px solid #B42318; border-radius: 12px; } .ds-field-err-box:focus-within { box-shadow: inset 0 0 0 0.6px #B42318; } .ds-field-err-input { flex: 1; padding: 16px 0; border: none; outline: none; background: transparent; font: inherit; font-size: 16px; font-weight: 500; color: #111522; caret-color: #1E263B; } .ds-field-err-help { margin-top: -4px; padding: 0 16px; font-size: 12px; line-height: 1.4; font-weight: 500; color: #B42318; }"
+    },
+    {
+      "name": "Error Notice",
+      "kind": "custom",
+      "refersTo": "notice-error",
+      "description": "Credential, offline, or unexpected failure; tinted surface, announced as a live region.",
+      "html": "<div class=\"ds-notice\" role=\"status\" aria-live=\"polite\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z\" fill=\"currentColor\"/></svg><span>Incorrect email or password.</span></div>",
+      "css": ".ds-notice { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; background: #FBEEEC; color: #B42318; border-radius: 12px; font-family: system-ui, Roboto, -apple-system, sans-serif; font-size: 14px; line-height: 1.4; font-weight: 600; } .ds-notice svg { flex: none; }"
+    },
+    {
+      "name": "Route Mark",
+      "kind": "custom",
+      "refersTo": "route-mark",
+      "description": "The product mark: origin dot to destination ring on a 40dp tile.",
+      "html": "<svg class=\"ds-route-mark\" viewBox=\"0 0 40 40\" width=\"40\" height=\"40\" role=\"img\" aria-label=\"Driver Portal\"><rect width=\"40\" height=\"40\" rx=\"12\" fill=\"#1E263B\"/><path d=\"M12 14H21Q27 14 27 20V23.5\" fill=\"none\" stroke=\"#DCE3EF\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"12\" cy=\"14\" r=\"3.4\" fill=\"#DCE3EF\"/><circle cx=\"27\" cy=\"27\" r=\"3.4\" fill=\"none\" stroke=\"#DCE3EF\" stroke-width=\"2.2\"/></svg>",
+      "css": ".ds-route-mark { display: block; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Issued Ticket",
+    "overview": "Every surface in this world reads like a fuel or weighbridge ticket handed to a driver: a stub that says who issued it and when, a perforated tear line, and a working body below. The paper is calm and the ink is official. The palette is the binding slate-navy six, built into two schemes that are designed separately rather than inverted: Light is a mist ground with a white ticket and ink action; Dark is an ink ground with a lifted navy ticket and a mist action. Depth comes from one soft shadow on the one raised surface and from fields that sit tonally below the ticket.\n\nDensity is low and deliberate. A surface shows the few things the driver needs, in a single centred column, at a size that survives a cab in daylight, a night shift, a large system font, and Arabic as much as English. Decoration is limited to the ticket's own anatomy: the notches, the perforation, and the route mark. Motion is short, purposeful, and always skipped when the system asks for reduced motion.\n\nScope: this world is adopted by Login only. Every other screen still renders the previous violet system (the earlier tokens in `AppColors` and the `AppSurfaces` roles) and migrates one screen at a time. This document governs only surfaces built on `AppPalette`.",
+    "keyCharacteristics": [
+      "Official slate-navy only; no saturated hue anywhere except a muted error red.",
+      "Two built schemes with their own roles, read through `AppPalette`.",
+      "One raised surface per screen: the ticket, with one soft shadow.",
+      "Hairline borders; controls share one 12dp corner.",
+      "The perforated tear line with side notches is the signature.",
+      "Platform system fonts, no negative tracking, tabular figures for data."
+    ],
+    "rules": [
+      { "name": "The Official Six Rule", "body": "Every neutral is one of the six official values or a stated mix of them (mist is slate-100 toward white; slate-450 and slate-350 sit between slate-600 and slate-300). New colors are derived the same way, never picked freely.", "section": "colors" },
+      { "name": "The Built Twice Rule", "body": "Light and Dark are two designed role sets, not an inversion: the Dark field sinks to the ground color, and the Dark action turns pale. Screens read roles from `AppPalette`, never raw tokens.", "section": "colors" },
+      { "name": "The Joined Letters Rule", "body": "Letter spacing stays at normal on every role so Arabic letters stay joined. Hierarchy comes from size and weight.", "section": "typography" },
+      { "name": "The Tabular Data Rule", "body": "Dates, amounts, and any figure that may line up with another use tabular figures.", "section": "typography" },
+      { "name": "The One Raised Surface Rule", "body": "A screen has one raised surface, and it is the ticket. Fields, notices, and buttons do not cast shadows.", "section": "elevation" },
+      { "name": "The Perforation Rule", "body": "The tear line separates a ticket's identifying stub from its working body. It appears once per ticket and is never used as a generic divider.", "section": "shapes" }
+    ],
+    "dos": [
+      "**Do** read colors through `AppPalette` roles so each scheme gets its own built value.",
+      "**Do** keep one raised surface per screen, carrying `raisedShadow`.",
+      "**Do** put every control on the 12dp corner and every border on a 1dp hairline; only focus thickens to 1.6dp.",
+      "**Do** space on the 8dp rhythm (8, 12, 16, 20, 24dp).",
+      "**Do** set figures in tabular numerals.",
+      "**Do** keep touch targets at least 48dp and merge a field's visible label into its semantics.",
+      "**Do** skip every entrance and transition when the system asks for reduced motion."
+    ],
+    "donts": [
+      "**Don't** introduce saturated colors; the error red stays muted and is the only hue outside the slate-navy ladder.",
+      "**Don't** use the previous violet tokens (`AppColors.primary` and its siblings, `AppSurfaces`) on a surface that has moved to this world.",
+      "**Don't** invert Light to make Dark; each scheme has its own role values.",
+      "**Don't** apply negative letter spacing on any role.",
+      "**Don't** add shadows to fields, notices, or buttons, or stack a second raised card on the ticket.",
+      "**Don't** use the perforation as a plain divider in lists or sections.",
+      "**Don't** fade the ticket in on entrance; it rises once, already visible."
+    ]
+  }
+}
