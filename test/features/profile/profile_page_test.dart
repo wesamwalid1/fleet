@@ -169,7 +169,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('4,200 EGP'), findsOneWidget);
+    expect(find.text('4,200 EGP'), findsNWidgets(2));
 
     await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
@@ -199,7 +199,7 @@ void main() {
     expect(find.text('Welcome back!'), findsOneWidget);
 
     await _login(tester);
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('4,200 EGP'), findsNothing);
     expect(find.text('3 pending'), findsOneWidget);
   });

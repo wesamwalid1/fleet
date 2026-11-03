@@ -4,7 +4,10 @@ enum CashRequestType { requestCash, withdraw }
 
 enum CashRequestStatus { pending, approved, rejected }
 
-/// A driver-initiated vault request. Balance moves only when approved.
+/// A driver-initiated vault request.
+///
+/// Request Cash credits the balance only when approved. Withdraw deducts the
+/// balance at submit, keeps it frozen while pending, and refunds on rejection.
 class CashRequest extends Equatable {
   final String id;
   final String requestNumber;
@@ -16,10 +19,12 @@ class CashRequest extends Equatable {
   final DateTime createdAt;
   final DateTime? processedAt;
 
-  /// Driver balance immediately before the approval movement. Set on approve.
+  /// Driver balance immediately before the balance movement. Set on approve
+  /// for Request Cash and on submit for Withdraw.
   final int? balanceBeforeEgp;
 
-  /// Driver balance immediately after the approval movement. Set on approve.
+  /// Driver balance immediately after the balance movement. Set on approve
+  /// for Request Cash and on submit for Withdraw.
   final int? balanceAfterEgp;
 
   const CashRequest({

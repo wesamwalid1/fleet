@@ -4,7 +4,7 @@ import '../../domain/repositories/finance_repository.dart';
 import '../../domain/summarize_transactions.dart';
 import '../datasources/mock_finance_data_source.dart';
 
-/// Available balance comes from the shared cash ledger.
+/// Available and frozen balances come from the shared cash ledger.
 /// Charge and max limit stay on the transaction summary.
 class SessionFinanceRepository implements FinanceRepository {
   final MockFinanceDataSource _dataSource;
@@ -25,7 +25,8 @@ class SessionFinanceRepository implements FinanceRepository {
       ],
     );
     return FinancialSummary(
-      balanceEgp: _ledger.balanceOf(MockCashLedger.senderId),
+      balanceEgp: _ledger.availableBalance(MockCashLedger.senderId),
+      frozenBalanceEgp: _ledger.frozenBalance(MockCashLedger.senderId),
       chargeEgp: base.chargeEgp,
       maxLimitEgp: base.maxLimitEgp,
     );

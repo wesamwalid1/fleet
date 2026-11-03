@@ -86,7 +86,7 @@ void main() {
     expect(find.text('Action Required'), findsNothing);
   });
 
-  testWidgets('vault sheet shows Current Balance when a Withdraw is reserved', (
+  testWidgets('vault sheet shows the ledger balance after a pending Withdraw', (
     tester,
   ) async {
     late MockCashLedger ledger;
@@ -102,8 +102,9 @@ void main() {
       },
     );
 
-    expect(ledger.currentBalance(MockCashLedger.senderId), 2200);
+    expect(ledger.currentBalance(MockCashLedger.senderId), 1700);
     expect(ledger.availableBalance(MockCashLedger.senderId), 1700);
+    expect(ledger.frozenBalance(MockCashLedger.senderId), 500);
 
     await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
     await tester.pump();
@@ -111,11 +112,10 @@ void main() {
 
     expect(find.text('Approve Cash Receipt'), findsOneWidget);
     expect(find.text('Current balance'), findsOneWidget);
-    // Must show Current 2,200 and After 4,200 — not Available 1,700 / 3,700.
-    expect(find.text('2,200 EGP'), findsWidgets);
-    expect(find.text('4,200 EGP'), findsOneWidget);
-    expect(find.text('1,700 EGP'), findsNothing);
-    expect(find.text('3,700 EGP'), findsNothing);
+    // The withdraw is already deducted, so the vault credit lands on 1,700.
+    expect(find.text('1,700 EGP'), findsWidgets);
+    expect(find.text('3,700 EGP'), findsOneWidget);
+    expect(find.text('4,200 EGP'), findsNothing);
 
     await tester.tap(find.byKey(const Key('approval-cancel')));
     await tester.pumpAndSettle();
@@ -147,7 +147,7 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
 
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
@@ -181,7 +181,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('4,200 EGP'), findsOneWidget);
+    expect(find.text('4,200 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
@@ -213,7 +213,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
   });
 
   testWidgets('confirming a road expense does not change the balance', (
@@ -244,7 +244,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
@@ -296,7 +296,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });

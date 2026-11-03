@@ -218,7 +218,7 @@ void main() {
   });
 
   test(
-    'success result reports Current Balance when a Withdraw is reserved',
+    'success result reports the ledger balance after a pending Withdraw',
     () async {
       final ledger = MockCashLedger(senderBalanceEgp: 2200);
       final requests = CashRequestRepositoryImpl(ledger);
@@ -229,7 +229,7 @@ void main() {
         amountEgp: 500,
         createdAt: createdAt,
       );
-      expect(ledger.currentBalance(MockCashLedger.senderId), 2200);
+      expect(ledger.currentBalance(MockCashLedger.senderId), 1700);
       expect(ledger.availableBalance(MockCashLedger.senderId), 1700);
 
       final result = await SendCash(transfers)(
@@ -239,10 +239,11 @@ void main() {
         createdAt: createdAt.add(const Duration(minutes: 1)),
       );
 
-      // Current after send: 2000; Available: 1500. Success UI needs Current.
-      expect(ledger.currentBalance(MockCashLedger.senderId), 2000);
+      expect(ledger.currentBalance(MockCashLedger.senderId), 1500);
       expect(ledger.availableBalance(MockCashLedger.senderId), 1500);
-      expect(result.senderBalanceEgp, 2000);
+      expect(ledger.frozenBalance(MockCashLedger.senderId), 700);
+      expect(ledger.totalBalance(MockCashLedger.senderId), 2200);
+      expect(result.senderBalanceEgp, 1500);
       expect(
         await transfers.getAvailableBalance(MockCashLedger.senderId),
         1500,

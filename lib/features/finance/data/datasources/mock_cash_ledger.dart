@@ -111,7 +111,8 @@ class MockCashLedger {
     }
   }
 
-  /// Cash currently held by the driver (not reduced by pending withdraws).
+  /// Actual ledger balance. Pending Send Cash and pending Withdraw amounts are
+  /// already deducted from it.
   int balanceOf(String driverId) {
     final balance = _balances[driverId];
     if (balance == null) throw UnknownDriverException(driverId);
@@ -132,10 +133,30 @@ class MockCashLedger {
     return total;
   }
 
-  /// Spendable cash after pending withdraw reservations.
-  int availableBalance(String driverId) {
-    return currentBalance(driverId) - reservedWithdraw(driverId);
+  int pendingSendCash(String driverId) {
+    var total = 0;
+    for (final transfer in _transfers) {
+      if (transfer.senderId == driverId &&
+          transfer.status == TransferStatus.pending) {
+        total += transfer.amountEgp;
+      }
+    }
+    return total;
   }
+
+  /// Outgoing amounts deducted from the ledger but not yet finalized.
+  int frozenBalance(String driverId) {
+    balanceOf(driverId);
+    return pendingSendCash(driverId) + reservedWithdraw(driverId);
+  }
+
+  /// Ledger balance plus frozen reservations: Total = Available + Frozen.
+  int totalBalance(String driverId) {
+    return balanceOf(driverId) + frozenBalance(driverId);
+  }
+
+  /// Spendable cash. Reservations are already deducted from the ledger.
+  int availableBalance(String driverId) => balanceOf(driverId);
 
   int pendingRequestCash(String driverId) {
     var total = 0;
@@ -149,10 +170,10 @@ class MockCashLedger {
     return total;
   }
 
+  /// Max Limit − Total Balance − pending Request Cash. Frozen amounts are
+  /// already part of Total Balance and are not subtracted again.
   int availableRequestCapacity(String driverId) {
-    return maxLimitEgp -
-        currentBalance(driverId) -
-        pendingRequestCash(driverId);
+    return maxLimitEgp - totalBalance(driverId) - pendingRequestCash(driverId);
   }
 
   List<FinanceDriver> recipients(String senderId) {
@@ -589,11 +610,13 @@ class MockCashLedger {
     String? note,
   }) {
     if (amountEgp <= 0) throw InvalidCashRequestAmountException(amountEgp);
-    balanceOf(driverId);
+    final balance = balanceOf(driverId);
     if (amountEgp > availableBalance(driverId)) {
       throw const InsufficientWithdrawBalanceException();
     }
 
+    final after = balance - amountEgp;
+    _balances[driverId] = after;
     final number = 'WD-${_withdrawSequence.toString().padLeft(3, '0')}';
     _withdrawSequence += 1;
     final request = CashRequest(
@@ -605,6 +628,8 @@ class MockCashLedger {
       note: _trimmedNote(note),
       status: CashRequestStatus.pending,
       createdAt: createdAt,
+      balanceBeforeEgp: balance,
+      balanceAfterEgp: after,
     );
     _cashRequests.add(request);
     _emit(CashRequestCreated(request));
@@ -627,10 +652,10 @@ class MockCashLedger {
     if (balance == null) throw UnknownDriverException(request.driverId);
     final at = processedAt ?? DateTime.now();
 
-    late final int after;
+    late final CashRequest updated;
     switch (request.type) {
       case CashRequestType.requestCash:
-        after = balance + request.amountEgp;
+        final after = balance + request.amountEgp;
         _balances[request.driverId] = after;
         _transactions.add(
           MoneyTransaction(
@@ -642,12 +667,14 @@ class MockCashLedger {
             createdAt: at,
           ),
         );
+        updated = request.copyWith(
+          status: CashRequestStatus.approved,
+          processedAt: at,
+          balanceBeforeEgp: balance,
+          balanceAfterEgp: after,
+        );
       case CashRequestType.withdraw:
-        if (request.amountEgp > balance) {
-          throw const InsufficientWithdrawBalanceException();
-        }
-        after = balance - request.amountEgp;
-        _balances[request.driverId] = after;
+        // Already deducted at submit; approval releases the reservation only.
         _transactions.add(
           MoneyTransaction(
             type: MoneyTransactionType.expense,
@@ -658,14 +685,12 @@ class MockCashLedger {
             createdAt: at,
           ),
         );
+        updated = request.copyWith(
+          status: CashRequestStatus.approved,
+          processedAt: at,
+        );
     }
 
-    final updated = request.copyWith(
-      status: CashRequestStatus.approved,
-      processedAt: at,
-      balanceBeforeEgp: balance,
-      balanceAfterEgp: after,
-    );
     _cashRequests[index] = updated;
     _emit(CashRequestApproved(updated));
     _changed();
@@ -683,6 +708,12 @@ class MockCashLedger {
       throw const CashRequestAlreadyFinalizedException();
     }
 
+    if (request.type == CashRequestType.withdraw) {
+      final balance = _balances[request.driverId];
+      if (balance == null) throw UnknownDriverException(request.driverId);
+      // Refund the submit deduction. Keep the original debit snapshots.
+      _balances[request.driverId] = balance + request.amountEgp;
+    }
     final updated = request.copyWith(
       status: CashRequestStatus.rejected,
       processedAt: processedAt ?? DateTime.now(),

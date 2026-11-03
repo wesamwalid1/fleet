@@ -127,7 +127,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get availableRequestCapacity => 'السعة المتاحة للطلب';
 
   @override
-  String get availableToWithdraw => 'المتاح للتسليم';
+  String get requestCashTotalBalance => 'إجمالي الرصيد';
+
+  @override
+  String get pendingRequestCash => 'طلبات النقد المعلّقة';
+
+  @override
+  String get requestCashSummaryLoadError => 'تعذر تحميل بيانات طلب النقد.';
+
+  @override
+  String get withdrawAvailableBalance => 'الرصيد المتاح';
+
+  @override
+  String get withdrawAmountLabel => 'مبلغ التسليم';
+
+  @override
+  String get withdrawBalanceAfter => 'الرصيد بعد التسليم';
+
+  @override
+  String get withdrawSummaryLoadError => 'تعذر تحميل بيانات التسليم.';
 
   @override
   String get submitRequest => 'إرسال الطلب';
@@ -795,6 +813,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get homeAvailableBalance => 'الرصيد المتاح';
+
+  @override
+  String get homeTotalBalance => 'إجمالي الرصيد';
+
+  @override
+  String get homeFrozenBalance => 'الرصيد المجمّد';
 
   @override
   String homeLimitUsed(String percent) {

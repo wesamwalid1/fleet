@@ -6,6 +6,9 @@ enum WithdrawCashError { invalidAmount, exceedsAvailable, unexpected }
 
 class WithdrawCashState extends Equatable {
   final bool loading;
+
+  /// The form summary failed to load, so its figures are not known.
+  final bool summaryUnavailable;
   final int currentBalanceEgp;
   final int availableBalanceEgp;
   final int amountEgp;
@@ -16,6 +19,7 @@ class WithdrawCashState extends Equatable {
 
   const WithdrawCashState({
     this.loading = true,
+    this.summaryUnavailable = false,
     this.currentBalanceEgp = 0,
     this.availableBalanceEgp = 0,
     this.amountEgp = 0,
@@ -27,6 +31,7 @@ class WithdrawCashState extends Equatable {
 
   bool get canSubmit =>
       !loading &&
+      !summaryUnavailable &&
       !submitting &&
       result == null &&
       amountEgp > 0 &&
@@ -34,6 +39,7 @@ class WithdrawCashState extends Equatable {
 
   WithdrawCashState copyWith({
     bool? loading,
+    bool? summaryUnavailable,
     int? currentBalanceEgp,
     int? availableBalanceEgp,
     int? amountEgp,
@@ -45,6 +51,7 @@ class WithdrawCashState extends Equatable {
   }) {
     return WithdrawCashState(
       loading: loading ?? this.loading,
+      summaryUnavailable: summaryUnavailable ?? this.summaryUnavailable,
       currentBalanceEgp: currentBalanceEgp ?? this.currentBalanceEgp,
       availableBalanceEgp: availableBalanceEgp ?? this.availableBalanceEgp,
       amountEgp: amountEgp ?? this.amountEgp,
@@ -58,6 +65,7 @@ class WithdrawCashState extends Equatable {
   @override
   List<Object?> get props => [
     loading,
+    summaryUnavailable,
     currentBalanceEgp,
     availableBalanceEgp,
     amountEgp,

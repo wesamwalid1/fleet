@@ -129,7 +129,7 @@ void main() {
       expect(approved.balanceAfterEgp, 2600);
     });
 
-    test('withdraw pending has no snapshot; approve debits', () async {
+    test('withdraw snapshots the debit at submit; approve keeps it', () async {
       final ledger = MockCashLedger(senderBalanceEgp: 2200);
       final request = ledger.submitWithdraw(
         driverId: _driverId,
@@ -137,13 +137,34 @@ void main() {
         createdAt: DateTime(2026, 8, 5),
       );
       final pending = await _row(ledger, request.id);
-      expect(pending.hasBalanceSnapshot, isFalse);
+      expect(pending.balanceBeforeEgp, 2200);
+      expect(pending.balanceAfterEgp, 1950);
 
       ledger.approveCashRequest(request.id, processedAt: DateTime(2026, 8, 6));
       final approved = await _row(ledger, request.id);
       expect(approved.balanceBeforeEgp, 2200);
       expect(approved.balanceAfterEgp, 1950);
+      expect(ledger.balanceOf(_driverId), 1950);
     });
+
+    test(
+      'rejected withdraw keeps the debit snapshot and refunds once',
+      () async {
+        final ledger = MockCashLedger(senderBalanceEgp: 2200);
+        final request = ledger.submitWithdraw(
+          driverId: _driverId,
+          amountEgp: 250,
+          createdAt: DateTime(2026, 8, 5),
+        );
+
+        ledger.rejectCashRequest(request.id, processedAt: DateTime(2026, 8, 6));
+        final rejected = await _row(ledger, request.id);
+        expect(rejected.status, HistoryDisplayStatus.rejected);
+        expect(rejected.balanceBeforeEgp, 2200);
+        expect(rejected.balanceAfterEgp, 1950);
+        expect(ledger.balanceOf(_driverId), 2200);
+      },
+    );
 
     test('rejected cash request does not fabricate snapshots', () async {
       final ledger = MockCashLedger(senderBalanceEgp: 2200);

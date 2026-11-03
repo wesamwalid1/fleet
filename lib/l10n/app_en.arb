@@ -42,7 +42,13 @@
   "withdrawTitle": "Withdraw",
   "withdrawSubtitle": "Return unused cash to the company vault",
   "availableRequestCapacity": "Available request capacity",
-  "availableToWithdraw": "Available to withdraw",
+  "requestCashTotalBalance": "Total Balance",
+  "pendingRequestCash": "Pending Request Cash",
+  "requestCashSummaryLoadError": "Unable to load your request cash details.",
+  "withdrawAvailableBalance": "Available Balance",
+  "withdrawAmountLabel": "Withdrawal Amount",
+  "withdrawBalanceAfter": "Balance After Withdrawal",
+  "withdrawSummaryLoadError": "Unable to load your withdrawal details.",
   "submitRequest": "Submit Request",
   "submitWithdraw": "Submit Withdraw",
   "exceedsRequestCapacityError": "Amount exceeds your available request capacity",
@@ -408,6 +414,8 @@
   },
   "approvalFailed": "Could not update this approval.",
   "homeAvailableBalance": "Available Balance",
+  "homeTotalBalance": "Total Balance",
+  "homeFrozenBalance": "Frozen Balance",
   "homeLimitUsed": "{percent}% of limit used",
   "@homeLimitUsed": {
     "placeholders": {

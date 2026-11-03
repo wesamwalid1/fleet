@@ -117,10 +117,7 @@ String historySubtitle(AppLocalizations l10n, HistoryEntry entry) {
     HistoryKind.requestCash || HistoryKind.withdraw =>
       entry.requestNumber.isEmpty ? entry.id : entry.requestNumber,
   };
-  final pendingHint =
-      entry.isPending &&
-          (entry.kind == HistoryKind.requestCash ||
-              entry.kind == HistoryKind.withdraw)
+  final pendingHint = entry.isPending && entry.kind == HistoryKind.requestCash
       ? ' · ${l10n.historyPendingBalanceUnchanged}'
       : '';
   return '$reference · $marked$pendingHint';

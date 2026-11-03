@@ -332,11 +332,47 @@ abstract class AppLocalizations {
   /// **'Available request capacity'**
   String get availableRequestCapacity;
 
-  /// No description provided for @availableToWithdraw.
+  /// No description provided for @requestCashTotalBalance.
   ///
   /// In en, this message translates to:
-  /// **'Available to withdraw'**
-  String get availableToWithdraw;
+  /// **'Total Balance'**
+  String get requestCashTotalBalance;
+
+  /// No description provided for @pendingRequestCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Request Cash'**
+  String get pendingRequestCash;
+
+  /// No description provided for @requestCashSummaryLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load your request cash details.'**
+  String get requestCashSummaryLoadError;
+
+  /// No description provided for @withdrawAvailableBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Available Balance'**
+  String get withdrawAvailableBalance;
+
+  /// No description provided for @withdrawAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawal Amount'**
+  String get withdrawAmountLabel;
+
+  /// No description provided for @withdrawBalanceAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance After Withdrawal'**
+  String get withdrawBalanceAfter;
+
+  /// No description provided for @withdrawSummaryLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load your withdrawal details.'**
+  String get withdrawSummaryLoadError;
 
   /// No description provided for @submitRequest.
   ///
@@ -1513,6 +1549,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Available Balance'**
   String get homeAvailableBalance;
+
+  /// No description provided for @homeTotalBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Balance'**
+  String get homeTotalBalance;
+
+  /// No description provided for @homeFrozenBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Frozen Balance'**
+  String get homeFrozenBalance;
 
   /// No description provided for @homeLimitUsed.
   ///

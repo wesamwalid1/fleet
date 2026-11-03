@@ -15,7 +15,9 @@ class CashRequestRepositoryImpl implements CashRequestRepository {
   ) async {
     return RequestCashFormSummary(
       currentBalanceEgp: _ledger.currentBalance(driverId),
+      totalBalanceEgp: _ledger.totalBalance(driverId),
       maxLimitEgp: _ledger.maxLimitEgp,
+      pendingRequestCashEgp: _ledger.pendingRequestCash(driverId),
       availableRequestCapacityEgp: _ledger.availableRequestCapacity(driverId),
     );
   }

@@ -38,7 +38,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
@@ -126,7 +126,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('4,200 EGP'), findsOneWidget);
+    expect(find.text('4,200 EGP'), findsNWidgets(2));
     expect(find.text('6,200 EGP'), findsNothing);
   });
 
@@ -164,7 +164,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,700 EGP'), findsOneWidget);
+    expect(find.text('2,700 EGP'), findsNWidgets(2));
   });
 
   testWidgets('rejecting an incoming transfer updates the same history row', (
@@ -194,7 +194,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
   });
 
   testWidgets('confirming a road expense updates the same history row', (
@@ -229,7 +229,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
   });
@@ -261,7 +261,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
   });
 
   testWidgets('arabic history copy is localized', (tester) async {

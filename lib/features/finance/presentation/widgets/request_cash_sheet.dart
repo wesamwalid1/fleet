@@ -72,11 +72,24 @@ class _RequestCashSheetState extends State<RequestCashSheet> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
+  /// Digits that overflow [int]. The bloc only receives ints, so the sheet
+  /// tracks this itself instead of letting the amount read as zero.
+  bool _amountOutOfRange = false;
+
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _onAmountChanged(String value) {
+    final parsed = int.tryParse(value);
+    final outOfRange = value.isNotEmpty && parsed == null;
+    if (outOfRange != _amountOutOfRange) {
+      setState(() => _amountOutOfRange = outOfRange);
+    }
+    context.read<RequestCashBloc>().add(RequestCashAmountChanged(parsed ?? 0));
   }
 
   @override
@@ -105,6 +118,7 @@ class _RequestCashSheetState extends State<RequestCashSheet> {
         listenWhen: (previous, current) =>
             previous.amountEgp != current.amountEgp,
         listener: (context, state) {
+          if (_amountOutOfRange) return;
           final text = state.amountEgp == 0 ? '' : '${state.amountEgp}';
           if (_amountController.text == text) return;
           _amountController.value = TextEditingValue(
@@ -126,6 +140,8 @@ class _RequestCashSheetState extends State<RequestCashSheet> {
                       l10n: l10n,
                       amountController: _amountController,
                       noteController: _noteController,
+                      amountOutOfRange: _amountOutOfRange,
+                      onAmountChanged: _onAmountChanged,
                     );
                   },
                 ),
@@ -143,17 +159,23 @@ class _RequestCashForm extends StatelessWidget {
   final AppLocalizations l10n;
   final TextEditingController amountController;
   final TextEditingController noteController;
+  final bool amountOutOfRange;
+  final ValueChanged<String> onAmountChanged;
 
   const _RequestCashForm({
     required this.state,
     required this.l10n,
     required this.amountController,
     required this.noteController,
+    required this.amountOutOfRange,
+    required this.onAmountChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
+    String figure(int amount) =>
+        state.summaryUnavailable ? '—' : _money(amount, locale, l10n.egp);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,24 +207,46 @@ class _RequestCashForm extends StatelessWidget {
           _SummaryCard(
             rows: [
               _SummaryLine(
-                label: l10n.currentBalance,
-                value: _money(state.currentBalanceEgp, locale, l10n.egp),
+                label: l10n.requestCashTotalBalance,
+                value: figure(state.totalBalanceEgp),
+                valueKey: const Key('request-cash-total-balance'),
               ),
               _SummaryLine(
                 label: l10n.maxLimit,
-                value: _money(state.maxLimitEgp, locale, l10n.egp),
+                value: figure(state.maxLimitEgp),
+                valueKey: const Key('request-cash-max-limit'),
+              ),
+              _SummaryLine(
+                label: l10n.pendingRequestCash,
+                value: figure(state.pendingRequestCashEgp),
+                valueKey: const Key('request-cash-pending'),
               ),
               _SummaryLine(
                 label: l10n.availableRequestCapacity,
-                value: _money(
-                  state.availableRequestCapacityEgp,
-                  locale,
-                  l10n.egp,
-                ),
+                value: figure(state.availableRequestCapacityEgp),
+                valueKey: const Key('request-cash-capacity'),
                 emphasize: true,
               ),
             ],
           ),
+          if (state.summaryUnavailable) ...[
+            const SizedBox(height: 10),
+            Text(
+              l10n.requestCashSummaryLoadError,
+              key: const Key('request-cash-summary-error'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+            Center(
+              child: TextButton(
+                key: const Key('request-cash-retry'),
+                onPressed: () => context.read<RequestCashBloc>().add(
+                  const RequestCashStarted(),
+                ),
+                child: Text(l10n.tryAgain),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           TextField(
             key: const Key('request-cash-amount'),
@@ -226,11 +270,7 @@ class _RequestCashForm extends StatelessWidget {
               enabledBorder: _amountBorder(),
               focusedBorder: _amountBorder(),
             ),
-            onChanged: (value) {
-              context.read<RequestCashBloc>().add(
-                RequestCashAmountChanged(int.tryParse(value) ?? 0),
-              );
-            },
+            onChanged: onAmountChanged,
           ),
           const SizedBox(height: 14),
           TextField(
@@ -276,7 +316,7 @@ class _RequestCashForm extends StatelessWidget {
               Expanded(
                 child: FilledButton(
                   key: const Key('request-cash-submit'),
-                  onPressed: state.canSubmit
+                  onPressed: state.canSubmit && !amountOutOfRange
                       ? () {
                           if (_blockIfOffline(context, l10n)) return;
                           context.read<RequestCashBloc>().add(
@@ -315,8 +355,11 @@ class _RequestCashForm extends StatelessWidget {
   }
 
   String? _message(RequestCashState state, AppLocalizations l10n) {
-    if (state.amountEgp > state.availableRequestCapacityEgp &&
-        state.amountEgp > 0) {
+    // Capacity is unknown, so amount validation would be misleading.
+    if (state.summaryUnavailable) return null;
+    if (amountOutOfRange ||
+        (state.amountEgp > state.availableRequestCapacityEgp &&
+            state.amountEgp > 0)) {
       return l10n.exceedsRequestCapacityError;
     }
     return switch (state.error) {
@@ -476,11 +519,13 @@ class _SummaryCard extends StatelessWidget {
 class _SummaryLine extends StatelessWidget {
   final String label;
   final String value;
+  final Key? valueKey;
   final bool emphasize;
 
   const _SummaryLine({
     required this.label,
     required this.value,
+    this.valueKey,
     this.emphasize = false,
   });
 
@@ -500,6 +545,7 @@ class _SummaryLine extends StatelessWidget {
         ),
         Text(
           value,
+          key: valueKey,
           style: TextStyle(
             color: emphasize ? AppColors.success : AppColors.title,
             fontSize: 15,

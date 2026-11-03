@@ -17,7 +17,7 @@ class RequestCashBloc extends Bloc<RequestCashEvent, RequestCashState> {
     required this.requestCash,
     required this.repository,
   }) : super(const RequestCashState()) {
-    on<RequestCashStarted>(_onStarted);
+    on<RequestCashStarted>(_onStarted, transformer: droppable());
     on<RequestCashAmountChanged>(_onAmountChanged);
     on<RequestCashNoteChanged>(_onNoteChanged);
     on<RequestCashSubmitted>(_onSubmitted, transformer: droppable());
@@ -27,19 +27,23 @@ class RequestCashBloc extends Bloc<RequestCashEvent, RequestCashState> {
     RequestCashStarted event,
     Emitter<RequestCashState> emit,
   ) async {
+    emit(state.copyWith(loading: true, summaryUnavailable: false));
     try {
       final form = await repository.getRequestCashFormSummary(driverId);
       emit(
         state.copyWith(
           loading: false,
+          summaryUnavailable: false,
           currentBalanceEgp: form.currentBalanceEgp,
+          totalBalanceEgp: form.totalBalanceEgp,
           maxLimitEgp: form.maxLimitEgp,
+          pendingRequestCashEgp: form.pendingRequestCashEgp,
           availableRequestCapacityEgp: form.availableRequestCapacityEgp,
           clearError: true,
         ),
       );
     } catch (_) {
-      emit(state.copyWith(loading: false, error: RequestCashError.unexpected));
+      emit(state.copyWith(loading: false, summaryUnavailable: true));
     }
   }
 

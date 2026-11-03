@@ -6,8 +6,13 @@ enum RequestCashError { invalidAmount, exceedsCapacity, unexpected }
 
 class RequestCashState extends Equatable {
   final bool loading;
+
+  /// The form summary failed to load, so its figures are not known.
+  final bool summaryUnavailable;
   final int currentBalanceEgp;
+  final int totalBalanceEgp;
   final int maxLimitEgp;
+  final int pendingRequestCashEgp;
   final int availableRequestCapacityEgp;
   final int amountEgp;
   final String note;
@@ -17,8 +22,11 @@ class RequestCashState extends Equatable {
 
   const RequestCashState({
     this.loading = true,
+    this.summaryUnavailable = false,
     this.currentBalanceEgp = 0,
+    this.totalBalanceEgp = 0,
     this.maxLimitEgp = 0,
+    this.pendingRequestCashEgp = 0,
     this.availableRequestCapacityEgp = 0,
     this.amountEgp = 0,
     this.note = '',
@@ -29,6 +37,7 @@ class RequestCashState extends Equatable {
 
   bool get canSubmit =>
       !loading &&
+      !summaryUnavailable &&
       !submitting &&
       result == null &&
       amountEgp > 0 &&
@@ -36,8 +45,11 @@ class RequestCashState extends Equatable {
 
   RequestCashState copyWith({
     bool? loading,
+    bool? summaryUnavailable,
     int? currentBalanceEgp,
+    int? totalBalanceEgp,
     int? maxLimitEgp,
+    int? pendingRequestCashEgp,
     int? availableRequestCapacityEgp,
     int? amountEgp,
     String? note,
@@ -48,8 +60,12 @@ class RequestCashState extends Equatable {
   }) {
     return RequestCashState(
       loading: loading ?? this.loading,
+      summaryUnavailable: summaryUnavailable ?? this.summaryUnavailable,
       currentBalanceEgp: currentBalanceEgp ?? this.currentBalanceEgp,
+      totalBalanceEgp: totalBalanceEgp ?? this.totalBalanceEgp,
       maxLimitEgp: maxLimitEgp ?? this.maxLimitEgp,
+      pendingRequestCashEgp:
+          pendingRequestCashEgp ?? this.pendingRequestCashEgp,
       availableRequestCapacityEgp:
           availableRequestCapacityEgp ?? this.availableRequestCapacityEgp,
       amountEgp: amountEgp ?? this.amountEgp,
@@ -63,8 +79,11 @@ class RequestCashState extends Equatable {
   @override
   List<Object?> get props => [
     loading,
+    summaryUnavailable,
     currentBalanceEgp,
+    totalBalanceEgp,
     maxLimitEgp,
+    pendingRequestCashEgp,
     availableRequestCapacityEgp,
     amountEgp,
     note,

@@ -17,7 +17,7 @@ class WithdrawCashBloc extends Bloc<WithdrawCashEvent, WithdrawCashState> {
     required this.withdrawCash,
     required this.repository,
   }) : super(const WithdrawCashState()) {
-    on<WithdrawCashStarted>(_onStarted);
+    on<WithdrawCashStarted>(_onStarted, transformer: droppable());
     on<WithdrawCashAmountChanged>(_onAmountChanged);
     on<WithdrawCashNoteChanged>(_onNoteChanged);
     on<WithdrawCashSubmitted>(_onSubmitted, transformer: droppable());
@@ -27,18 +27,20 @@ class WithdrawCashBloc extends Bloc<WithdrawCashEvent, WithdrawCashState> {
     WithdrawCashStarted event,
     Emitter<WithdrawCashState> emit,
   ) async {
+    emit(state.copyWith(loading: true, summaryUnavailable: false));
     try {
       final form = await repository.getWithdrawFormSummary(driverId);
       emit(
         state.copyWith(
           loading: false,
+          summaryUnavailable: false,
           currentBalanceEgp: form.currentBalanceEgp,
           availableBalanceEgp: form.availableBalanceEgp,
           clearError: true,
         ),
       );
     } catch (_) {
-      emit(state.copyWith(loading: false, error: WithdrawCashError.unexpected));
+      emit(state.copyWith(loading: false, summaryUnavailable: true));
     }
   }
 

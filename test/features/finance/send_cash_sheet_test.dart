@@ -21,7 +21,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Send Cash to Driver'), findsNothing);
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('1,700 EGP'), findsNothing);
   });
 
@@ -46,10 +46,12 @@ void main() {
     await tester.tap(find.byKey(const Key('send-cash-home')));
     await tester.pumpAndSettle();
 
+    // Pending Send Cash: Available 1,700, Frozen 500, Total stays 2,200.
     expect(find.text('1,700 EGP'), findsOneWidget);
+    expect(find.text('500 EGP'), findsOneWidget);
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsNothing);
+    expect(find.text('2,200 EGP'), findsOneWidget);
     expect(find.byKey(const Key('record-expense')), findsOneWidget);
     expect(find.text('Pending Approvals'), findsOneWidget);
     expect(find.byKey(const Key('home-pending-TRF-2026-0124')), findsNothing);

@@ -66,7 +66,7 @@ void main() {
   });
 
   test(
-    'balanceEgp stays Current Balance when a Withdraw is reserved',
+    'balanceEgp is the ledger balance after a pending Withdraw deduction',
     () async {
       final harness = _Harness(
         seed: true,
@@ -78,16 +78,17 @@ void main() {
           );
         },
       );
-      expect(harness.ledger.currentBalance('DR-001'), 2200);
+      expect(harness.ledger.currentBalance('DR-001'), 1700);
       expect(harness.ledger.availableBalance('DR-001'), 1700);
+      expect(harness.ledger.frozenBalance('DR-001'), 500);
 
       final bloc = harness.bloc;
       addTearDown(bloc.close);
       bloc.add(const ApprovalsStarted());
       final state = await bloc.stream.firstWhere((s) => !s.loading);
 
-      expect(state.balanceEgp, 2200);
-      expect(await harness.repository.getAvailableBalance('DR-001'), 2200);
+      expect(state.balanceEgp, 1700);
+      expect(await harness.repository.getAvailableBalance('DR-001'), 1700);
     },
   );
 

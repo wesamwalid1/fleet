@@ -241,22 +241,22 @@ void main() {
       expect(cashLedger.cashRequests, hasLength(1));
     });
 
-    test(
-      'submitting does not change Current Balance or create a Transaction',
-      () async {
-        final cashLedger = ledger();
-        final repository = CashRequestRepositoryImpl(cashLedger);
-        await WithdrawCash(repository)(
-          driverId: driverId,
-          amountEgp: 300,
-          createdAt: createdAt,
-        );
+    test('submitting deducts the ledger, freezes the amount, and creates no '
+        'Transaction', () async {
+      final cashLedger = ledger();
+      final repository = CashRequestRepositoryImpl(cashLedger);
+      await WithdrawCash(repository)(
+        driverId: driverId,
+        amountEgp: 300,
+        createdAt: createdAt,
+      );
 
-        expect(cashLedger.currentBalance(driverId), 2200);
-        expect(cashLedger.transactions, isEmpty);
-        expect(cashLedger.availableBalance(driverId), 1900);
-      },
-    );
+      expect(cashLedger.currentBalance(driverId), 1900);
+      expect(cashLedger.transactions, isEmpty);
+      expect(cashLedger.availableBalance(driverId), 1900);
+      expect(cashLedger.frozenBalance(driverId), 300);
+      expect(cashLedger.totalBalance(driverId), 2200);
+    });
 
     test(
       'multiple pending Withdraw requests reserve balance cumulatively',
@@ -303,7 +303,8 @@ void main() {
         throwsA(isA<InsufficientWithdrawBalanceException>()),
       );
       expect(cashLedger.cashRequests, hasLength(1));
-      expect(cashLedger.currentBalance(driverId), 2200);
+      expect(cashLedger.currentBalance(driverId), 700);
+      expect(cashLedger.totalBalance(driverId), 2200);
     });
 
     test(
@@ -392,7 +393,7 @@ void main() {
         ),
         throwsA(isA<InsufficientBalanceException>()),
       );
-      expect(cashLedger.currentBalance(driverId), 2200);
+      expect(cashLedger.currentBalance(driverId), 200);
       expect(cashLedger.transfers, isEmpty);
     });
 
@@ -422,7 +423,7 @@ void main() {
           throwsA(isA<InsufficientExpenseBalanceException>()),
         );
         expect(cashLedger.expenses, isEmpty);
-        expect(cashLedger.currentBalance(driverId), 2200);
+        expect(cashLedger.currentBalance(driverId), 200);
       },
     );
 

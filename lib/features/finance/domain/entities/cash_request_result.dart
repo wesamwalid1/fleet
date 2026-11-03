@@ -26,19 +26,29 @@ class CashRequestResult extends Equatable {
 
 class RequestCashFormSummary extends Equatable {
   final int currentBalanceEgp;
+
+  /// Available + Frozen, read from the same ledger snapshot as capacity.
+  final int totalBalanceEgp;
   final int maxLimitEgp;
+
+  /// Sum of Request Cash amounts still Pending.
+  final int pendingRequestCashEgp;
   final int availableRequestCapacityEgp;
 
   const RequestCashFormSummary({
     required this.currentBalanceEgp,
+    required this.totalBalanceEgp,
     required this.maxLimitEgp,
+    required this.pendingRequestCashEgp,
     required this.availableRequestCapacityEgp,
   });
 
   @override
   List<Object?> get props => [
     currentBalanceEgp,
+    totalBalanceEgp,
     maxLimitEgp,
+    pendingRequestCashEgp,
     availableRequestCapacityEgp,
   ];
 }

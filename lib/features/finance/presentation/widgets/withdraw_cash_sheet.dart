@@ -71,11 +71,26 @@ class _WithdrawCashSheetState extends State<WithdrawCashSheet> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
+  /// Digits that overflow [int]. The bloc only receives ints, so the sheet
+  /// tracks this itself instead of letting the amount read as zero.
+  bool _amountOutOfRange = false;
+
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  void _onAmountChanged(String value) {
+    final parsed = int.tryParse(value);
+    final outOfRange = value.isNotEmpty && parsed == null;
+    if (outOfRange != _amountOutOfRange) {
+      setState(() => _amountOutOfRange = outOfRange);
+    }
+    context.read<WithdrawCashBloc>().add(
+      WithdrawCashAmountChanged(parsed ?? 0),
+    );
   }
 
   @override
@@ -104,6 +119,7 @@ class _WithdrawCashSheetState extends State<WithdrawCashSheet> {
         listenWhen: (previous, current) =>
             previous.amountEgp != current.amountEgp,
         listener: (context, state) {
+          if (_amountOutOfRange) return;
           final text = state.amountEgp == 0 ? '' : '${state.amountEgp}';
           if (_amountController.text == text) return;
           _amountController.value = TextEditingValue(
@@ -125,6 +141,8 @@ class _WithdrawCashSheetState extends State<WithdrawCashSheet> {
                       l10n: l10n,
                       amountController: _amountController,
                       noteController: _noteController,
+                      amountOutOfRange: _amountOutOfRange,
+                      onAmountChanged: _onAmountChanged,
                     );
                   },
                 ),
@@ -142,17 +160,25 @@ class _WithdrawCashForm extends StatelessWidget {
   final AppLocalizations l10n;
   final TextEditingController amountController;
   final TextEditingController noteController;
+  final bool amountOutOfRange;
+  final ValueChanged<String> onAmountChanged;
 
   const _WithdrawCashForm({
     required this.state,
     required this.l10n,
     required this.amountController,
     required this.noteController,
+    required this.amountOutOfRange,
+    required this.onAmountChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
+    final unavailable = state.summaryUnavailable;
+    final exceeds =
+        amountOutOfRange || state.amountEgp > state.availableBalanceEgp;
+    final balanceAfter = state.availableBalanceEgp - state.amountEgp;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -188,23 +214,44 @@ class _WithdrawCashForm extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Column(
-                children: [
-                  _row(
-                    l10n.currentBalance,
-                    _money(state.currentBalanceEgp, locale, l10n.egp),
-                  ),
-                  const SizedBox(height: 8),
-                  _row(
-                    l10n.availableToWithdraw,
-                    _money(state.availableBalanceEgp, locale, l10n.egp),
-                    emphasize: true,
-                  ),
-                ],
+              child: _row(
+                l10n.withdrawAvailableBalance,
+                unavailable
+                    ? '—'
+                    : _money(state.availableBalanceEgp, locale, l10n.egp),
+                valueKey: const Key('withdraw-available-balance'),
+                emphasize: true,
               ),
             ),
           ),
+          if (unavailable) ...[
+            const SizedBox(height: 10),
+            Text(
+              l10n.withdrawSummaryLoadError,
+              key: const Key('withdraw-summary-error'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+            Center(
+              child: TextButton(
+                key: const Key('withdraw-retry'),
+                onPressed: () => context.read<WithdrawCashBloc>().add(
+                  const WithdrawCashStarted(),
+                ),
+                child: Text(l10n.tryAgain),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
+          Text(
+            l10n.withdrawAmountLabel,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
           TextField(
             key: const Key('withdraw-amount'),
             controller: amountController,
@@ -227,11 +274,25 @@ class _WithdrawCashForm extends StatelessWidget {
               enabledBorder: _amountBorder(),
               focusedBorder: _amountBorder(),
             ),
-            onChanged: (value) {
-              context.read<WithdrawCashBloc>().add(
-                WithdrawCashAmountChanged(int.tryParse(value) ?? 0),
-              );
-            },
+            onChanged: onAmountChanged,
+          ),
+          const SizedBox(height: 12),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: _row(
+                l10n.withdrawBalanceAfter,
+                unavailable || exceeds
+                    ? '—'
+                    : _money(balanceAfter, locale, l10n.egp),
+                valueKey: const Key('withdraw-balance-after'),
+                valueColor: unavailable || exceeds ? AppColors.muted : null,
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -277,7 +338,7 @@ class _WithdrawCashForm extends StatelessWidget {
               Expanded(
                 child: FilledButton(
                   key: const Key('withdraw-submit'),
-                  onPressed: state.canSubmit
+                  onPressed: state.canSubmit && !amountOutOfRange
                       ? () {
                           if (_blockIfOffline(context, l10n)) return;
                           context.read<WithdrawCashBloc>().add(
@@ -315,7 +376,13 @@ class _WithdrawCashForm extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value, {bool emphasize = false}) {
+  Widget _row(
+    String label,
+    String value, {
+    Key? valueKey,
+    Color? valueColor,
+    bool emphasize = false,
+  }) {
     return Row(
       children: [
         Expanded(
@@ -330,8 +397,10 @@ class _WithdrawCashForm extends StatelessWidget {
         ),
         Text(
           value,
+          key: valueKey,
           style: TextStyle(
-            color: emphasize ? AppColors.success : AppColors.title,
+            color:
+                valueColor ?? (emphasize ? AppColors.success : AppColors.title),
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
@@ -341,7 +410,10 @@ class _WithdrawCashForm extends StatelessWidget {
   }
 
   String? _message(WithdrawCashState state, AppLocalizations l10n) {
-    if (state.amountEgp > state.availableBalanceEgp && state.amountEgp > 0) {
+    // The balance is unknown, so amount validation would be misleading.
+    if (state.summaryUnavailable) return null;
+    if (amountOutOfRange ||
+        (state.amountEgp > state.availableBalanceEgp && state.amountEgp > 0)) {
       return l10n.exceedsAvailableBalanceError;
     }
     return switch (state.error) {

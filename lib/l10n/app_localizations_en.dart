@@ -128,7 +128,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get availableRequestCapacity => 'Available request capacity';
 
   @override
-  String get availableToWithdraw => 'Available to withdraw';
+  String get requestCashTotalBalance => 'Total Balance';
+
+  @override
+  String get pendingRequestCash => 'Pending Request Cash';
+
+  @override
+  String get requestCashSummaryLoadError =>
+      'Unable to load your request cash details.';
+
+  @override
+  String get withdrawAvailableBalance => 'Available Balance';
+
+  @override
+  String get withdrawAmountLabel => 'Withdrawal Amount';
+
+  @override
+  String get withdrawBalanceAfter => 'Balance After Withdrawal';
+
+  @override
+  String get withdrawSummaryLoadError =>
+      'Unable to load your withdrawal details.';
 
   @override
   String get submitRequest => 'Submit Request';
@@ -798,6 +818,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeAvailableBalance => 'Available Balance';
+
+  @override
+  String get homeTotalBalance => 'Total Balance';
+
+  @override
+  String get homeFrozenBalance => 'Frozen Balance';
 
   @override
   String homeLimitUsed(String percent) {

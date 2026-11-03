@@ -510,7 +510,7 @@ class _WalletFigures extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final amount = formatHomeAmount(
-      summary.balanceEgp,
+      summary.totalBalanceEgp,
       locale: locale,
       withCurrency: false,
       currency: l10n.egp,
@@ -519,7 +519,7 @@ class _WalletFigures extends StatelessWidget {
       key: const Key('home-finance-card'),
       children: [
         Text(
-          l10n.homeAvailableBalance,
+          l10n.homeTotalBalance,
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -549,7 +549,7 @@ class _WalletFigures extends StatelessWidget {
                 ),
               ],
             ),
-            key: const Key('home-balance'),
+            key: const Key('home-total-balance'),
             maxLines: 1,
             textAlign: TextAlign.center,
             style: const TextStyle(
@@ -562,7 +562,98 @@ class _WalletFigures extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 20),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _WalletSubFigure(
+                label: l10n.homeAvailableBalance,
+                value: _money(context, summary.availableBalanceEgp),
+                valueKey: const Key('home-balance'),
+                icon: Icons.account_balance_wallet_outlined,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _WalletSubFigure(
+                label: l10n.homeFrozenBalance,
+                value: _money(context, summary.frozenBalanceEgp),
+                valueKey: const Key('home-frozen-balance'),
+                icon: Icons.lock_outline_rounded,
+              ),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+}
+
+class _WalletSubFigure extends StatelessWidget {
+  final String label;
+  final String value;
+  final Key valueKey;
+  final IconData icon;
+
+  const _WalletSubFigure({
+    required this.label,
+    required this.value,
+    required this.valueKey,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: AppColors.hint),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.hint,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                value,
+                key: valueKey,
+                maxLines: 1,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  height: 1.1,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: _tabular,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

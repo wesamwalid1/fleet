@@ -22,7 +22,7 @@ void main() {
 
     expect(find.byKey(const Key('expense-close')), findsNothing);
     expect(find.byKey(const Key('record-expense')), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('1,900 EGP'), findsNothing);
   });
 
@@ -74,7 +74,7 @@ void main() {
     await tester.tap(find.byKey(const Key('expense-done')));
     await tester.pumpAndSettle();
 
-    expect(find.text('1,900 EGP'), findsOneWidget);
+    expect(find.text('1,900 EGP'), findsNWidgets(2));
     expect(find.text('3,200 EGP'), findsOneWidget);
     expect(find.text('5,000 EGP'), findsOneWidget);
     expect(find.text('2,200 EGP'), findsNothing);
