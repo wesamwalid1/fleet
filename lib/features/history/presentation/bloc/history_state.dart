@@ -10,8 +10,7 @@ class HistoryState extends Equatable {
   final HistoryDateMode dateMode;
   final DateTime? startDate;
   final DateTime? endDate;
-  final HistoryTripMode tripMode;
-  final String? tripId;
+  final Set<String> tripIds;
   final List<HistoryEntry> entries;
   final String? highlightedId;
 
@@ -23,8 +22,7 @@ class HistoryState extends Equatable {
     this.dateMode = HistoryDateMode.all,
     this.startDate,
     this.endDate,
-    this.tripMode = HistoryTripMode.all,
-    this.tripId,
+    this.tripIds = const {},
     this.entries = const [],
     this.highlightedId,
   });
@@ -42,7 +40,7 @@ class HistoryState extends Equatable {
   bool get hasActiveFilter =>
       filter != HistoryFilter.all ||
       dateMode != HistoryDateMode.all ||
-      (filter == HistoryFilter.expenses && tripMode != HistoryTripMode.all);
+      (filter == HistoryFilter.expenses && tripIds.isNotEmpty);
 
   /// Type / date / trip filters applied; search is applied on the page.
   List<HistoryEntry> get visible => [
@@ -53,7 +51,7 @@ class HistoryState extends Equatable {
             startDate: startDate,
             endDate: endDate,
           ) &&
-          entry.matchesTrip(filter: filter, tripMode: tripMode, tripId: tripId))
+          entry.matchesTrip(filter: filter, tripIds: tripIds))
         entry,
   ];
 
@@ -65,8 +63,7 @@ class HistoryState extends Equatable {
     HistoryDateMode? dateMode,
     Object? startDate = _keep,
     Object? endDate = _keep,
-    HistoryTripMode? tripMode,
-    Object? tripId = _keep,
+    Set<String>? tripIds,
     List<HistoryEntry>? entries,
     Object? highlightedId = _keep,
   }) {
@@ -80,8 +77,7 @@ class HistoryState extends Equatable {
           ? this.startDate
           : startDate as DateTime?,
       endDate: identical(endDate, _keep) ? this.endDate : endDate as DateTime?,
-      tripMode: tripMode ?? this.tripMode,
-      tripId: identical(tripId, _keep) ? this.tripId : tripId as String?,
+      tripIds: tripIds ?? this.tripIds,
       entries: entries ?? this.entries,
       highlightedId: identical(highlightedId, _keep)
           ? this.highlightedId
@@ -98,8 +94,7 @@ class HistoryState extends Equatable {
     dateMode,
     startDate,
     endDate,
-    tripMode,
-    tripId,
+    tripIds,
     entries,
     highlightedId,
   ];
@@ -113,16 +108,14 @@ class HistoryFilterDraft extends Equatable {
   final HistoryDateMode dateMode;
   final DateTime? startDate;
   final DateTime? endDate;
-  final HistoryTripMode tripMode;
-  final String? tripId;
+  final Set<String> tripIds;
 
   const HistoryFilterDraft({
     this.filter = HistoryFilter.all,
     this.dateMode = HistoryDateMode.all,
     this.startDate,
     this.endDate,
-    this.tripMode = HistoryTripMode.all,
-    this.tripId,
+    this.tripIds = const {},
   });
 
   factory HistoryFilterDraft.fromState(HistoryState state) {
@@ -136,8 +129,7 @@ class HistoryFilterDraft extends Equatable {
       dateMode: state.dateMode,
       startDate: state.startDate,
       endDate: state.endDate,
-      tripMode: state.tripMode,
-      tripId: state.tripId,
+      tripIds: state.tripIds,
     );
   }
 
@@ -148,8 +140,7 @@ class HistoryFilterDraft extends Equatable {
     HistoryDateMode? dateMode,
     Object? startDate = _keep,
     Object? endDate = _keep,
-    HistoryTripMode? tripMode,
-    Object? tripId = _keep,
+    Set<String>? tripIds,
   }) {
     return HistoryFilterDraft(
       filter: filter ?? this.filter,
@@ -158,18 +149,10 @@ class HistoryFilterDraft extends Equatable {
           ? this.startDate
           : startDate as DateTime?,
       endDate: identical(endDate, _keep) ? this.endDate : endDate as DateTime?,
-      tripMode: tripMode ?? this.tripMode,
-      tripId: identical(tripId, _keep) ? this.tripId : tripId as String?,
+      tripIds: tripIds ?? this.tripIds,
     );
   }
 
   @override
-  List<Object?> get props => [
-    filter,
-    dateMode,
-    startDate,
-    endDate,
-    tripMode,
-    tripId,
-  ];
+  List<Object?> get props => [filter, dateMode, startDate, endDate, tripIds];
 }

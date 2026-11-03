@@ -60,8 +60,7 @@ void main() {
             filter: HistoryFilter.expenses,
             dateMode: HistoryDateMode.day,
             startDate: DateTime(2099, 1, 1),
-            tripMode: HistoryTripMode.specific,
-            tripId: 'trip-missing',
+            tripIds: const {'trip-missing'},
           ),
         ),
       );
@@ -87,8 +86,7 @@ void main() {
       expect(bloc.state.dateMode, HistoryDateMode.all);
       expect(bloc.state.startDate, isNull);
       expect(bloc.state.endDate, isNull);
-      expect(bloc.state.tripMode, HistoryTripMode.all);
-      expect(bloc.state.tripId, isNull);
+      expect(bloc.state.tripIds, isEmpty);
       expect(
         bloc.state.visible.any((entry) => entry.id == 'DSB-2025-0441'),
         isTrue,
@@ -463,32 +461,28 @@ void main() {
     expect(
       expense.matchesTrip(
         filter: HistoryFilter.expenses,
-        tripMode: HistoryTripMode.specific,
-        tripId: 'trip-a',
+        tripIds: const {'trip-a'},
       ),
       isTrue,
     );
     expect(
       expense.matchesTrip(
         filter: HistoryFilter.expenses,
-        tripMode: HistoryTripMode.specific,
-        tripId: 'trip-b',
+        tripIds: const {'trip-b'},
       ),
       isFalse,
     );
     expect(
       transfer.matchesTrip(
         filter: HistoryFilter.cashTransfers,
-        tripMode: HistoryTripMode.specific,
-        tripId: 'trip-a',
+        tripIds: const {'trip-a'},
       ),
       isTrue,
     );
     expect(
       transfer.matchesTrip(
         filter: HistoryFilter.all,
-        tripMode: HistoryTripMode.specific,
-        tripId: 'trip-a',
+        tripIds: const {'trip-a'},
       ),
       isTrue,
     );

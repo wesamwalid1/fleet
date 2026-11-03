@@ -1035,6 +1035,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripRequired => 'Select a trip to apply this filter.';
 
   @override
+  String historyTripsSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips selected',
+      one: '1 trip selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get historyNoResults => 'No matching transactions';
 
   @override

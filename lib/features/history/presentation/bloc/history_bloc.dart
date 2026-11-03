@@ -90,8 +90,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         dateMode: draft.dateMode,
         startDate: draft.startDate,
         endDate: draft.endDate,
-        tripMode: expenses ? draft.tripMode : HistoryTripMode.all,
-        tripId: expenses ? draft.tripId : null,
+        tripIds: expenses ? Set<String>.unmodifiable(draft.tripIds) : const {},
       ),
     );
   }
@@ -103,8 +102,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         dateMode: HistoryDateMode.all,
         startDate: null,
         endDate: null,
-        tripMode: HistoryTripMode.all,
-        tripId: null,
+        tripIds: const {},
       ),
     );
   }
@@ -122,8 +120,7 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         dateMode: HistoryDateMode.all,
         startDate: null,
         endDate: null,
-        tripMode: HistoryTripMode.all,
-        tripId: null,
+        tripIds: const {},
       ),
     );
     _highlightTimer = Timer(historyHighlightDuration, () {

@@ -1922,6 +1922,12 @@ abstract class AppLocalizations {
   /// **'Select a trip to apply this filter.'**
   String get tripRequired;
 
+  /// No description provided for @historyTripsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 trip selected} other{{count} trips selected}}'**
+  String historyTripsSelected(int count);
+
   /// No description provided for @historyNoResults.
   ///
   /// In en, this message translates to:

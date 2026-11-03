@@ -532,6 +532,12 @@
   "selectTrip": "Select trip",
   "invalidDateRange": "Start date must be on or before the end date.",
   "tripRequired": "Select a trip to apply this filter.",
+  "historyTripsSelected": "{count, plural, =1{1 trip selected} other{{count} trips selected}}",
+  "@historyTripsSelected": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "historyNoResults": "No matching transactions",
   "historyNoResultsHint": "Try a different search or reset the filters.",
   "clearFilters": "Clear filters",

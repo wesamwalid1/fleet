@@ -1026,6 +1026,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripRequired => 'اختر رحلة لتطبيق هذا التصفية.';
 
   @override
+  String historyTripsSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رحلة محددة',
+      many: '$count رحلة محددة',
+      few: '$count رحلات محددة',
+      two: 'رحلتان محددتان',
+      zero: 'لا رحلات محددة',
+      one: 'رحلة واحدة محددة',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get historyNoResults => 'لا توجد حركات مطابقة';
 
   @override

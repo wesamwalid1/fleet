@@ -304,6 +304,12 @@
   "selectTrip": "اختر الرحلة",
   "invalidDateRange": "يجب أن يكون تاريخ البدء قبل تاريخ الانتهاء أو مساوياً له.",
   "tripRequired": "اختر رحلة لتطبيق هذا التصفية.",
+  "historyTripsSelected": "{count, plural, =1{رحلة واحدة محددة} zero{لا رحلات محددة} two{رحلتان محددتان} few{{count} رحلات محددة} many{{count} رحلة محددة} other{{count} رحلة محددة}}",
+  "@historyTripsSelected": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "historyNoResults": "لا توجد حركات مطابقة",
   "historyNoResultsHint": "جرّب بحثاً آخر أو أعد تعيين عوامل التصفية.",
   "clearFilters": "مسح عوامل التصفية",

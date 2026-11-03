@@ -50,11 +50,6 @@ Future<void> showHistoryFilterSheet(BuildContext context) async {
         );
         if (start.isAfter(end)) return l10n.invalidDateRange;
       }
-      if (draft.filter == HistoryFilter.expenses &&
-          draft.tripMode == HistoryTripMode.specific &&
-          (draft.tripId == null || draft.tripId!.isEmpty)) {
-        return l10n.tripRequired;
-      }
       return null;
     },
     bodyBuilder: (context, draft, onChanged) {
@@ -80,12 +75,21 @@ class _HistoryFilterBody extends StatelessWidget {
     required this.trips,
   });
 
+  void _toggleTrip(String tripId) {
+    final next = Set<String>.from(draft.tripIds);
+    if (!next.add(tripId)) {
+      next.remove(tripId);
+    }
+    onChanged(draft.copyWith(tripIds: Set<String>.unmodifiable(next)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final surfaces = AppSurfaces.of(context);
     final locale = Localizations.localeOf(context).toString();
     final showTrip = draft.filter == HistoryFilter.expenses;
+    final selectedTrips = draft.tripIds;
 
     Widget section(String title) {
       return Padding(
@@ -137,12 +141,9 @@ class _HistoryFilterBody extends StatelessWidget {
                 onSelected: () => onChanged(
                   draft.copyWith(
                     filter: entry.$1,
-                    tripMode: entry.$1 == HistoryFilter.expenses
-                        ? draft.tripMode
-                        : HistoryTripMode.all,
-                    tripId: entry.$1 == HistoryFilter.expenses
-                        ? draft.tripId
-                        : null,
+                    tripIds: entry.$1 == HistoryFilter.expenses
+                        ? draft.tripIds
+                        : const {},
                   ),
                 ),
               ),
@@ -155,27 +156,31 @@ class _HistoryFilterBody extends StatelessWidget {
               AppFilterChip(
                 key: const Key('history-trip-all'),
                 label: l10n.tripFilterAll,
-                selected: draft.tripMode == HistoryTripMode.all,
-                onSelected: () => onChanged(
-                  draft.copyWith(tripMode: HistoryTripMode.all, tripId: null),
-                ),
+                selected: selectedTrips.isEmpty,
+                onSelected: () => onChanged(draft.copyWith(tripIds: const {})),
               ),
               for (final trip in trips)
-                AppFilterChip(
-                  key: Key('history-trip-${trip.id}'),
-                  label: '${trip.code} · ${trip.route(locale)}',
-                  selected:
-                      draft.tripMode == HistoryTripMode.specific &&
-                      draft.tripId == trip.id,
-                  onSelected: () => onChanged(
-                    draft.copyWith(
-                      tripMode: HistoryTripMode.specific,
-                      tripId: trip.id,
-                    ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 280),
+                  child: AppFilterChip(
+                    key: Key('history-trip-${trip.id}'),
+                    label: '${trip.code} · ${trip.route(locale)}',
+                    selected: selectedTrips.contains(trip.id),
+                    multiSelect: true,
+                    onSelected: () => _toggleTrip(trip.id),
                   ),
                 ),
             ],
           ),
+          if (selectedTrips.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                l10n.historyTripsSelected(selectedTrips.length),
+                key: const Key('history-trips-selected-summary'),
+                style: TextStyle(color: surfaces.body, fontSize: 13.5),
+              ),
+            ),
           if (trips.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),

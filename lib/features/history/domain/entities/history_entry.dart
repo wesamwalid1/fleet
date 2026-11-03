@@ -25,8 +25,6 @@ enum HistoryFilter {
 
 enum HistoryDateMode { all, day, range }
 
-enum HistoryTripMode { all, specific }
-
 enum HistoryDisplayStatus {
   recorded,
   approved,
@@ -142,16 +140,16 @@ class HistoryEntry extends Equatable {
     return !day.isBefore(start) && !day.isAfter(end);
   }
 
+  /// Empty [tripIds] means no trip restriction. Non-empty uses OR matching.
   bool matchesTrip({
     required HistoryFilter filter,
-    required HistoryTripMode tripMode,
-    String? tripId,
+    required Set<String> tripIds,
   }) {
     if (filter != HistoryFilter.expenses) return true;
-    if (tripMode != HistoryTripMode.specific) return true;
-    final id = tripId ?? '';
-    if (id.isEmpty) return true;
-    return kind == HistoryKind.expense && this.tripId == id;
+    if (tripIds.isEmpty) return true;
+    return kind == HistoryKind.expense &&
+        tripId.isNotEmpty &&
+        tripIds.contains(tripId);
   }
 
   @override
