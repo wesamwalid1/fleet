@@ -1493,7 +1493,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseLanguage.
   ///
   /// In en, this message translates to:
-  /// **'Choose Language'**
+  /// **'Choose language'**
   String get chooseLanguage;
 
   /// No description provided for @languageEnglish.
@@ -1511,7 +1511,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileQuickAccess.
   ///
   /// In en, this message translates to:
-  /// **'Quick Access'**
+  /// **'Quick access'**
   String get profileQuickAccess;
 
   /// No description provided for @profileSettings.
@@ -1526,23 +1526,29 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get profileAccount;
 
+  /// No description provided for @profileBadgeId.
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get profileBadgeId;
+
+  /// No description provided for @profileBadgeVault.
+  ///
+  /// In en, this message translates to:
+  /// **'Vault'**
+  String get profileBadgeVault;
+
+  /// No description provided for @profileBadgeBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get profileBadgeBalance;
+
   /// No description provided for @darkMode.
   ///
   /// In en, this message translates to:
   /// **'Dark Mode'**
   String get darkMode;
-
-  /// No description provided for @profileBalance.
-  ///
-  /// In en, this message translates to:
-  /// **'Balance: {amount}'**
-  String profileBalance(String amount);
-
-  /// No description provided for @profileIdentity.
-  ///
-  /// In en, this message translates to:
-  /// **'{id} · {vault}'**
-  String profileIdentity(String id, String vault);
 
   /// No description provided for @approvalFailed.
   ///

@@ -1,5 +1,7 @@
 import 'package:driver_portal_app/features/auth/data/datasources/mock_auth_data_source.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/features/home/domain/entities/driver.dart';
+import 'package:driver_portal_app/features/home/domain/repositories/driver_repository.dart';
 import 'package:driver_portal_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +13,8 @@ import '../../support/fake_connectivity.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  _redesignStateTests();
 
   testWidgets(
     'profile shows the signed-in driver, balance, and pending count',
@@ -24,10 +28,12 @@ void main() {
       );
       expect(find.text('Ahmed Ali'), findsOneWidget);
       expect(find.text('AA'), findsOneWidget);
-      expect(find.text('DR-001 · Drivers Vault'), findsOneWidget);
-      expect(find.text('Balance: 2,200 EGP'), findsOneWidget);
+      expect(_badgeField('ID', 'DR-001'), findsOneWidget);
+      expect(_badgeField('Vault', 'Drivers Vault'), findsOneWidget);
+      expect(_badgeBalance('2,200 EGP'), findsOneWidget);
+      expect(find.text('Balance'), findsOneWidget);
       expect(find.text('My Balance'), findsOneWidget);
-      expect(find.text('2,200 EGP'), findsOneWidget);
+      expect(find.text('2,200 EGP'), findsNWidgets(2));
       expect(find.text('Pending Approvals'), findsOneWidget);
       expect(_pendingRowText('3'), findsOneWidget);
       expect(find.text('Transaction History'), findsOneWidget);
@@ -63,9 +69,9 @@ void main() {
     expectIn('profile-settings', ['profile-language', 'profile-dark-mode']);
     expectIn('profile-account', ['profile-logout']);
 
-    final quick = tester.getRect(find.text('QUICK ACCESS'));
-    final settings = tester.getRect(find.text('SETTINGS'));
-    final account = tester.getRect(find.text('ACCOUNT'));
+    final quick = tester.getRect(find.text('Quick access'));
+    final settings = tester.getRect(find.text('Settings'));
+    final account = tester.getRect(find.text('Account'));
     expect(quick.top, greaterThan(top('profile-header').bottom));
     expect(top('profile-quick-access').top, greaterThan(quick.bottom));
     expect(settings.top, greaterThan(top('profile-quick-access').bottom));
@@ -147,7 +153,7 @@ void main() {
 
     expect(find.text('Log out?'), findsNothing);
     expect(find.text('Welcome back!'), findsNothing);
-    expect(find.text('Balance: 2,200 EGP'), findsOneWidget);
+    expect(_badgeBalance('2,200 EGP'), findsOneWidget);
     expect(_pendingRowText('3'), findsOneWidget);
   });
 
@@ -176,7 +182,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-profile')));
     await tester.pumpAndSettle();
-    expect(find.text('Balance: 4,200 EGP'), findsOneWidget);
+    expect(_badgeBalance('4,200 EGP'), findsOneWidget);
     expect(
       find.descendant(
         of: find.byKey(const Key('profile-my-balance')),
@@ -211,7 +217,7 @@ void main() {
     await _openProfile(tester, seedApprovals: false);
 
     expect(find.byKey(const Key('profile-pending-count')), findsNothing);
-    expect(find.text('Balance: 2,200 EGP'), findsOneWidget);
+    expect(_badgeBalance('2,200 EGP'), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
   });
 
@@ -226,8 +232,15 @@ void main() {
     expect(find.text('الإعدادات'), findsOneWidget);
     expect(find.text('الحساب'), findsOneWidget);
     expect(find.text('الوضع الداكن'), findsOneWidget);
-    expect(find.text('DR-001 · خزينة السائقين'), findsOneWidget);
-    expect(find.textContaining('الرصيد:'), findsOneWidget);
+    expect(_badgeField('رقم السائق', 'DR-001'), findsOneWidget);
+    expect(_badgeField('الخزينة', 'خزينة السائقين'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('profile-balance')),
+        matching: find.text('الرصيد'),
+      ),
+      findsOneWidget,
+    );
     expect(
       Directionality.of(tester.element(find.byKey(const Key('profile-name')))),
       TextDirection.rtl,
@@ -344,6 +357,160 @@ void main() {
   );
 }
 
+void _redesignStateTests() {
+  testWidgets('offline, the badge marks the balance unavailable', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _localizedApp(
+        withConnectivity(
+          online: false,
+          child: HomeScope(now: () => DateTime(2026, 10, 21, 9)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pumpAndSettle();
+
+    expect(_badgeBalance('Unavailable while offline'), findsOneWidget);
+    expect(find.byKey(const Key('profile-balance-amount')), findsNothing);
+    expect(find.byKey(const Key('profile-pending-count')), findsNothing);
+    expect(find.byKey(const Key('profile-logout')), findsOneWidget);
+  });
+
+  testWidgets('a failed load offers a retry that loads again', (tester) async {
+    final repository = _FailingDriverRepository();
+    await tester.pumpWidget(
+      _localizedApp(
+        HomeScope(now: () => DateTime(2026, 10, 21, 9), repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unable to load your profile.'), findsOneWidget);
+    final calls = repository.calls;
+    await tester.tap(find.byKey(const Key('profile-retry')));
+    await tester.pumpAndSettle();
+    expect(repository.calls, calls + 1);
+  });
+
+  testWidgets('the Dark Mode switch is announced with its label', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await _openProfile(tester);
+
+    expect(
+      tester.getSemantics(find.byKey(const Key('profile-dark-mode-switch'))),
+      isSemantics(label: 'Dark Mode', hasToggledState: true),
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('the whole Dark Mode row toggles, and the switch toggles once', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await _openProfile(tester);
+    bool value() => tester
+        .widget<Switch>(find.byKey(const Key('profile-dark-mode-switch')))
+        .value;
+
+    expect(value(), isFalse);
+    await tester.tap(find.text('Dark Mode'));
+    await tester.pumpAndSettle();
+    expect(value(), isTrue);
+
+    await tester.tap(find.text('Dark Mode'));
+    await tester.pumpAndSettle();
+    expect(value(), isFalse);
+
+    await tester.tap(find.byKey(const Key('profile-dark-mode-switch')));
+    await tester.pumpAndSettle();
+    expect(value(), isTrue);
+
+    expect(
+      tester.getSemantics(find.byKey(const Key('profile-dark-mode-switch'))),
+      isSemantics(
+        label: 'Dark Mode',
+        hasToggledState: true,
+        isToggled: true,
+        hasTapAction: true,
+        isFocusable: true,
+      ),
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('values swap over 180ms, and at once with reduced motion', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final (reduceMotion, expected) in const [
+      (false, Duration(milliseconds: 180)),
+      (true, Duration.zero),
+    ]) {
+      await tester.pumpWidget(
+        _localizedApp(
+          HomeScope(
+            key: ValueKey(reduceMotion),
+            now: () => DateTime(2026, 10, 21, 9),
+          ),
+          reduceMotion: reduceMotion,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('nav-profile')));
+      await tester.pumpAndSettle();
+
+      final switchers = tester.widgetList<AnimatedSwitcher>(
+        find.descendant(
+          of: find.byType(ProfilePage),
+          matching: find.byType(AnimatedSwitcher),
+        ),
+      );
+      expect(switchers, isNotEmpty);
+      for (final switcher in switchers) {
+        expect(switcher.duration, expected);
+      }
+    }
+  });
+}
+
+Widget _localizedApp(Widget home, {bool reduceMotion = false}) {
+  return MaterialApp(
+    locale: const Locale('en'),
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+      child: child!,
+    ),
+    home: home,
+  );
+}
+
+class _FailingDriverRepository implements DriverRepository {
+  int calls = 0;
+
+  @override
+  Future<Driver> getCurrentDriver() async {
+    calls += 1;
+    throw StateError('driver unavailable');
+  }
+}
+
 Future<void> _openProfile(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
@@ -385,6 +552,25 @@ Future<void> _login(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(MockAuthDataSource.delay);
   await tester.pumpAndSettle();
+}
+
+/// A badge line with [label] and [value] inside the identity grid.
+Finder _badgeField(String label, String value) {
+  final identity = find.byKey(const Key('profile-identity'));
+  return find.descendant(
+    of: find.ancestor(
+      of: find.descendant(of: identity, matching: find.text(label)),
+      matching: find.byType(Row),
+    ),
+    matching: find.text(value),
+  );
+}
+
+Finder _badgeBalance(String amount) {
+  return find.descendant(
+    of: find.byKey(const Key('profile-balance')),
+    matching: find.text(amount),
+  );
 }
 
 Finder _pendingRowText(String count) {

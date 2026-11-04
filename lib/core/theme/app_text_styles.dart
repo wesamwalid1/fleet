@@ -116,6 +116,13 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w700,
   );
 
+  /// titleLarge: a person's name or a sheet title.
+  static const title = TextStyle(
+    fontSize: 22,
+    height: 1.25,
+    fontWeight: FontWeight.w700,
+  );
+
   /// titleMedium: product name in a brand row.
   static const brand = TextStyle(
     fontSize: 16,

@@ -787,7 +787,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
-  String get chooseLanguage => 'Choose Language';
+  String get chooseLanguage => 'Choose language';
 
   @override
   String get languageEnglish => 'English';
@@ -796,7 +796,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageArabic => 'العربية';
 
   @override
-  String get profileQuickAccess => 'Quick Access';
+  String get profileQuickAccess => 'Quick access';
 
   @override
   String get profileSettings => 'Settings';
@@ -805,17 +805,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileAccount => 'Account';
 
   @override
+  String get profileBadgeId => 'ID';
+
+  @override
+  String get profileBadgeVault => 'Vault';
+
+  @override
+  String get profileBadgeBalance => 'Balance';
+
+  @override
   String get darkMode => 'Dark Mode';
-
-  @override
-  String profileBalance(String amount) {
-    return 'Balance: $amount';
-  }
-
-  @override
-  String profileIdentity(String id, String vault) {
-    return '$id · $vault';
-  }
 
   @override
   String get approvalFailed => 'Could not update this approval.';

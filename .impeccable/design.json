@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T15:57:00+02:00",
+  "generatedAt": "2026-11-03T21:18:00+02:00",
   "title": "Design System: Driver Portal",
   "extensions": {
     "scope": {
       "world": "AppPalette (official slate-navy)",
-      "adoptedBy": ["Login"],
-      "note": "Other screens still render the previous violet system (earlier AppColors tokens and AppSurfaces) and migrate one screen at a time."
+      "adoptedBy": ["Login", "Profile (with its language and logout sheets)"],
+      "note": "Other screens, the floating bottom navigation, PortalShell, and its offline banner still render the previous violet system (earlier AppColors tokens and AppSurfaces) and migrate one screen at a time."
     },
     "colorMeta": {
       "ink-950": { "role": "neutral", "displayName": "Night Ink", "canonical": "#111522", "source": "official", "tonalRamp": ["#111522", "#1E263B", "#303D59", "#536684", "#7687A4", "#98A9C4", "#DCE3EF", "#F6F8FB"] },
@@ -42,14 +42,19 @@
       "onMark": { "light": "slate-100", "dark": "ink-900" },
       "error": { "light": "error-light", "dark": "error-dark" },
       "errorSurface": { "light": "error-surface-light", "dark": "error-surface-dark" },
+      "onError": { "light": "ticket-white", "dark": "ink-950", "note": "Content on an error fill, such as the destructive logout confirm." },
+      "insetShade": { "light": "ink-950 at 16% (rgba(17, 21, 34, 0.16))", "dark": "black at 50% (#80000000)", "overGround": { "light": "#CBCED5", "dark": "#080A11" }, "note": "Shade along the top inner edge of a shape cut into a surface (the badge's lanyard slot); always blended over the ground, never a fill on its own." },
       "systemBars": { "statusBar": "transparent", "navigationBar": "ground", "iconBrightness": "dark icons in Light, light icons in Dark" }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Screen headline, such as the sign-in welcome (Material headlineMedium)." },
+      "display": { "displayName": "Display", "purpose": "Screen headline, such as the sign-in welcome and the Profile page title (Material headlineMedium)." },
+      "title": { "displayName": "Title", "purpose": "A person's name or a sheet title: the badge name, the badge initials, the language and logout sheet titles (Material titleLarge)." },
       "brand": { "displayName": "Brand", "purpose": "Product name in the ticket stub (Material titleMedium)." },
-      "body-large": { "displayName": "Body Large", "purpose": "A headline's supporting line." },
-      "body-medium": { "displayName": "Body Medium", "purpose": "Notices and help lines; the error notice raises it to 600." },
-      "label": { "displayName": "Label", "purpose": "Label above a field (Material labelLarge)." },
+      "body-large": { "displayName": "Body Large", "purpose": "A headline's supporting line and a sheet's message." },
+      "body-medium": { "displayName": "Body Medium", "purpose": "Notices and help lines; the error notice raises it to 600. Badge labels (muted) and status values (muted, 500)." },
+      "row-title": { "displayName": "Row Title", "purpose": "Body Large tightened for a settings row or sheet option; a selected language option raises it to 700." },
+      "value": { "displayName": "Value", "purpose": "Body Medium raised for data with tabular figures: badge values in the title role, row values in the body role." },
+      "label": { "displayName": "Label", "purpose": "Label above a field (Material labelLarge) and Profile's section labels (muted, sentence case); the pending count raises it to 700 with tabular figures." },
       "input": { "displayName": "Input", "purpose": "Text typed into a field." },
       "helper": { "displayName": "Helper", "purpose": "Field error messages (Material bodySmall)." },
       "data": { "displayName": "Data", "purpose": "Small tabular data fields such as the stub's issue date." },
@@ -57,14 +62,15 @@
       "fontNote": "Platform system fonts: Roboto on Android, SF Pro on iOS, the platform's native Arabic face. No bundled faces in this phase. Sizes are dp."
     },
     "shadows": [
-      { "name": "raised-light", "value": "0 12px 28px rgba(17, 21, 34, 0.07), 0 1px 4px rgba(17, 21, 34, 0.04)", "purpose": "The ticket in Light: soft ambient drop plus a faint contact edge. Flutter blurRadius values carried as CSS blur." },
-      { "name": "raised-dark", "value": "0 14px 28px rgba(0, 0, 0, 0.35)", "purpose": "The ticket in Dark." }
+      { "name": "raised-light", "value": "0 12px 28px rgba(17, 21, 34, 0.07), 0 1px 4px rgba(17, 21, 34, 0.04)", "purpose": "The ticket or ID badge in Light: soft ambient drop plus a faint contact edge. Flutter blurRadius values carried as CSS blur." },
+      { "name": "raised-dark", "value": "0 14px 28px rgba(0, 0, 0, 0.35)", "purpose": "The ticket or ID badge in Dark." }
     ],
     "motion": [
       { "name": "ticket-rise", "value": "translateY(18px) to 0, 520ms, cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Cold-start entrance of the ticket; no fade. Skipped when a route transition brings the page in or reduced motion is on." },
       { "name": "fade-through-in", "value": "320ms; ground cover 0-35% ease-out; content fade 35-100% cubic-bezier(0.33, 1, 0.68, 1) with scale 0.96 to 1", "purpose": "Route transition between screens in this world (Login and Home). Skipped when system animations are off." },
       { "name": "fade-through-out", "value": "260ms, the same curves in reverse", "purpose": "Popping a fade-through route." },
-      { "name": "action-swap", "value": "180ms cross-fade", "purpose": "Primary action label and arrow swap for the loading spinner." }
+      { "name": "action-swap", "value": "180ms cross-fade", "purpose": "Primary action label and arrow swap for the loading spinner." },
+      { "name": "value-swap", "value": "180ms cross-fade, ease-out-cubic cubic-bezier(0.215, 0.61, 0.355, 1), anchored to the end edge", "purpose": "A changed badge value, row value, or pending count replaces the old one in place without moving its row. Instant under reduced motion." }
     ],
     "shapes": {
       "ticketRadius": "20px",
@@ -72,12 +78,23 @@
       "controlRadius": "12px",
       "hairline": "1px",
       "focusOutline": "1.6px",
-      "perforation": "1px dashed, 6px dash, 5px gap, inset 8px from each notch, hairline color"
+      "perforation": "1px dashed, 6px dash, 5px gap, inset 8px from each notch, hairline color",
+      "badgeRadius": "20px, 1px hairline border, no notches or perforation",
+      "lanyardSlot": "40x8px, 4px radius, centred 12px below the badge top; vertical gradient from insetShade over ground (0) to ground (45%)",
+      "initialsTile": "64px, 12px radius, mark role",
+      "sheetRadius": "20px top corners only",
+      "rowDivider": "1px hairline between rows, inset 20px from each side"
     },
     "layout": {
       "contentMaxWidth": "440px",
       "pagePadding": "20px horizontal, 24px vertical",
-      "stubPadding": "24px horizontal, 16px vertical"
+      "stubPadding": "24px horizontal, 16px vertical",
+      "profileInset": "20px horizontal; 16px below the safe area; 20px from page title to badge",
+      "badgePadding": "12px to the slot, 12px below it, 24px sides, 8px bottom; 16px tile-to-name; 20px name row to first rule; grid lines 12px vertical, 16px label-to-value",
+      "sectionLabel": "24px above, 4px below, 20px inset",
+      "row": "56px minimum, 20px horizontal and 12px vertical padding; 16px icon-to-title, 12px before trailing (max 140px wide), 4px before chevron",
+      "listBottom": "32px plus the floating navigation height reported by the shell",
+      "sheet": "max 640px wide (language sheet up to 92% height); 24px top, 20px sides, 16px bottom; logout 8px title-to-message, 24px to buttons, 12px between buttons; language 16px title-to-options, 8px between options"
     }
   },
   "components": [
@@ -144,17 +161,50 @@
       "description": "The product mark: origin dot to destination ring on a 40dp tile.",
       "html": "<svg class=\"ds-route-mark\" viewBox=\"0 0 40 40\" width=\"40\" height=\"40\" role=\"img\" aria-label=\"Driver Portal\"><rect width=\"40\" height=\"40\" rx=\"12\" fill=\"#1E263B\"/><path d=\"M12 14H21Q27 14 27 20V23.5\" fill=\"none\" stroke=\"#DCE3EF\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"12\" cy=\"14\" r=\"3.4\" fill=\"#DCE3EF\"/><circle cx=\"27\" cy=\"27\" r=\"3.4\" fill=\"none\" stroke=\"#DCE3EF\" stroke-width=\"2.2\"/></svg>",
       "css": ".ds-route-mark { display: block; }"
+    },
+    {
+      "name": "ID Badge",
+      "kind": "card",
+      "refersTo": "id-badge",
+      "description": "Profile's one raised surface: lanyard slot, initials tile beside the name, hairline-ruled label-value grid with end-aligned tabular values.",
+      "html": "<div class=\"ds-badge-ground\"><div class=\"ds-badge\"><span class=\"ds-badge-slot\" aria-hidden=\"true\"></span><div class=\"ds-badge-head\"><span class=\"ds-badge-tile\" aria-hidden=\"true\">DN</span><span class=\"ds-badge-name\">Driver Name</span></div><dl class=\"ds-badge-grid\"><div><dt>ID</dt><dd>DR-0001</dd></div><div><dt>Vault</dt><dd>Drivers Vault</dd></div><div><dt>Balance</dt><dd>EGP 0.00</dd></div></dl></div></div>",
+      "css": ".ds-badge-ground { background: #EEF1F7; padding: 16px 20px 24px; font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-badge { background: #FFFFFF; border: 1px solid #DCE3EF; border-radius: 20px; box-shadow: 0 12px 28px rgba(17,21,34,0.07), 0 1px 4px rgba(17,21,34,0.04); padding: 12px 24px 8px; } .ds-badge-slot { display: block; width: 40px; height: 8px; margin: 0 auto; border-radius: 4px; background: linear-gradient(to bottom, #CBCED5 0%, #EEF1F7 45%); } .ds-badge-head { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding-bottom: 20px; border-bottom: 1px solid #DCE3EF; } .ds-badge-tile { flex: none; display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 12px; background: #1E263B; color: #DCE3EF; font-size: 22px; line-height: 1.25; font-weight: 700; } .ds-badge-name { font-size: 22px; line-height: 1.25; font-weight: 700; color: #111522; } .ds-badge-grid { margin: 0; } .ds-badge-grid div { display: flex; gap: 16px; padding: 12px 0; border-top: 1px solid #DCE3EF; } .ds-badge-grid div:first-child { border-top: none; } .ds-badge-grid dt { margin: 0; font-size: 14px; line-height: 1.4; font-weight: 500; color: #536684; } .ds-badge-grid dd { flex: 1; margin: 0; text-align: end; font-size: 14px; line-height: 1.4; font-weight: 600; font-variant-numeric: tabular-nums; color: #111522; }"
+    },
+    {
+      "name": "Settings Rows",
+      "kind": "custom",
+      "refersTo": "settings-row",
+      "description": "Section label over 56dp rows on the ground, hairlines inset 20dp; end-aligned value or pending count, mirrored chevron, destructive row in the error role.",
+      "html": "<div class=\"ds-rows\"><h3 class=\"ds-rows-label\">Quick access</h3><button class=\"ds-row\"><svg class=\"ds-row-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z\" fill=\"currentColor\"/></svg><span class=\"ds-row-title\">My Balance</span><span class=\"ds-row-value\">EGP 0.00</span><svg class=\"ds-row-chevron\" viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" aria-hidden=\"true\"><path d=\"M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\" fill=\"currentColor\"/></svg></button><button class=\"ds-row\"><svg class=\"ds-row-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z\" fill=\"currentColor\"/></svg><span class=\"ds-row-title\">Pending Approvals</span><span class=\"ds-count\">3</span><svg class=\"ds-row-chevron\" viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" aria-hidden=\"true\"><path d=\"M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\" fill=\"currentColor\"/></svg></button><h3 class=\"ds-rows-label\">Account</h3><button class=\"ds-row ds-row-danger\"><svg class=\"ds-row-icon\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" aria-hidden=\"true\"><path d=\"M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z\" fill=\"currentColor\"/></svg><span class=\"ds-row-title\">Logout</span></button></div>",
+      "css": ".ds-rows { background: #EEF1F7; padding-bottom: 8px; font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-rows-label { margin: 0; padding: 24px 20px 4px; font-size: 14px; line-height: 1.3; font-weight: 600; color: #536684; } .ds-row { position: relative; display: flex; align-items: center; width: 100%; min-height: 56px; box-sizing: border-box; padding: 12px 20px; background: transparent; border: none; font: inherit; text-align: start; color: #111522; cursor: pointer; transition: background-color 0.15s; } .ds-row + .ds-row::before { content: ''; position: absolute; top: 0; left: 20px; right: 20px; height: 1px; background: #DCE3EF; } .ds-row:hover { background: rgba(17,21,34,0.06); } .ds-row:active { background: rgba(17,21,34,0.08); } .ds-row:focus-visible { outline: none; background: rgba(30,38,59,0.12); } .ds-row-icon { flex: none; margin-inline-end: 16px; color: #536684; } .ds-row-title { flex: 1; font-size: 16px; line-height: 1.3; font-weight: 500; } .ds-row-value { max-width: 140px; margin-inline-start: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 1.4; font-weight: 600; font-variant-numeric: tabular-nums; color: #303D59; } .ds-count { margin-inline-start: 12px; min-width: 28px; box-sizing: border-box; padding: 3px 8px; border-radius: 12px; background: #1E263B; color: #FFFFFF; text-align: center; font-size: 14px; line-height: 1.3; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-row-chevron { flex: none; margin-inline-start: 4px; color: #536684; } [dir=rtl] .ds-row-chevron { transform: scaleX(-1); } .ds-row-danger, .ds-row-danger .ds-row-icon { color: #B42318; }"
+    },
+    {
+      "name": "Language Sheet",
+      "kind": "custom",
+      "refersTo": "language-option",
+      "description": "Surface sheet with 20dp top corners; 56dp options with hairline at rest, field fill plus 1.6dp focus outline and check when selected.",
+      "html": "<div class=\"ds-sheet\" role=\"radiogroup\" aria-labelledby=\"ds-sheet-title\"><h2 class=\"ds-sheet-title\" id=\"ds-sheet-title\">Choose Language</h2><button class=\"ds-option\" role=\"radio\" aria-checked=\"true\"><span class=\"ds-option-label\">English</span><svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" aria-hidden=\"true\"><path d=\"M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z\" fill=\"currentColor\"/></svg></button><button class=\"ds-option\" role=\"radio\" aria-checked=\"false\"><span class=\"ds-option-label\">العربية</span></button></div>",
+      "css": ".ds-sheet { background: #FFFFFF; border-radius: 20px 20px 0 0; padding: 24px 20px 16px; font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-sheet-title { margin: 0 0 16px; font-size: 22px; line-height: 1.25; font-weight: 700; color: #111522; } .ds-option { display: flex; align-items: center; width: 100%; min-height: 56px; box-sizing: border-box; padding: 12px 16px; background: #FFFFFF; border: 1px solid #DCE3EF; border-radius: 12px; font: inherit; font-size: 16px; line-height: 1.3; font-weight: 500; text-align: start; color: #111522; cursor: pointer; transition: background-color 0.15s; } .ds-option + .ds-option { margin-top: 8px; } .ds-option:hover { background: #F1F1F2; } .ds-option:focus-visible { outline: 2px solid #1E263B; outline-offset: 2px; } .ds-option[aria-checked=true] { background: #F6F8FB; border: 1.6px solid #1E263B; padding: 11.4px 15.4px; font-weight: 700; } .ds-option-label { flex: 1; } .ds-option svg { flex: none; color: #1E263B; }"
+    },
+    {
+      "name": "Logout Sheet",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Title, message, and paired 56dp actions: outlined cancel in fieldBorder, filled confirm in error / onError.",
+      "html": "<div class=\"ds-logout\"><h2 class=\"ds-logout-title\">Log out?</h2><p class=\"ds-logout-msg\">You will need to sign in again.</p><div class=\"ds-logout-actions\"><button class=\"ds-btn-outline\">Cancel</button><button class=\"ds-btn-destructive\">Logout</button></div></div>",
+      "css": ".ds-logout { background: #FFFFFF; border-radius: 20px 20px 0 0; padding: 24px 20px 16px; font-family: system-ui, Roboto, -apple-system, sans-serif; } .ds-logout-title { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700; color: #111522; } .ds-logout-msg { margin: 8px 0 24px; font-size: 16px; line-height: 1.45; font-weight: 400; color: #303D59; } .ds-logout-actions { display: flex; gap: 12px; } .ds-btn-outline, .ds-btn-destructive { flex: 1; height: 56px; border-radius: 12px; font: inherit; font-size: 16px; line-height: 1.2; font-weight: 700; cursor: pointer; transition: background-color 0.15s; } .ds-btn-outline { background: #FFFFFF; color: #111522; border: 1px solid #7687A4; } .ds-btn-outline:hover { background: #F1F1F2; } .ds-btn-outline:focus-visible { outline: 2px solid #1E263B; outline-offset: 2px; } .ds-btn-destructive { background: #B42318; color: #FFFFFF; border: none; } .ds-btn-destructive:hover { background: #A11F15; } .ds-btn-destructive:focus-visible { outline: 2px solid #B42318; outline-offset: 2px; }"
     }
   ],
   "narrative": {
     "northStar": "The Issued Ticket",
-    "overview": "Every surface in this world reads like a fuel or weighbridge ticket handed to a driver: a stub that says who issued it and when, a perforated tear line, and a working body below. The paper is calm and the ink is official. The palette is the binding slate-navy six, built into two schemes that are designed separately rather than inverted: Light is a mist ground with a white ticket and ink action; Dark is an ink ground with a lifted navy ticket and a mist action. Depth comes from one soft shadow on the one raised surface and from fields that sit tonally below the ticket.\n\nDensity is low and deliberate. A surface shows the few things the driver needs, in a single centred column, at a size that survives a cab in daylight, a night shift, a large system font, and Arabic as much as English. Decoration is limited to the ticket's own anatomy: the notches, the perforation, and the route mark. Motion is short, purposeful, and always skipped when the system asks for reduced motion.\n\nScope: this world is adopted by Login only. Every other screen still renders the previous violet system (the earlier tokens in `AppColors` and the `AppSurfaces` roles) and migrates one screen at a time. This document governs only surfaces built on `AppPalette`.",
+    "overview": "Every surface in this world reads like a fuel or weighbridge ticket handed to a driver: a stub that says who issued it and when, a perforated tear line, and a working body below. The paper is calm and the ink is official. The palette is the binding slate-navy six, built into two schemes that are designed separately rather than inverted: Light is a mist ground with a white ticket and ink action; Dark is an ink ground with a lifted navy ticket and a mist action. Depth comes from one soft shadow on the one raised surface and from fields that sit tonally below the ticket.\n\nThe same paper and ink also issue the driver's company ID. Profile is one laminated badge, white on mist in Light and lifted navy on ink in Dark, with a punched lanyard slot at its top and a hairline-ruled grid of labels and values. Everything the driver can change sits loose on the ground below it in hairline-divided rows, never boxed in cards.\n\nDensity is low and deliberate. A surface shows the few things the driver needs, at a size that survives a cab in daylight, a night shift, a large system font, and Arabic as much as English. Decoration is limited to each issued document's own anatomy: the ticket's notches, perforation, and route mark; the badge's lanyard slot and label-value grid. Motion is short, purposeful, and always skipped when the system asks for reduced motion.\n\nScope: this world is adopted by Login and Profile, including Profile's language and logout sheets. Every other screen, the floating bottom navigation, `PortalShell`, and its offline banner still render the previous violet system (the earlier tokens in `AppColors` and the `AppSurfaces` roles) and migrate one screen at a time. This document governs only surfaces built on `AppPalette`.",
     "keyCharacteristics": [
       "Official slate-navy only; no saturated hue anywhere except a muted error red.",
       "Two built schemes with their own roles, read through `AppPalette`.",
-      "One raised surface per screen: the ticket, with one soft shadow.",
+      "One raised surface per screen, with one soft shadow: the ticket on Login, the ID badge on Profile.",
       "Hairline borders; controls share one 12dp corner.",
-      "The perforated tear line with side notches is the signature.",
+      "The perforated tear line with side notches is the ticket's signature; the lanyard slot and label-value grid are the badge's.",
+      "Lists sit on the ground, divided by 1dp hairlines.",
       "Platform system fonts, no negative tracking, tabular figures for data."
     ],
     "rules": [
@@ -162,8 +212,8 @@
       { "name": "The Built Twice Rule", "body": "Light and Dark are two designed role sets, not an inversion: the Dark field sinks to the ground color, and the Dark action turns pale. Screens read roles from `AppPalette`, never raw tokens.", "section": "colors" },
       { "name": "The Joined Letters Rule", "body": "Letter spacing stays at normal on every role so Arabic letters stay joined. Hierarchy comes from size and weight.", "section": "typography" },
       { "name": "The Tabular Data Rule", "body": "Dates, amounts, and any figure that may line up with another use tabular figures.", "section": "typography" },
-      { "name": "The One Raised Surface Rule", "body": "A screen has one raised surface, and it is the ticket. Fields, notices, and buttons do not cast shadows.", "section": "elevation" },
-      { "name": "The Perforation Rule", "body": "The tear line separates a ticket's identifying stub from its working body. It appears once per ticket and is never used as a generic divider.", "section": "shapes" }
+      { "name": "The One Raised Surface Rule", "body": "A screen has one raised surface: the ticket on Login, the ID badge on Profile. Fields, notices, buttons, and rows do not cast shadows.", "section": "elevation" },
+      { "name": "The Perforation Rule", "body": "The tear line separates a ticket's identifying stub from its working body. It appears once per ticket and is never used as a generic divider. It stays the ticket's: the badge's grid and Profile's rows are divided by solid hairlines.", "section": "shapes" }
     ],
     "dos": [
       "**Do** read colors through `AppPalette` roles so each scheme gets its own built value.",
@@ -172,16 +222,21 @@
       "**Do** space on the 8dp rhythm (8, 12, 16, 20, 24dp).",
       "**Do** set figures in tabular numerals.",
       "**Do** keep touch targets at least 48dp and merge a field's visible label into its semantics.",
-      "**Do** skip every entrance and transition when the system asks for reduced motion."
+      "**Do** lay list rows on the ground at 56dp or more, divided by 1dp hairlines inset 20dp.",
+      "**Do** end-align values and swap a changed value in place (180ms ease-out-cubic cross-fade) without moving its row.",
+      "**Do** mirror directional icons (arrows, chevrons) in right-to-left.",
+      "**Do** put content on an error fill in `onError`, as content on an action fill uses `onAction`.",
+      "**Do** skip every entrance, transition, and value swap when the system asks for reduced motion."
     ],
     "donts": [
       "**Don't** introduce saturated colors; the error red stays muted and is the only hue outside the slate-navy ladder.",
       "**Don't** use the previous violet tokens (`AppColors.primary` and its siblings, `AppSurfaces`) on a surface that has moved to this world.",
       "**Don't** invert Light to make Dark; each scheme has its own role values.",
       "**Don't** apply negative letter spacing on any role.",
-      "**Don't** add shadows to fields, notices, or buttons, or stack a second raised card on the ticket.",
-      "**Don't** use the perforation as a plain divider in lists or sections.",
-      "**Don't** fade the ticket in on entrance; it rises once, already visible."
+      "**Don't** add shadows to fields, notices, buttons, or rows, or stack a second raised card on the ticket or badge.",
+      "**Don't** box list rows in cards; they lie on the ground.",
+      "**Don't** use the perforation as a plain divider in lists or sections, or give the badge a stub, notches, or perforation.",
+      "**Don't** fade the ticket in on entrance; it rises once, already visible. The rise stays the ticket's."
     ]
   }
 }

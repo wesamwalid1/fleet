@@ -54,8 +54,16 @@ class AppPalette {
   Color get onMark => isDark ? AppColors.ink900 : AppColors.slate100;
 
   Color get error => isDark ? AppColors.errorDark : AppColors.errorLight;
+
+  /// Content on an [error] fill, such as a destructive action.
+  Color get onError => isDark ? AppColors.ink950 : Colors.white;
   Color get errorSurface =>
       isDark ? AppColors.errorSurfaceDark : AppColors.errorSurfaceLight;
+
+  /// Shade along the top inner edge of a shape cut into a surface.
+  Color get insetShade => isDark
+      ? const Color(0x80000000)
+      : AppColors.ink950.withValues(alpha: 0.16);
 
   /// One soft offset shadow for raised surfaces.
   List<BoxShadow> get raisedShadow => isDark

@@ -4,15 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/presentation/bloc/theme_bloc.dart';
 import '../../../../core/theme/presentation/bloc/theme_event.dart';
 import '../../../../core/theme/presentation/bloc/theme_state.dart';
-import '../../../../core/widgets/status_badge.dart';
-import '../../../../core/widgets/type_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../approvals/presentation/bloc/approvals_bloc.dart';
 import '../../../approvals/presentation/bloc/approvals_state.dart';
@@ -25,8 +21,9 @@ import '../../../home/presentation/bloc/home_state.dart';
 import '../language_sheet.dart';
 import '../logout_dialog.dart';
 
-/// Account and settings: a dark identity header over light grouped rows
-/// (Quick Access, Settings, Account) that scroll with it as one page.
+/// Account and settings, laid out as the driver's company ID: one raised
+/// badge says who is signed in, and the rows that change things sit loose on
+/// the ground below it, divided by hairlines.
 class ProfilePage extends StatelessWidget {
   final VoidCallback onOpenHome;
   final VoidCallback onOpenApprovals;
@@ -41,14 +38,19 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
+        statusBarIconBrightness: palette.isDark
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: palette.isDark
+            ? Brightness.dark
+            : Brightness.light,
       ),
-      child: ColoredBox(
-        color: AppSurfaces.of(context).scaffold,
+      child: Material(
+        color: palette.ground,
         child: BlocBuilder<HomeBloc, HomeState>(
           builder: (context, state) {
             return switch (state) {
@@ -64,7 +66,12 @@ class ProfilePage extends StatelessWidget {
                   onOpenHistory: onOpenHistory,
                 ),
               HomeFailure() => const _ProfileFailure(),
-              _ => const Center(child: CircularProgressIndicator()),
+              _ => Center(
+                child: CircularProgressIndicator(
+                  color: palette.action,
+                  strokeWidth: 2.2,
+                ),
+              ),
             };
           },
         ),
@@ -79,6 +86,7 @@ class _ProfileFailure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -88,12 +96,18 @@ class _ProfileFailure extends StatelessWidget {
             Text(
               l10n.homeLoadError,
               textAlign: TextAlign.center,
-              style: AppTextStyles.body,
+              style: AppTextStyles.bodyLarge.copyWith(color: palette.body),
             ),
+            const SizedBox(height: 8),
             TextButton(
               key: const Key('profile-retry'),
               onPressed: () =>
                   context.read<HomeBloc>().add(const HomeStarted()),
+              style: TextButton.styleFrom(
+                foregroundColor: palette.action,
+                minimumSize: const Size(48, 48),
+                textStyle: _buttonText(context),
+              ),
               child: Text(l10n.tryAgain),
             ),
           ],
@@ -123,7 +137,8 @@ class _ProfileBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toString();
+    final palette = AppPalette.of(context);
+    final locale = Localizations.localeOf(context);
     return BlocBuilder<ConnectivityBloc, ConnectivityState>(
       buildWhen: (previous, current) =>
           previous.isUnavailable != current.isUnavailable,
@@ -133,15 +148,16 @@ class _ProfileBody extends StatelessWidget {
             ? null
             : formatHomeAmount(
                 summary!.balanceEgp,
-                locale: locale,
+                locale: locale.toString(),
                 withCurrency: true,
                 currency: l10n.egp,
               );
-        final balanceLabel = offline
+        final balance = offline
             ? l10n.offlineSectionUnavailable
-            : amount == null
-            ? (financeFailed ? l10n.balanceLoadError : null)
-            : l10n.profileBalance(amount);
+            : amount ?? (financeFailed ? l10n.balanceLoadError : null);
+        final language = locale.languageCode == 'ar'
+            ? l10n.languageArabic
+            : l10n.languageEnglish;
 
         // The shell extends its body behind the floating navigation bar and
         // reports the bar's height as bottom padding, so the last group can
@@ -153,11 +169,13 @@ class _ProfileBody extends StatelessWidget {
           ),
           children: [
             _Header(
-              initials: driver.initials(Localizations.localeOf(context)),
-              name: driver.displayName(Localizations.localeOf(context)),
               title: l10n.navProfile,
-              identity: l10n.profileIdentity(driver.id, l10n.driversVault),
-              balanceLabel: balanceLabel,
+              initials: driver.initials(locale),
+              name: driver.displayName(locale),
+              driverId: driver.id,
+              vault: l10n.driversVault,
+              balance: balance,
+              balanceIsStatus: amount == null,
             ),
             _SectionLabel(l10n.profileQuickAccess),
             _MenuGroup(
@@ -170,12 +188,15 @@ class _ProfileBody extends StatelessWidget {
                   onTap: onOpenHome,
                   trailing: amount == null
                       ? null
-                      : Text(
-                          amount,
-                          key: const Key('profile-balance-amount'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.amount.copyWith(fontSize: 14),
+                      : _Swap(
+                          value: amount,
+                          child: Text(
+                            amount,
+                            key: const Key('profile-balance-amount'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _valueStyle(palette),
+                          ),
                         ),
                 ),
                 _MenuRow(
@@ -183,7 +204,7 @@ class _ProfileBody extends StatelessWidget {
                   icon: Icons.fact_check_outlined,
                   title: l10n.pendingApprovals,
                   onTap: onOpenApprovals,
-                  trailing: offline ? null : const _PendingBadge(),
+                  trailing: offline ? null : const _PendingCount(),
                 ),
                 _MenuRow(
                   rowKey: const Key('profile-history'),
@@ -202,39 +223,57 @@ class _ProfileBody extends StatelessWidget {
                   icon: Icons.language_rounded,
                   title: l10n.language,
                   onTap: () => showLanguageSheet(context),
-                  trailing: Text(
-                    Localizations.localeOf(context).languageCode == 'ar'
-                        ? l10n.languageArabic
-                        : l10n.languageEnglish,
-                    key: const Key('profile-language-value'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.body.copyWith(
-                      fontWeight: FontWeight.w600,
+                  trailing: _Swap(
+                    value: language,
+                    child: Text(
+                      language,
+                      key: const Key('profile-language-value'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _valueStyle(palette),
                     ),
                   ),
                 ),
-                _MenuRow(
-                  rowKey: const Key('profile-dark-mode'),
-                  icon: Icons.dark_mode_outlined,
-                  title: l10n.darkMode,
-                  showChevron: false,
-                  trailing: BlocBuilder<ThemeBloc, ThemePreferenceState>(
-                    builder: (context, themeState) {
-                      final dark = themeState.mode == ThemeMode.dark;
-                      return Switch(
-                        key: const Key('profile-dark-mode-switch'),
-                        value: dark,
-                        onChanged: (value) {
-                          context.read<ThemeBloc>().add(
-                            ThemeModeSelected(
-                              value ? ThemeMode.dark : ThemeMode.light,
-                            ),
-                          );
-                        },
+                // Like SwitchListTile: the whole row toggles, the merged node
+                // announces the label with the switch state, and focus stops
+                // once on the row.
+                BlocBuilder<ThemeBloc, ThemePreferenceState>(
+                  builder: (context, themeState) {
+                    final dark = themeState.mode == ThemeMode.dark;
+                    void select(bool value) {
+                      context.read<ThemeBloc>().add(
+                        ThemeModeSelected(
+                          value ? ThemeMode.dark : ThemeMode.light,
+                        ),
                       );
-                    },
-                  ),
+                    }
+
+                    return MergeSemantics(
+                      child: _MenuRow(
+                        rowKey: const Key('profile-dark-mode'),
+                        icon: Icons.dark_mode_outlined,
+                        title: l10n.darkMode,
+                        showChevron: false,
+                        onTap: () => select(!dark),
+                        trailing: ExcludeFocus(
+                          child: Switch(
+                            key: const Key('profile-dark-mode-switch'),
+                            value: dark,
+                            activeTrackColor: palette.action,
+                            activeThumbColor: palette.onAction,
+                            inactiveTrackColor: palette.field,
+                            inactiveThumbColor: palette.fieldBorder,
+                            trackOutlineColor: WidgetStateProperty.resolveWith(
+                              (states) => states.contains(WidgetState.selected)
+                                  ? palette.action
+                                  : palette.fieldBorder,
+                            ),
+                            onChanged: select,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -245,10 +284,8 @@ class _ProfileBody extends StatelessWidget {
                 _MenuRow(
                   rowKey: const Key('profile-logout'),
                   icon: Icons.logout_rounded,
-                  iconColor: AppColors.rejectedText,
-                  iconBackground: AppColors.dangerBackground,
                   title: l10n.logout,
-                  titleColor: AppColors.rejectedText,
+                  destructive: true,
                   showChevron: false,
                   onTap: () => showLogoutDialog(context),
                 ),
@@ -261,150 +298,144 @@ class _ProfileBody extends StatelessWidget {
   }
 }
 
-/// Dark identity panel on the wallet's ink; it scrolls with the rows.
+/// Page title over the company ID badge.
 class _Header extends StatelessWidget {
+  final String title;
   final String initials;
   final String name;
-  final String title;
-  final String identity;
-  final String? balanceLabel;
+  final String driverId;
+  final String vault;
+  final String? balance;
+
+  /// [balance] is a status line (offline or failed), not an amount.
+  final bool balanceIsStatus;
 
   const _Header({
+    required this.title,
     required this.initials,
     required this.name,
-    required this.title,
-    required this.identity,
-    required this.balanceLabel,
+    required this.driverId,
+    required this.vault,
+    required this.balance,
+    required this.balanceIsStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    final balanceLabel = this.balanceLabel;
-    return DecoratedBox(
+    final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
+    final balance = this.balance;
+    return SafeArea(
       key: const Key('profile-header'),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.inkLift, AppColors.title],
-        ),
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(AppRadii.sheet),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
                 title,
-                style: AppTextStyles.pageTitle.copyWith(color: Colors.white),
+                style: AppTextStyles.display.copyWith(color: palette.title),
               ),
-              const SizedBox(height: 20),
-              Row(
+            ),
+            const SizedBox(height: 20),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: palette.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: palette.hairline),
+                boxShadow: palette.raisedShadow,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    key: const Key('profile-avatar'),
-                    width: 64,
-                    height: 64,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.28),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                          initials,
-                          maxLines: 1,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  const SizedBox(height: 12),
+                  const Center(child: _LanyardSlot()),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          name,
-                          key: const Key('profile-name'),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.sectionTitle.copyWith(
-                            color: Colors.white,
-                            fontSize: 20,
-                          ),
+                        Row(
+                          children: [
+                            _InitialsTile(initials),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                name,
+                                key: const Key('profile-name'),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.title.copyWith(
+                                  color: palette.title,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          identity,
+                        const SizedBox(height: 20),
+                        _Rule(palette),
+                        Column(
                           key: const Key('profile-identity'),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.hint,
-                          ),
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _BadgeField(
+                              label: l10n.profileBadgeId,
+                              value: driverId,
+                            ),
+                            _Rule(palette),
+                            _BadgeField(
+                              label: l10n.profileBadgeVault,
+                              value: vault,
+                            ),
+                          ],
                         ),
+                        if (balance != null) ...[
+                          _Rule(palette),
+                          _BadgeField(
+                            key: const Key('profile-balance'),
+                            label: l10n.profileBadgeBalance,
+                            value: balance,
+                            status: balanceIsStatus,
+                          ),
+                        ],
                       ],
                     ),
                   ),
                 ],
               ),
-              if (balanceLabel != null) ...[
-                const SizedBox(height: 16),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: DecoratedBox(
-                    key: const Key('profile-balance'),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppRadii.pill),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 16,
-                            color: AppColors.primaryOnInk,
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              balanceLabel,
-                              maxLines: 2,
-                              style: AppTextStyles.badge.copyWith(
-                                color: AppColors.primaryOnInk,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The punched hole a lanyard clip goes through: the ground shows through,
+/// shaded along its top cut edge.
+class _LanyardSlot extends StatelessWidget {
+  const _LanyardSlot();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    return ExcludeSemantics(
+      child: Container(
+        width: 40,
+        height: 8,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.alphaBlend(palette.insetShade, palette.ground),
+              palette.ground,
             ],
+            stops: const [0, 0.45],
           ),
         ),
       ),
@@ -412,11 +443,137 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _PendingBadge extends StatelessWidget {
-  const _PendingBadge();
+class _InitialsTile extends StatelessWidget {
+  final String initials;
+
+  const _InitialsTile(this.initials);
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    return ExcludeSemantics(
+      child: Container(
+        key: const Key('profile-avatar'),
+        width: 64,
+        height: 64,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: palette.mark,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              initials,
+              maxLines: 1,
+              style: AppTextStyles.title.copyWith(color: palette.onMark),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One label and value line of the badge; the value sits at the end in
+/// tabular figures and swaps in place when it changes. A [status] value, such
+/// as an offline notice, is set quieter so it does not read as data.
+class _BadgeField extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool status;
+
+  const _BadgeField({
+    super.key,
+    required this.label,
+    required this.value,
+    this.status = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _Swap(
+                value: value,
+                child: Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: status
+                      ? AppTextStyles.bodyMedium.copyWith(color: palette.muted)
+                      : AppTextStyles.bodyMedium.copyWith(
+                          color: palette.title,
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: AppTextStyles.tabular,
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Rule extends StatelessWidget {
+  final AppPalette palette;
+
+  const _Rule(this.palette);
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(height: 1, thickness: 1, color: palette.hairline);
+  }
+}
+
+/// Cross-fades a changed value in place over 180ms without moving its row;
+/// with reduced motion the new value replaces the old at once.
+class _Swap extends StatelessWidget {
+  final Object value;
+  final Widget child;
+
+  const _Swap({required this.value, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeOutCubic,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: AlignmentDirectional.centerEnd,
+        children: [...previous, ?current],
+      ),
+      child: KeyedSubtree(key: ValueKey(value), child: child),
+    );
+  }
+}
+
+/// Pending-approval count at the end of the Pending Approvals row.
+class _PendingCount extends StatelessWidget {
+  const _PendingCount();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return BlocBuilder<ApprovalsBloc, ApprovalsState>(
       buildWhen: (previous, current) =>
           previous.pendingCount != current.pendingCount ||
@@ -425,16 +582,33 @@ class _PendingBadge extends StatelessWidget {
         if (state.loading || state.pendingCount == 0) {
           return const SizedBox.shrink();
         }
-        return StatusBadge.pending(
-          key: const Key('profile-pending-count'),
-          label: state.pendingCount.toString(),
+        final count = state.pendingCount.toString();
+        return _Swap(
+          value: count,
+          child: Container(
+            key: const Key('profile-pending-count'),
+            constraints: const BoxConstraints(minWidth: 28),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: palette.action,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              count,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.label.copyWith(
+                color: palette.onAction,
+                fontWeight: FontWeight.w700,
+                fontFeatures: AppTextStyles.tabular,
+              ),
+            ),
+          ),
         );
       },
     );
   }
 }
 
-/// Small all-caps heading above a group of rows.
 class _SectionLabel extends StatelessWidget {
   final String label;
 
@@ -442,17 +616,21 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(24, 24, 24, 10),
-      child: Text(
-        label.toUpperCase(),
-        style: AppTextStyles.groupLabel.copyWith(letterSpacing: 0.8),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 4),
+      child: Semantics(
+        header: true,
+        child: Text(
+          label,
+          style: AppTextStyles.label.copyWith(color: palette.muted),
+        ),
       ),
     );
   }
 }
 
-/// White card holding related rows, separated by hairlines.
+/// Related rows on the ground, divided by hairlines; no card around them.
 class _MenuGroup extends StatelessWidget {
   final Key? groupKey;
   final List<Widget> children;
@@ -461,34 +639,23 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surfaces = AppSurfaces.of(context);
-    return Padding(
+    final palette = AppPalette.of(context);
+    return Column(
       key: groupKey,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Material(
-        color: surfaces.card,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.card),
-          side: BorderSide(color: surfaces.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final (index, child) in children.indexed) ...[
-              if (index > 0)
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  indent: 70,
-                  endIndent: 16,
-                  color: surfaces.divider,
-                ),
-              child,
-            ],
-          ],
-        ),
-      ),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (index, child) in children.indexed) ...[
+          if (index > 0)
+            Divider(
+              height: 1,
+              thickness: 1,
+              indent: 20,
+              endIndent: 20,
+              color: palette.hairline,
+            ),
+          child,
+        ],
+      ],
     );
   }
 }
@@ -496,12 +663,10 @@ class _MenuGroup extends StatelessWidget {
 class _MenuRow extends StatelessWidget {
   final Key rowKey;
   final IconData icon;
-  final Color iconColor;
-  final Color iconBackground;
   final String title;
-  final Color? titleColor;
   final Widget? trailing;
   final bool showChevron;
+  final bool destructive;
   final VoidCallback? onTap;
 
   const _MenuRow({
@@ -509,41 +674,45 @@ class _MenuRow extends StatelessWidget {
     required this.icon,
     required this.title,
     this.onTap,
-    this.iconColor = AppColors.primary,
-    this.iconBackground = AppColors.primarySurface,
-    this.titleColor,
     this.trailing,
     this.showChevron = true,
+    this.destructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final surfaces = AppSurfaces.of(context);
-    final resolvedTitle = titleColor ?? surfaces.title;
+    final palette = AppPalette.of(context);
     final chevron = Directionality.of(context) == TextDirection.rtl
         ? Icons.chevron_left
         : Icons.chevron_right;
     return InkWell(
       key: rowKey,
       onTap: onTap,
+      highlightColor: palette.title.withValues(alpha: 0.06),
+      splashColor: palette.title.withValues(alpha: 0.08),
+      focusColor: palette.focus.withValues(alpha: 0.12),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 64),
+        constraints: const BoxConstraints(minHeight: 56),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(
             children: [
-              TypeAvatar(
-                size: 40,
-                tint: iconBackground,
-                child: Icon(icon, color: iconColor, size: 20),
+              Icon(
+                icon,
+                size: 20,
+                color: destructive ? palette.error : palette.muted,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.rowTitle.copyWith(color: resolvedTitle),
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: destructive ? palette.error : palette.title,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
+                  ),
                 ),
               ),
               if (trailing != null) ...[
@@ -555,7 +724,7 @@ class _MenuRow extends StatelessWidget {
               ],
               if (showChevron) ...[
                 const SizedBox(width: 4),
-                Icon(chevron, color: surfaces.muted, size: 22),
+                Icon(chevron, color: palette.muted, size: 22),
               ],
             ],
           ),
@@ -563,4 +732,18 @@ class _MenuRow extends StatelessWidget {
       ),
     );
   }
+}
+
+TextStyle _valueStyle(AppPalette palette) {
+  return AppTextStyles.bodyMedium.copyWith(
+    color: palette.body,
+    fontWeight: FontWeight.w600,
+    fontFeatures: AppTextStyles.tabular,
+  );
+}
+
+/// Theme font with the redesign's button weight, so labels use the app face.
+TextStyle? _buttonText(BuildContext context) {
+  return Theme.of(context).textTheme.labelLarge
+      ?.merge(AppTextStyles.buttonLarge);
 }

@@ -41,14 +41,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.text('Choose Language'), findsOneWidget);
+      expect(find.text('Choose language'), findsOneWidget);
       expect(_check(const Key('language-option-en')), findsOneWidget);
       expect(_check(const Key('language-option-ar')), findsNothing);
 
       await tester.tap(find.byKey(const Key('language-option-ar')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Choose Language'), findsNothing);
+      expect(find.text('Choose language'), findsNothing);
       expect(find.text('العربية'), findsOneWidget);
       expect(find.text('اللغة'), findsOneWidget);
       expect(find.text('رصيدي'), findsOneWidget);

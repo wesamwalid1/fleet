@@ -393,26 +393,16 @@
   "logoutMessage": "You will need to sign in again.",
   "logoutFailed": "Couldn't log out. You are still signed in. Please try again.",
   "language": "Language",
-  "chooseLanguage": "Choose Language",
+  "chooseLanguage": "Choose language",
   "languageEnglish": "English",
   "languageArabic": "العربية",
-  "profileQuickAccess": "Quick Access",
+  "profileQuickAccess": "Quick access",
   "profileSettings": "Settings",
   "profileAccount": "Account",
+  "profileBadgeId": "ID",
+  "profileBadgeVault": "Vault",
+  "profileBadgeBalance": "Balance",
   "darkMode": "Dark Mode",
-  "profileBalance": "Balance: {amount}",
-  "@profileBalance": {
-    "placeholders": {
-      "amount": {"type": "String"}
-    }
-  },
-  "profileIdentity": "{id} · {vault}",
-  "@profileIdentity": {
-    "placeholders": {
-      "id": {"type": "String"},
-      "vault": {"type": "String"}
-    }
-  },
   "approvalFailed": "Could not update this approval.",
   "homeAvailableBalance": "Available Balance",
   "homeTotalBalance": "Total Balance",

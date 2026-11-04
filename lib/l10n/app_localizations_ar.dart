@@ -800,17 +800,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profileAccount => 'الحساب';
 
   @override
+  String get profileBadgeId => 'رقم السائق';
+
+  @override
+  String get profileBadgeVault => 'الخزينة';
+
+  @override
+  String get profileBadgeBalance => 'الرصيد';
+
+  @override
   String get darkMode => 'الوضع الداكن';
-
-  @override
-  String profileBalance(String amount) {
-    return 'الرصيد: $amount';
-  }
-
-  @override
-  String profileIdentity(String id, String vault) {
-    return '$id · $vault';
-  }
 
   @override
   String get approvalFailed => 'تعذر تحديث هذه الموافقة.';
