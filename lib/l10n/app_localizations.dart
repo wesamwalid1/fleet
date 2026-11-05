@@ -1142,6 +1142,72 @@ abstract class AppLocalizations {
   /// **'Action Required'**
   String get actionRequired;
 
+  /// No description provided for @approvalsNeedsDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs your decision'**
+  String get approvalsNeedsDecision;
+
+  /// No description provided for @approvalsAlreadyDecided.
+  ///
+  /// In en, this message translates to:
+  /// **'Already decided'**
+  String get approvalsAlreadyDecided;
+
+  /// No description provided for @approvalsNoPendingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs a decision right now.'**
+  String get approvalsNoPendingHint;
+
+  /// No description provided for @approvalsAllCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get approvalsAllCaughtUp;
+
+  /// No description provided for @approvalsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load approvals.'**
+  String get approvalsLoadError;
+
+  /// No description provided for @approvalsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get approvalsRetry;
+
+  /// No description provided for @approvalCreditsWhenApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits your balance when approved.'**
+  String get approvalCreditsWhenApproved;
+
+  /// No description provided for @approvalCreditedToBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Credited to your balance.'**
+  String get approvalCreditedToBalance;
+
+  /// No description provided for @approvalNotCreditedToBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Not credited to your balance.'**
+  String get approvalNotCreditedToBalance;
+
+  /// No description provided for @approvalNoBalanceChange.
+  ///
+  /// In en, this message translates to:
+  /// **'No change'**
+  String get approvalNoBalanceChange;
+
+  /// No description provided for @approvalRoadBalanceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Road expenses don\'t affect your balance.'**
+  String get approvalRoadBalanceNote;
+
   /// No description provided for @completed.
   ///
   /// In en, this message translates to:
@@ -1274,6 +1340,12 @@ abstract class AppLocalizations {
   /// **'Submitted by'**
   String get submittedBy;
 
+  /// No description provided for @vehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get vehicle;
+
   /// No description provided for @tripDetails.
   ///
   /// In en, this message translates to:
@@ -1313,19 +1385,19 @@ abstract class AppLocalizations {
   /// No description provided for @rejectExpenseTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reject expense?'**
+  /// **'Reject this road expense?'**
   String get rejectExpenseTitle;
 
   /// No description provided for @rejectExpenseMessage.
   ///
   /// In en, this message translates to:
-  /// **'This will notify the admin that you have rejected {reference}.'**
+  /// **'This will mark {reference} as rejected. It won’t change your balance.'**
   String rejectExpenseMessage(String reference);
 
   /// No description provided for @yesReject.
   ///
   /// In en, this message translates to:
-  /// **'Yes, Reject'**
+  /// **'Reject'**
   String get yesReject;
 
   /// No description provided for @approved.

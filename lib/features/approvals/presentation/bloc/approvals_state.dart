@@ -33,10 +33,10 @@ class ApprovalsState extends Equatable {
       if (item.isPending && item.matches(filter)) item,
   ];
 
-  /// Completed items (kind filter does not apply), before search.
+  /// Completed items for the selected kind filter, before search.
   List<ApprovalItem> get visibleCompleted => [
     for (final item in items)
-      if (!item.isPending) item,
+      if (!item.isPending && item.matches(filter)) item,
   ];
 
   ApprovalsState copyWith({

@@ -268,7 +268,7 @@ void main() {
       );
 
       expect(find.byKey(const Key('offline-unavailable')), findsNothing);
-      expect(find.text('Action Required'), findsOneWidget);
+      expect(find.text('Needs your decision'), findsOneWidget);
       final action = find.byKey(const Key('approval-action-DSB-2025-0441'));
       expect(tester.widget<FilledButton>(action).onPressed, isNull);
 

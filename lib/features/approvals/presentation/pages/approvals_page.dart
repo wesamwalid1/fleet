@@ -5,14 +5,8 @@ import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_event.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_filter_chip.dart';
-import '../../../../core/widgets/app_search_field.dart';
-import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/section_title.dart';
-import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
@@ -21,9 +15,10 @@ import '../approval_format.dart';
 import '../bloc/approvals_bloc.dart';
 import '../bloc/approvals_event.dart';
 import '../bloc/approvals_state.dart';
-import '../widgets/approval_card.dart';
+import '../widgets/approval_inbox_row.dart';
 import '../widgets/approval_sheets.dart';
 
+/// Action Inbox — The Desk: pending decisions first, finalized quieter below.
 class ApprovalsPage extends StatefulWidget {
   const ApprovalsPage({super.key});
 
@@ -56,6 +51,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     return BlocListener<ApprovalsBloc, ApprovalsState>(
       listenWhen: (previous, current) => current.revision != previous.revision,
       listener: (context, state) {
@@ -64,11 +60,13 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
       child: BlocListener<ApprovalsBloc, ApprovalsState>(
         listenWhen: (previous, current) => current.failed && !previous.failed,
         listener: (context, state) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(l10n.approvalFailed)));
+          if (state.items.isNotEmpty) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(l10n.approvalFailed)));
+          }
         },
-        child: ColoredBox(
-          color: AppSurfaces.of(context).scaffold,
+        child: Material(
+          color: palette.ground,
           child: SafeArea(
             bottom: false,
             child: BlocBuilder<ConnectivityBloc, ConnectivityState>(
@@ -87,13 +85,25 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                     ),
                   );
                 }
-                // Keep the list during a brief probe; only disable actions.
                 final actionsLocked = connectivity.blocksOnlineWork;
                 return BlocBuilder<ApprovalsBloc, ApprovalsState>(
                   builder: (context, state) {
-                    if (state.loading) {
-                      return const Center(child: CircularProgressIndicator());
+                    if (state.loading && state.items.isEmpty) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: palette.action,
+                          strokeWidth: 2.2,
+                        ),
+                      );
                     }
+                    if (state.failed && state.items.isEmpty) {
+                      return _LoadError(
+                        onRetry: () => context.read<ApprovalsBloc>().add(
+                          const ApprovalsStarted(),
+                        ),
+                      );
+                    }
+
                     final pending = [
                       for (final item in state.visiblePending)
                         if (approvalMatches(l10n, item, state.query)) item,
@@ -102,128 +112,171 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                       for (final item in state.visibleCompleted)
                         if (approvalMatches(l10n, item, state.query)) item,
                     ];
+                    final searching = state.query.trim().isNotEmpty;
                     final noSearchHits =
-                        state.query.trim().isNotEmpty &&
-                        pending.isEmpty &&
-                        completed.isEmpty;
+                        searching && pending.isEmpty && completed.isEmpty;
+                    final allCaughtUp =
+                        !searching && pending.isEmpty && completed.isEmpty;
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                          child: _Header(count: state.pendingCount),
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: _Header(count: pending.length),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              AppSearchField(
-                                controller: _search,
-                                hintText: l10n.approvalsSearchHint,
-                                clearTooltip: l10n.clearSearch,
-                                onChanged: _onSearchChanged,
-                                onClear: _clearSearch,
-                                showClear: state.query.isNotEmpty,
-                                fieldKey: const Key('approvals-search'),
-                                clearKey: const Key('approvals-search-clear'),
-                              ),
-                              const SizedBox(height: 12),
-                              FilterChipWrap(
-                                children: [
-                                  AppFilterChip(
-                                    key: const Key('approval-filter-all'),
-                                    label: l10n.filterAll,
-                                    selected:
-                                        state.filter == ApprovalFilter.all,
-                                    onSelected: () =>
-                                        _selectFilter(ApprovalFilter.all),
-                                  ),
-                                  AppFilterChip(
-                                    key: const Key('approval-filter-vault'),
-                                    label: l10n.fromVault,
-                                    selected:
-                                        state.filter == ApprovalFilter.vault,
-                                    onSelected: () =>
-                                        _selectFilter(ApprovalFilter.vault),
-                                  ),
-                                  AppFilterChip(
-                                    key: const Key('approval-filter-drivers'),
-                                    label: l10n.fromDrivers,
-                                    selected:
-                                        state.filter == ApprovalFilter.drivers,
-                                    onSelected: () =>
-                                        _selectFilter(ApprovalFilter.drivers),
-                                  ),
-                                  AppFilterChip(
-                                    key: const Key('approval-filter-road'),
-                                    label: l10n.roadExpenses,
-                                    selected:
-                                        state.filter ==
-                                        ApprovalFilter.roadExpense,
-                                    onSelected: () => _selectFilter(
-                                      ApprovalFilter.roadExpense,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: _ApprovalsSearchField(
+                            controller: _search,
+                            hintText: l10n.approvalsSearchHint,
+                            clearTooltip: l10n.clearSearch,
+                            onChanged: _onSearchChanged,
+                            onClear: _clearSearch,
+                            showClear: state.query.isNotEmpty,
                           ),
                         ),
+                        _FilterRow(
+                          filter: state.filter,
+                          onSelected: _selectFilter,
+                        ),
                         Expanded(
-                          child: ListView(
-                            padding: EdgeInsets.fromLTRB(
-                              20,
-                              4,
-                              20,
-                              32 + MediaQuery.paddingOf(context).bottom,
-                            ),
-                            children: [
-                              if (noSearchHits)
-                                EmptyState(
+                          child: noSearchHits
+                              ? _MessageState(
                                   key: const Key('approvals-no-results'),
-                                  icon: Icons.search_off_rounded,
                                   title: l10n.approvalsNoResults,
                                   hint: l10n.approvalsNoResultsHint,
                                 )
-                              else if (pending.isEmpty)
-                                EmptyState(
+                              : allCaughtUp
+                              ? _MessageState(
                                   key: const Key('approvals-empty'),
-                                  icon: Icons.check_rounded,
-                                  iconColor: AppColors.success,
-                                  iconBackground: AppColors.successBackground,
-                                  title: l10n.noPendingApprovals,
+                                  title: l10n.approvalsAllCaughtUp,
                                 )
-                              else ...[
-                                SectionTitle(
-                                  title: l10n.actionRequired,
-                                  leading: const _Dot(),
-                                ),
-                                const SizedBox(height: 12),
-                                for (final item in pending) ...[
-                                  ApprovalCard(
-                                    item: item,
-                                    onOpen: actionsLocked
-                                        ? null
-                                        : () => openApprovalRequest(
-                                            context,
-                                            item,
+                              : CustomScrollView(
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        20,
+                                        16,
+                                        20,
+                                        0,
+                                      ),
+                                      sliver: SliverToBoxAdapter(
+                                        child: Semantics(
+                                          header: true,
+                                          child: Text(
+                                            l10n.approvalsNeedsDecision,
+                                            style: AppTextStyles.label.copyWith(
+                                              color: palette.muted,
+                                            ),
                                           ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                ],
-                              ],
-                              if (completed.isNotEmpty) ...[
-                                const SizedBox(height: 22),
-                                SectionTitle(title: l10n.completed),
-                                const SizedBox(height: 12),
-                                for (final item in completed) ...[
-                                  ApprovalCard(item: item),
-                                  const SizedBox(height: 10),
-                                ],
-                              ],
-                            ],
-                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (pending.isEmpty)
+                                      SliverPadding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          8,
+                                          20,
+                                          8,
+                                        ),
+                                        sliver: SliverToBoxAdapter(
+                                          child: Text(
+                                            key: const Key(
+                                              'approvals-no-pending-hint',
+                                            ),
+                                            l10n.approvalsNoPendingHint,
+                                            style: AppTextStyles.bodyMedium
+                                                .copyWith(color: palette.muted),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      SliverPadding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        sliver: SliverList.separated(
+                                          itemCount: pending.length,
+                                          separatorBuilder: (_, _) =>
+                                              const ApprovalInboxDivider(),
+                                          itemBuilder: (context, index) {
+                                            final item = pending[index];
+                                            return ApprovalInboxRow(
+                                              item: item,
+                                              busy: state.busy,
+                                              onOpen: actionsLocked
+                                                  ? null
+                                                  : () => openApprovalRequest(
+                                                      context,
+                                                      item,
+                                                    ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    if (completed.isNotEmpty) ...[
+                                      // Already decided section.
+                                      SliverPadding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          28,
+                                          20,
+                                          0,
+                                        ),
+                                        sliver: SliverToBoxAdapter(
+                                          child: Semantics(
+                                            header: true,
+                                            child: Text(
+                                              l10n.approvalsAlreadyDecided,
+                                              style: AppTextStyles.label
+                                                  .copyWith(
+                                                    color: palette.muted,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Completed list.
+                                      SliverPadding(
+                                        padding: EdgeInsets.fromLTRB(
+                                          20,
+                                          0,
+                                          20,
+                                          32 +
+                                              MediaQuery.paddingOf(context)
+                                                  .bottom,
+                                        ),
+                                        sliver: SliverList.separated(
+                                          itemCount: completed.length,
+                                          separatorBuilder: (_, _) =>
+                                              const ApprovalInboxDivider(),
+                                          itemBuilder: (context, index) {
+                                            final item = completed[index];
+                                            return ApprovalInboxRow(
+                                              item: item,
+                                              busy: state.busy,
+                                              onOpen: () => openApprovalRequest(
+                                                context,
+                                                item,
+                                                readOnly: true,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ] else
+                                      SliverToBoxAdapter(
+                                        child: SizedBox(
+                                          height:
+                                              32 +
+                                              MediaQuery.paddingOf(context)
+                                                  .bottom,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                         ),
                       ],
                     );
@@ -246,41 +299,269 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
     return Row(
       children: [
         Expanded(
-          child: Text(
-            l10n.approvals,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.pageTitle.copyWith(
-              color: AppSurfaces.of(context).title,
+          child: Semantics(
+            header: true,
+            child: Text(
+              l10n.approvals,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.display.copyWith(color: palette.title),
             ),
           ),
         ),
         if (count > 0)
-          StatusBadge.pending(
+          Text(
             key: const Key('pending-count'),
-            label: l10n.pendingCount(count),
+            l10n.pendingCount(count),
+            style: AppTextStyles.label.copyWith(color: palette.muted),
           ),
       ],
     );
   }
 }
 
-/// Marks the section that needs the driver's action.
-class _Dot extends StatelessWidget {
-  const _Dot();
+class _MessageState extends StatelessWidget {
+  final String title;
+  final String? hint;
+
+  const _MessageState({super.key, required this.title, this.hint});
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      width: 8,
-      height: 8,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          shape: BoxShape.circle,
+    final palette = AppPalette.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: palette.title,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (hint != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                hint!,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadError extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _LoadError({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final palette = AppPalette.of(context);
+    return Center(
+      key: const Key('approvals-load-error'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.approvalsLoadError,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyLarge.copyWith(color: palette.body),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              key: const Key('approvals-retry'),
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: palette.action,
+                minimumSize: const Size(48, 48),
+                textStyle: Theme.of(context).textTheme.labelLarge
+                    ?.merge(AppTextStyles.buttonLarge),
+              ),
+              child: Text(l10n.approvalsRetry),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Matches History search: AppPalette field fill, fieldBorder, focus ring.
+class _ApprovalsSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final String clearTooltip;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final bool showClear;
+
+  const _ApprovalsSearchField({
+    required this.controller,
+    required this.hintText,
+    required this.clearTooltip,
+    required this.onChanged,
+    required this.onClear,
+    required this.showClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    OutlineInputBorder border(Color color, [double width = 1]) {
+      return OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: color, width: width),
+      );
+    }
+
+    return TextField(
+      key: const Key('approvals-search'),
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      cursorColor: palette.focus,
+      style: AppTextStyles.input.copyWith(color: palette.title),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: AppTextStyles.input.copyWith(color: palette.muted),
+        prefixIcon: Icon(Icons.search_rounded, color: palette.muted, size: 20),
+        suffixIcon: showClear
+            ? IconButton(
+                key: const Key('approvals-search-clear'),
+                tooltip: clearTooltip,
+                onPressed: onClear,
+                icon: Icon(Icons.close_rounded, color: palette.body),
+              )
+            : null,
+        filled: true,
+        fillColor: palette.field,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        enabledBorder: border(palette.fieldBorder),
+        focusedBorder: border(palette.focus, 1.6),
+      ),
+    );
+  }
+}
+
+/// Single horizontal, non-wrapping filter row (scrolls when needed).
+class _FilterRow extends StatelessWidget {
+  final ApprovalFilter filter;
+  final ValueChanged<ApprovalFilter> onSelected;
+
+  const _FilterRow({required this.filter, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final chips = <(Key, String, ApprovalFilter)>[
+      (const Key('approval-filter-all'), l10n.filterAll, ApprovalFilter.all),
+      (
+        const Key('approval-filter-vault'),
+        l10n.fromVault,
+        ApprovalFilter.vault,
+      ),
+      (
+        const Key('approval-filter-drivers'),
+        l10n.fromDrivers,
+        ApprovalFilter.drivers,
+      ),
+      (
+        const Key('approval-filter-road'),
+        l10n.roadExpenses,
+        ApprovalFilter.roadExpense,
+      ),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Row(
+        children: [
+          for (var i = 0; i < chips.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            _FilterChip(
+              chipKey: chips[i].$1,
+              label: chips[i].$2,
+              selected: filter == chips[i].$3,
+              onSelected: () => onSelected(chips[i].$3),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// History-style choice pill: ink when selected, outlined surface at rest.
+class _FilterChip extends StatelessWidget {
+  final Key chipKey;
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _FilterChip({
+    required this.chipKey,
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: selected ? palette.action : palette.hairline),
+    );
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? palette.action : palette.surface,
+        shape: shape,
+        child: InkWell(
+          key: chipKey,
+          onTap: onSelected,
+          customBorder: shape,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: AppTextStyles.label.copyWith(
+                    color: selected ? palette.onAction : palette.body,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

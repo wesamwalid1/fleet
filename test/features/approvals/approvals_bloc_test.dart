@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/features/approvals/data/repositories/approval_repository_impl.dart';
 import 'package:driver_portal_app/features/approvals/domain/entities/approval_item.dart';
+import 'package:driver_portal_app/features/approvals/domain/repositories/approval_repository.dart';
 import 'package:driver_portal_app/features/approvals/domain/usecases/approve_incoming_transfer.dart';
 import 'package:driver_portal_app/features/approvals/domain/usecases/approve_vault_receipt.dart';
 import 'package:driver_portal_app/features/approvals/domain/usecases/confirm_road_expense.dart';
@@ -34,8 +35,9 @@ void main() {
     expect(bloc.state.visiblePending.single.kind, ApprovalKind.vault);
     expect(
       bloc.state.visibleCompleted.map((item) => item.kind),
-      containsAll([ApprovalKind.vault, ApprovalKind.driver]),
+      everyElement(ApprovalKind.vault),
     );
+    expect(bloc.state.visibleCompleted, isNotEmpty);
 
     bloc.add(const ApprovalsFilterSelected(ApprovalFilter.drivers));
     await bloc.stream.firstWhere(
@@ -91,6 +93,34 @@ void main() {
       expect(await harness.repository.getAvailableBalance('DR-001'), 1700);
     },
   );
+
+  test('ApprovalsStarted surfaces a load failure for Retry', () async {
+    final harness = _Harness(seed: false);
+    final failing = _FailingApprovals(harness.repository);
+    final bloc = ApprovalsBloc(
+      driverId: MockCashLedger.senderId,
+      repository: failing,
+      approveVaultReceipt: ApproveVaultReceipt(failing),
+      approveIncomingTransfer: ApproveIncomingTransfer(failing),
+      declineIncomingTransfer: DeclineIncomingTransfer(failing),
+      confirmRoadExpense: ConfirmRoadExpense(failing),
+      rejectRoadExpense: RejectRoadExpense(failing),
+    );
+    addTearDown(bloc.close);
+
+    bloc.add(const ApprovalsStarted());
+    final failed = await bloc.stream.firstWhere(
+      (state) => state.failed && !state.loading,
+    );
+    expect(failed.items, isEmpty);
+
+    failing.fail = false;
+    bloc.add(const ApprovalsStarted());
+    final recovered = await bloc.stream.firstWhere(
+      (state) => !state.failed && !state.loading,
+    );
+    expect(recovered.items, isEmpty);
+  });
 
   test('a finalized vault receipt cannot be approved again', () async {
     final harness = _Harness(seed: true);
@@ -157,4 +187,79 @@ class _Harness {
       rejectRoadExpense: RejectRoadExpense(repository),
     );
   }
+}
+
+class _FailingApprovals implements ApprovalRepository {
+  _FailingApprovals(this._inner);
+
+  final ApprovalRepositoryImpl _inner;
+  bool fail = true;
+
+  @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
+  Future<List<ApprovalItem>> getApprovals(String driverId) async {
+    if (fail) throw StateError('load failed');
+    return _inner.getApprovals(driverId);
+  }
+
+  @override
+  Future<int> getAvailableBalance(String driverId) =>
+      _inner.getAvailableBalance(driverId);
+
+  @override
+  Future<void> approveVaultReceipt({
+    required String driverId,
+    required String receiptId,
+    DateTime? finalizedAt,
+  }) => _inner.approveVaultReceipt(
+    driverId: driverId,
+    receiptId: receiptId,
+    finalizedAt: finalizedAt,
+  );
+
+  @override
+  Future<void> approveIncomingTransfer({
+    required String driverId,
+    required String transferId,
+    DateTime? finalizedAt,
+  }) => _inner.approveIncomingTransfer(
+    driverId: driverId,
+    transferId: transferId,
+    finalizedAt: finalizedAt,
+  );
+
+  @override
+  Future<void> declineIncomingTransfer({
+    required String driverId,
+    required String transferId,
+    DateTime? finalizedAt,
+  }) => _inner.declineIncomingTransfer(
+    driverId: driverId,
+    transferId: transferId,
+    finalizedAt: finalizedAt,
+  );
+
+  @override
+  Future<void> confirmRoadExpense({
+    required String driverId,
+    required String approvalId,
+    DateTime? finalizedAt,
+  }) => _inner.confirmRoadExpense(
+    driverId: driverId,
+    approvalId: approvalId,
+    finalizedAt: finalizedAt,
+  );
+
+  @override
+  Future<void> rejectRoadExpense({
+    required String driverId,
+    required String approvalId,
+    DateTime? finalizedAt,
+  }) => _inner.rejectRoadExpense(
+    driverId: driverId,
+    approvalId: approvalId,
+    finalizedAt: finalizedAt,
+  );
 }

@@ -187,7 +187,7 @@ void main() {
     expect(find.text('Khaled Ramadan (DR-003)'), findsOneWidget);
     expect(find.byKey(const Key('approval-approve')), findsOneWidget);
     await _dismissSheet(tester);
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
@@ -197,7 +197,7 @@ void main() {
     expect(find.byKey(const Key('approval-confirm')), findsOneWidget);
     expect(find.text('RE-2026-1041'), findsWidgets);
     await _dismissSheet(tester);
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
 
     expect(
       ledger.transfers
@@ -534,7 +534,7 @@ void main() {
     expect(find.byKey(const Key('approval-approve')), findsOneWidget);
     await _dismissSheet(tester);
     expect(find.text('launcher'), findsNothing);
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
   });
 
   testWidgets('in the app, a dismissed approval sheet leaves Approvals open', (
@@ -551,7 +551,7 @@ void main() {
     expect(find.byKey(const Key('approval-approve')), findsOneWidget);
     await _dismissSheet(tester);
 
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
     expect(
       find.byKey(const Key('approval-action-DSB-2025-0441')),
       findsOneWidget,
@@ -563,7 +563,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(popped, isFalse);
     expect(find.text('Page not found'), findsNothing);
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();

@@ -274,6 +274,17 @@
   "fromDrivers": "From Drivers",
   "roadExpenses": "Road Expenses",
   "actionRequired": "Action Required",
+  "approvalsNeedsDecision": "Needs your decision",
+  "approvalsAlreadyDecided": "Already decided",
+  "approvalsNoPendingHint": "Nothing needs a decision right now.",
+  "approvalsAllCaughtUp": "You're all caught up",
+  "approvalsLoadError": "Couldn't load approvals.",
+  "approvalsRetry": "Retry",
+  "approvalCreditsWhenApproved": "Credits your balance when approved.",
+  "approvalCreditedToBalance": "Credited to your balance.",
+  "approvalNotCreditedToBalance": "Not credited to your balance.",
+  "approvalNoBalanceChange": "No change",
+  "approvalRoadBalanceNote": "Road expenses don't affect your balance.",
   "completed": "Completed",
   "noPendingApprovals": "No pending approvals",
   "receivedFromVault": "Received from Vault",
@@ -311,6 +322,7 @@
   "totalAmount": "TOTAL AMOUNT",
   "period": "Period",
   "submittedBy": "Submitted by",
+  "vehicle": "Vehicle",
   "tripDetails": "TRIP DETAILS",
   "tripsPerAmount": "{count} trips · {amount} / trip",
   "@tripsPerAmount": {
@@ -328,14 +340,14 @@
   "grandTotal": "Grand Total",
   "reject": "Reject",
   "confirm": "Confirm",
-  "rejectExpenseTitle": "Reject expense?",
-  "rejectExpenseMessage": "This will notify the admin that you have rejected {reference}.",
+  "rejectExpenseTitle": "Reject this road expense?",
+  "rejectExpenseMessage": "This will mark {reference} as rejected. It won’t change your balance.",
   "@rejectExpenseMessage": {
     "placeholders": {
       "reference": {"type": "String"}
     }
   },
-  "yesReject": "Yes, Reject",
+  "yesReject": "Reject",
   "approved": "Approved",
   "rejected": "Rejected",
   "navHome": "Home",

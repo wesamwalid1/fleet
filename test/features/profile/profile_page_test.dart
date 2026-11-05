@@ -130,7 +130,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('profile-pending')));
     await tester.pumpAndSettle();
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
     expect(find.byKey(const Key('profile-my-balance')), findsNothing);
 
     await tester.tap(find.byKey(const Key('nav-profile')));

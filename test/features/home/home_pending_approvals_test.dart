@@ -78,7 +78,7 @@ void main() {
     await _pump(tester);
     await tester.tap(find.byKey(const Key('home-pending-DSB-2025-0441')));
     await tester.pumpAndSettle();
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
 
     await tester.ensureVisible(
       find.byKey(const Key('approval-action-DSB-2025-0441')),
@@ -119,7 +119,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('home-view-all-approvals')));
     await tester.pumpAndSettle();
-    expect(find.text('Action Required'), findsOneWidget);
+    expect(find.text('Needs your decision'), findsOneWidget);
     expect(
       find.byKey(const Key('approval-action-DSB-2025-0441')),
       findsNothing,

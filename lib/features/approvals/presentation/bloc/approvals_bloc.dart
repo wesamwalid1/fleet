@@ -49,6 +49,7 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     ApprovalsStarted event,
     Emitter<ApprovalsState> emit,
   ) async {
+    emit(state.copyWith(loading: true, failed: false));
     await _reload(emit, revision: state.revision);
   }
 

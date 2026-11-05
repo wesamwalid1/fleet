@@ -588,6 +588,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionRequired => 'Action Required';
 
   @override
+  String get approvalsNeedsDecision => 'Needs your decision';
+
+  @override
+  String get approvalsAlreadyDecided => 'Already decided';
+
+  @override
+  String get approvalsNoPendingHint => 'Nothing needs a decision right now.';
+
+  @override
+  String get approvalsAllCaughtUp => 'You\'re all caught up';
+
+  @override
+  String get approvalsLoadError => 'Couldn\'t load approvals.';
+
+  @override
+  String get approvalsRetry => 'Retry';
+
+  @override
+  String get approvalCreditsWhenApproved =>
+      'Credits your balance when approved.';
+
+  @override
+  String get approvalCreditedToBalance => 'Credited to your balance.';
+
+  @override
+  String get approvalNotCreditedToBalance => 'Not credited to your balance.';
+
+  @override
+  String get approvalNoBalanceChange => 'No change';
+
+  @override
+  String get approvalRoadBalanceNote =>
+      'Road expenses don\'t affect your balance.';
+
+  @override
   String get completed => 'Completed';
 
   @override
@@ -661,6 +696,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get submittedBy => 'Submitted by';
 
   @override
+  String get vehicle => 'Vehicle';
+
+  @override
   String get tripDetails => 'TRIP DETAILS';
 
   @override
@@ -683,15 +721,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
-  String get rejectExpenseTitle => 'Reject expense?';
+  String get rejectExpenseTitle => 'Reject this road expense?';
 
   @override
   String rejectExpenseMessage(String reference) {
-    return 'This will notify the admin that you have rejected $reference.';
+    return 'This will mark $reference as rejected. It won’t change your balance.';
   }
 
   @override
-  String get yesReject => 'Yes, Reject';
+  String get yesReject => 'Reject';
 
   @override
   String get approved => 'Approved';

@@ -583,6 +583,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get actionRequired => 'إجراء مطلوب';
 
   @override
+  String get approvalsNeedsDecision => 'يحتاج إلى قرارك';
+
+  @override
+  String get approvalsAlreadyDecided => 'تمّ البت فيه';
+
+  @override
+  String get approvalsNoPendingHint => 'لا يوجد ما يحتاج إلى قرار الآن.';
+
+  @override
+  String get approvalsAllCaughtUp => 'أنت على اطلاع بكل شيء';
+
+  @override
+  String get approvalsLoadError => 'تعذر تحميل الموافقات.';
+
+  @override
+  String get approvalsRetry => 'إعادة المحاولة';
+
+  @override
+  String get approvalCreditsWhenApproved => 'يُضاف إلى رصيدك عند الموافقة.';
+
+  @override
+  String get approvalCreditedToBalance => 'أُضيف إلى رصيدك.';
+
+  @override
+  String get approvalNotCreditedToBalance => 'لم يُضف إلى رصيدك.';
+
+  @override
+  String get approvalNoBalanceChange => 'لا تغيير';
+
+  @override
+  String get approvalRoadBalanceNote => 'مصروفات الطريق لا تؤثر على رصيدك.';
+
+  @override
   String get completed => 'مكتملة';
 
   @override
@@ -655,6 +688,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get submittedBy => 'مقدَّم من';
 
   @override
+  String get vehicle => 'المركبة';
+
+  @override
   String get tripDetails => 'تفاصيل الرحلات';
 
   @override
@@ -677,15 +713,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirm => 'تأكيد';
 
   @override
-  String get rejectExpenseTitle => 'رفض المصروف؟';
+  String get rejectExpenseTitle => 'رفض مصروف الطريق؟';
 
   @override
   String rejectExpenseMessage(String reference) {
-    return 'سيصل إشعار إلى المسؤول بأنك رفضت $reference.';
+    return 'سيتم تعليم $reference كمرفوض. لن يتغيّر رصيدك.';
   }
 
   @override
-  String get yesReject => 'نعم، رفض';
+  String get yesReject => 'رفض';
 
   @override
   String get approved => 'تمت الموافقة';
