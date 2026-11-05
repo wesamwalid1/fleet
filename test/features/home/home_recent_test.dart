@@ -1,7 +1,7 @@
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/history/presentation/history_format.dart';
-import 'package:driver_portal_app/features/history/presentation/widgets/history_entry_tile.dart';
+import 'package:driver_portal_app/features/history/presentation/widgets/history_ledger_row.dart';
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -33,9 +33,13 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.descendant(of: recent, matching: find.text('Drivers Vault')),
+      findsOneWidget,
+    );
+    expect(
       find.descendant(
-        of: recent,
-        matching: find.text('Drivers Vault · Awaiting your approval'),
+        of: find.byKey(const Key('home-recent-DSB-2025-0441')),
+        matching: find.text('Awaiting your approval'),
       ),
       findsOneWidget,
     );
@@ -95,6 +99,8 @@ void main() {
     await tester.tap(find.byKey(const Key('home-recent-DSB-2025-0441')));
     await tester.pumpAndSettle();
     expect(find.text('Transaction Details'), findsOneWidget);
+    expect(find.byKey(const Key('history-title')), findsNothing);
+    expect(find.byKey(const Key('home-balance')), findsOneWidget);
     expect(
       tester.widget<Text>(find.byKey(const Key('history-detail-amount'))).data,
       startsWith('+'),
@@ -139,7 +145,8 @@ void main() {
     );
     expect(find.text('Yesterday'), findsOneWidget);
     expect(find.text('Sent to Sami Hassan'), findsOneWidget);
-    expect(find.textContaining('DR-004 · Pending confirm'), findsOneWidget);
+    expect(find.text('DR-004'), findsOneWidget);
+    expect(find.textContaining('Pending confirm'), findsWidgets);
     expect(find.text('-100 EGP'), findsOneWidget);
     expect(_text(tester, 'home-balance'), '2,050 EGP');
     expect(_text(tester, 'home-charge'), '3,200 EGP');
@@ -187,34 +194,30 @@ void main() {
     tester,
   ) async {
     await _pump(tester);
-    expect(find.text('Drivers Vault · Awaiting your approval'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('nav-approvals')));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(
-      find.byKey(const Key('approval-action-DSB-2025-0441')),
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('home-recent-DSB-2025-0441')),
+        matching: find.text('Awaiting your approval'),
+      ),
+      findsOneWidget,
     );
-    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const Key('approval-approve')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('nav-home')));
+
+    await tester.tap(
+      find.byKey(const Key('home-pending-approve-DSB-2025-0441')),
+    );
     await tester.pumpAndSettle();
 
     final row = find.byKey(const Key('home-recent-DSB-2025-0441'));
     expect(
-      find.descendant(
-        of: row,
-        matching: find.text('Drivers Vault · Awaiting your approval'),
-      ),
+      find.descendant(of: row, matching: find.text('Awaiting your approval')),
       findsNothing,
     );
     expect(
-      find.descendant(
-        of: row,
-        matching: find.textContaining('Drivers Vault · Approved'),
-      ),
+      find.descendant(of: row, matching: find.text('Approved')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: row, matching: find.text('Drivers Vault')),
       findsOneWidget,
     );
     expect(_text(tester, 'home-balance'), '4,200 EGP');
@@ -228,11 +231,11 @@ void main() {
     expect(find.byKey(const Key('home-recent-empty')), findsOneWidget);
     expect(find.text('No transactions'), findsOneWidget);
     expect(find.byKey(const Key('home-recent-DSB-2025-0441')), findsNothing);
-    expect(find.byType(HistoryEntryTile), findsNothing);
+    expect(find.byType(HistoryLedgerRow), findsNothing);
     expect(_text(tester, 'home-balance'), '2,200 EGP');
   });
 
-  testWidgets('recent rows are spaced in order without dividers', (
+  testWidgets('recent rows are spaced in order with History hairlines', (
     tester,
   ) async {
     await _pump(tester);
@@ -240,8 +243,8 @@ void main() {
     const ids = ['RE-2026-1041', 'TRF-2025-0123', 'DSB-2025-0441'];
     final recent = find.byKey(const Key('home-recent-card'));
     expect(
-      find.descendant(of: recent, matching: find.byType(HistoryEntryDivider)),
-      findsNothing,
+      find.descendant(of: recent, matching: find.byType(HistoryLedgerDivider)),
+      findsNWidgets(2),
     );
     final rects = [
       for (final id in ids) tester.getRect(find.byKey(Key('home-recent-$id'))),

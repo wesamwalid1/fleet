@@ -265,16 +265,9 @@ void main() {
     );
 
     var remaining = 3;
-    for (final (id, action) in const [
-      ('DSB-2025-0441', 'approval-approve'),
-      ('TRF-2025-0123', 'approval-approve'),
-      ('RE-2026-1041', 'approval-confirm'),
-    ]) {
+    for (final id in const ['DSB-2025-0441', 'TRF-2025-0123', 'RE-2026-1041']) {
       await tester.ensureVisible(find.byKey(Key('approval-action-$id')));
       await tester.tap(find.byKey(Key('approval-action-$id')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.tap(find.byKey(Key(action)));
       await tester.pumpAndSettle();
       remaining -= 1;
       if (remaining > 0) expect(_badgeText(tester), '$remaining');

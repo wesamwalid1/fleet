@@ -821,6 +821,20 @@ Future<void> openApprovalRequest(
   );
 }
 
+/// Runs the same Approvals sheet action path used by review buttons, including
+/// offline gating and the road-expense reject confirmation.
+Future<void> runApprovalSheetAction(
+  BuildContext context,
+  ApprovalItem item,
+  ApprovalSheetAction action,
+) async {
+  if (action == ApprovalSheetAction.reject) {
+    await _rejectRoad(context, item);
+    return;
+  }
+  _dispatch(context, item, action);
+}
+
 Future<void> _rejectRoad(BuildContext context, ApprovalItem item) async {
   if (_blockApprovalIfOffline(context)) return;
   final confirmed = await showRejectExpenseDialog(

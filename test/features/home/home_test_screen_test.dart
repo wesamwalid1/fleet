@@ -7,7 +7,7 @@ import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_le
 import 'package:driver_portal_app/features/finance/domain/entities/expense_request.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_trip_scope.dart';
 import 'package:driver_portal_app/features/finance/presentation/bloc/record_expense_bloc.dart';
-import 'package:driver_portal_app/features/history/presentation/widgets/history_entry_tile.dart';
+import 'package:driver_portal_app/features/history/presentation/widgets/history_ledger_row.dart';
 import 'package:driver_portal_app/features/home/domain/entities/driver.dart';
 import 'package:driver_portal_app/features/home/domain/entities/financial_summary.dart';
 import 'package:driver_portal_app/features/home/domain/repositories/driver_repository.dart';
@@ -127,7 +127,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: recent, matching: find.byType(HistoryEntryTile)),
+      find.descendant(of: recent, matching: find.byType(HistoryLedgerRow)),
       findsNWidgets(3),
     );
     expect(tester.takeException(), isNull);

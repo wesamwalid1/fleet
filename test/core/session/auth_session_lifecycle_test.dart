@@ -158,9 +158,7 @@ void main() {
         find.byKey(const Key('approval-action-DSB-2025-0441')),
       );
       await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.tap(find.byKey(const Key('approval-approve')));
+      await tester.pumpAndSettle();
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('nav-history')));
       await tester.pumpAndSettle();

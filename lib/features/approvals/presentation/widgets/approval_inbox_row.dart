@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/approval_item.dart';
 import '../approval_format.dart';
+import 'approval_inline_actions.dart';
 
 enum ApprovalMarkState { pending, approved, rejected }
 
@@ -65,18 +66,21 @@ class ApprovalKindMark extends StatelessWidget {
   }
 }
 
-/// Approvals-local inbox row for The Desk. Pending rows open the review sheet
-/// via [onOpen]; the CTA does the same and never dispatches a ledger action.
+/// Approvals inbox row for The Desk. The non-action area opens the review
+/// sheet via [onOpen]; pending rows also expose inline decisions that reuse
+/// the sheet action path.
 class ApprovalInboxRow extends StatelessWidget {
   final ApprovalItem item;
   final VoidCallback? onOpen;
   final bool busy;
+  final bool actionsLocked;
 
   const ApprovalInboxRow({
     super.key,
     required this.item,
     this.onOpen,
     this.busy = false,
+    this.actionsLocked = false,
   });
 
   @override
@@ -86,98 +90,103 @@ class ApprovalInboxRow extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     final pending = item.isPending;
     final mark = approvalMarkState(item.outcome);
-    final enabled = pending && onOpen != null && !busy;
+    final openEnabled = onOpen != null && !busy && (!pending || !actionsLocked);
     final amount = approvalAmount(
       item.amountEgp,
       locale: locale,
       currency: l10n.egp,
     );
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: Key('approval-card-${item.id}'),
-        onTap: enabled
-            ? onOpen
-            : (!pending && onOpen != null && !busy ? onOpen : null),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: ApprovalKindMark(mark),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  key: Key('approval-details-${item.id}'),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: Key('approval-card-${item.id}'),
+              onTap: openEnabled ? onOpen : null,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      approvalTitle(l10n, item),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: palette.title,
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: ApprovalKindMark(mark),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        key: Key('approval-details-${item.id}'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            approvalTitle(l10n, item),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: palette.title,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _subtitle(l10n, locale),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: mark == ApprovalMarkState.rejected
+                                  ? palette.error
+                                  : palette.muted,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _subtitle(l10n, locale),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: mark == ApprovalMarkState.rejected
-                            ? palette.error
-                            : palette.muted,
-                        fontSize: 13,
+                    const SizedBox(width: 12),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 148),
+                      child: Column(
+                        key: Key('approval-values-${item.id}'),
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              amount,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: palette.title,
+                                fontWeight: FontWeight.w600,
+                                height: 1.3,
+                                fontFeatures: AppTextStyles.tabular,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 148),
-                child: Column(
-                  key: Key('approval-values-${item.id}'),
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: Text(
-                        amount,
-                        maxLines: 1,
-                        softWrap: false,
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: palette.title,
-                          fontWeight: FontWeight.w600,
-                          height: 1.3,
-                          fontFeatures: AppTextStyles.tabular,
-                        ),
-                      ),
-                    ),
-                    if (pending) ...[
-                      const SizedBox(height: 8),
-                      _InboxAction(
-                        label: item.kind == ApprovalKind.roadExpense
-                            ? l10n.confirm
-                            : l10n.approve,
-                        onPressed: enabled ? onOpen : null,
-                        buttonKey: Key('approval-action-${item.id}'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          if (pending) ...[
+            ApprovalInlineActions(
+              item: item,
+              enabled: !busy && !actionsLocked && onOpen != null,
+              busy: busy,
+            ),
+            const SizedBox(height: 4),
+          ],
+        ],
       ),
     );
   }
@@ -194,43 +203,6 @@ class ApprovalInboxRow extends StatelessWidget {
         ? approvalClock(item.occurredAt, locale)
         : cardRecency(l10n, item);
     return '${approvalSource(l10n, item)} · $when';
-  }
-}
-
-class _InboxAction extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final Key buttonKey;
-
-  const _InboxAction({
-    required this.label,
-    required this.onPressed,
-    required this.buttonKey,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = AppPalette.of(context);
-    return SizedBox(
-      height: 48,
-      child: FilledButton(
-        key: buttonKey,
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: palette.action,
-          foregroundColor: palette.onAction,
-          disabledBackgroundColor: palette.action.withValues(alpha: 0.4),
-          minimumSize: const Size(48, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: AppTextStyles.buttonLarge,
-        ),
-        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-      ),
-    );
   }
 }
 

@@ -159,10 +159,11 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-DSB-2025-0441')),
+      find.byKey(const Key('approval-card-DSB-2025-0441')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('approval-card-DSB-2025-0441')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('1,700 EGP'), findsOneWidget);
     expect(find.text('3,700 EGP'), findsOneWidget);

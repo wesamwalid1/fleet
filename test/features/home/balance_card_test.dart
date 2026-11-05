@@ -55,11 +55,15 @@ void main() {
 
     final recent = find.byKey(const Key('home-recent-card'));
     expect(
+      find.descendant(of: recent, matching: find.text('Drivers Vault')),
+      findsOneWidget,
+    );
+    expect(
       find.descendant(
         of: recent,
-        matching: find.text('Drivers Vault · Awaiting your approval'),
+        matching: find.text('Awaiting your approval'),
       ),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(
       find.descendant(

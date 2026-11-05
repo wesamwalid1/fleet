@@ -105,28 +105,18 @@ void main() {
     await _openApprovals(tester);
 
     await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const Key('approval-approve')));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-TRF-2025-0123')),
+      find.byKey(const Key('approval-decline-TRF-2025-0123')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-TRF-2025-0123')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const Key('approval-decline')));
+    await tester.tap(find.byKey(const Key('approval-decline-TRF-2025-0123')));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(
       find.byKey(const Key('approval-action-RE-2026-1041')),
     );
     await tester.tap(find.byKey(const Key('approval-action-RE-2026-1041')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-confirm')));
-    await tester.tap(find.byKey(const Key('approval-confirm')));
     await tester.pumpAndSettle();
 
     await _selectApprovalFilter(tester, const Key('approval-filter-vault'));
@@ -155,7 +145,7 @@ void main() {
     expect(ledger.availableBalance(MockCashLedger.senderId), 1700);
     expect(ledger.frozenBalance(MockCashLedger.senderId), 500);
 
-    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
+    await tester.tap(find.byKey(const Key('approval-card-DSB-2025-0441')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -173,7 +163,7 @@ void main() {
     tester,
   ) async {
     await _openApprovals(tester);
-    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
+    await tester.tap(find.byKey(const Key('approval-card-DSB-2025-0441')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -181,7 +171,7 @@ void main() {
     expect(find.text('Vault sent you custody funds'), findsOneWidget);
     expect(find.text('2,200 EGP'), findsWidgets);
     expect(find.text('4,200 EGP'), findsOneWidget);
-    expect(find.text('Decline'), findsNothing);
+    expect(find.byKey(const Key('approval-decline')), findsNothing);
 
     await tester.tap(find.byKey(const Key('approval-cancel')));
     await tester.pumpAndSettle();
@@ -205,9 +195,6 @@ void main() {
   ) async {
     await _openApprovals(tester);
     await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const Key('approval-approve')));
     await tester.pumpAndSettle();
 
     expect(find.text('2 pending'), findsOneWidget);
@@ -217,9 +204,9 @@ void main() {
     );
 
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-TRF-2025-0123')),
+      find.byKey(const Key('approval-card-TRF-2025-0123')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-TRF-2025-0123')));
+    await tester.tap(find.byKey(const Key('approval-card-TRF-2025-0123')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('4,200 EGP'), findsWidgets);
@@ -239,18 +226,9 @@ void main() {
   ) async {
     await _openApprovals(tester);
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-TRF-2025-0123')),
+      find.byKey(const Key('approval-decline-TRF-2025-0123')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-TRF-2025-0123')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(find.text('Approve Cash from Driver'), findsOneWidget);
-    expect(find.text('Khaled Ramadan sent you cash'), findsOneWidget);
-    expect(find.text('2,700 EGP'), findsOneWidget);
-    expect(find.text('500 EGP'), findsWidgets);
-
-    await tester.tap(find.byKey(const Key('approval-decline')));
+    await tester.tap(find.byKey(const Key('approval-decline-TRF-2025-0123')));
     await tester.pumpAndSettle();
 
     expect(find.text('2 pending'), findsOneWidget);
@@ -270,9 +248,9 @@ void main() {
   ) async {
     await _openApprovals(tester);
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-RE-2026-1041')),
+      find.byKey(const Key('approval-card-RE-2026-1041')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-RE-2026-1041')));
+    await tester.tap(find.byKey(const Key('approval-card-RE-2026-1041')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -312,13 +290,9 @@ void main() {
   ) async {
     await _openApprovals(tester);
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-RE-2026-1041')),
+      find.byKey(const Key('approval-reject-RE-2026-1041')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-RE-2026-1041')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-reject')));
-    await tester.tap(find.byKey(const Key('approval-reject')));
+    await tester.tap(find.byKey(const Key('approval-reject-RE-2026-1041')));
     await tester.pumpAndSettle();
 
     expect(find.text('Reject this road expense?'), findsOneWidget);
@@ -333,12 +307,14 @@ void main() {
     await tester.tap(find.byKey(const Key('approval-reject-cancel')));
     await tester.pumpAndSettle();
 
-    // Review sheet stays open after dismissing the reject dialog.
-    expect(find.byKey(const Key('approval-reject')), findsOneWidget);
+    // Inline reject dialog closes; the pending road row remains.
+    expect(
+      find.byKey(const Key('approval-reject-RE-2026-1041')),
+      findsOneWidget,
+    );
     expect(find.text('3 pending'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('approval-reject')));
-    await tester.tap(find.byKey(const Key('approval-reject')));
+    await tester.tap(find.byKey(const Key('approval-reject-RE-2026-1041')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('approval-reject-yes')));
     await tester.pumpAndSettle();
@@ -408,7 +384,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // Busy shows an indeterminate spinner; avoid pumpAndSettle.
+    await tester.pump();
 
     final action = tester.widget<FilledButton>(
       find.byKey(const Key('approval-action-DSB-busy')),
@@ -419,18 +396,123 @@ void main() {
     expect(opened, isFalse);
   });
 
-  testWidgets('pending action targets are at least 48dp', (tester) async {
+  testWidgets('pending action targets stay compact and comfortably tappable', (
+    tester,
+  ) async {
     await _openApprovals(tester);
     final action = tester.getSize(
       find.byKey(const Key('approval-action-DSB-2025-0441')),
     );
-    expect(action.height, greaterThanOrEqualTo(48));
-    expect(action.width, greaterThanOrEqualTo(48));
+    expect(action.height, lessThan(48));
+    expect(action.height, greaterThanOrEqualTo(40));
+    expect(action.width, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('list exposes kind-specific inline actions', (tester) async {
+    await _openApprovals(tester);
+
+    expect(
+      find.byKey(const Key('approval-action-DSB-2025-0441')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('approval-decline-DSB-2025-0441')),
+      findsNothing,
+    );
+
+    expect(
+      find.byKey(const Key('approval-action-TRF-2025-0123')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('approval-decline-TRF-2025-0123')),
+      findsOneWidget,
+    );
+
+    expect(
+      find.byKey(const Key('approval-action-RE-2026-1041')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('approval-reject-RE-2026-1041')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('inline approve decides without opening the details sheet', (
+    tester,
+  ) async {
+    await _openApprovals(tester);
+
+    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
+    await tester.pump();
+    expect(find.text('Approve Cash Receipt'), findsNothing);
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 pending'), findsOneWidget);
+    expect(
+      find.byKey(const Key('approval-action-DSB-2025-0441')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('card tap still opens the details sheet', (tester) async {
+    await _openApprovals(tester);
+
+    await tester.tap(find.byKey(const Key('approval-card-DSB-2025-0441')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Approve Cash Receipt'), findsOneWidget);
+    expect(find.byKey(const Key('approval-approve')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('approval-cancel')));
+    await tester.pumpAndSettle();
+    expect(find.text('3 pending'), findsOneWidget);
+  });
+
+  testWidgets('sheet approve still works after reviewing details', (
+    tester,
+  ) async {
+    await _openApprovals(tester);
+
+    await tester.tap(find.byKey(const Key('approval-card-DSB-2025-0441')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const Key('approval-approve')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Approve Cash Receipt'), findsNothing);
+    expect(find.text('2 pending'), findsOneWidget);
+    expect(
+      find.byKey(const Key('approval-action-DSB-2025-0441')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('inline approve does not also open the details sheet', (
+    tester,
+  ) async {
+    await _openApprovals(tester);
+    final bloc = _approvalsBloc(tester);
+    final before = bloc.state.revision;
+
+    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
+    await tester.pump();
+    expect(find.text('Approve Cash Receipt'), findsNothing);
+    await tester.pumpAndSettle();
+
+    expect(bloc.state.revision, greaterThan(before));
+    expect(find.text('Approve Cash Receipt'), findsNothing);
+    expect(
+      find.byKey(const Key('approval-action-DSB-2025-0441')),
+      findsNothing,
+    );
   });
 
   testWidgets('review sheet primary actions are at least 56dp', (tester) async {
     await _openApprovals(tester);
-    await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
+    await tester.tap(find.byKey(const Key('approval-card-DSB-2025-0441')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -456,13 +538,9 @@ void main() {
     );
 
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-RE-2026-1041')),
+      find.byKey(const Key('approval-reject-RE-2026-1041')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-RE-2026-1041')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-reject')));
-    await tester.tap(find.byKey(const Key('approval-reject')));
+    await tester.tap(find.byKey(const Key('approval-reject-RE-2026-1041')));
     await tester.pumpAndSettle();
 
     expect(find.text('رفض مصروف الطريق؟'), findsOneWidget);
@@ -501,8 +579,8 @@ void main() {
     expect(support.left, closeTo(title.left, 1));
     expect(support.top, greaterThan(title.bottom - 1));
     expect(amount.right, closeTo(values.right, 1));
-    expect(action.right, closeTo(values.right, 1));
-    expect(action.top, greaterThan(amount.bottom - 1));
+    expect(action.top, greaterThan(cardRect.bottom - 1));
+    expect(action.width, greaterThan(cardRect.width * 0.5));
     expect(title.right, lessThanOrEqualTo(amount.left + 1));
     expect(tester.takeException(), isNull);
   });
@@ -522,7 +600,7 @@ void main() {
 
     expect(details.left - values.right, closeTo(12, 1));
     expect(values.left, closeTo(cardRect.left, 1));
-    expect(action.left, closeTo(values.left, 1));
+    expect(action.top, greaterThan(cardRect.bottom - 1));
     expect(tester.takeException(), isNull);
   });
 

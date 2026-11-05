@@ -80,6 +80,8 @@ class HistoryLedgerRow extends StatelessWidget {
   final String when;
   final bool highlighted;
   final VoidCallback onTap;
+  final String keyPrefix;
+  final bool showDivider;
 
   const HistoryLedgerRow({
     super.key,
@@ -87,6 +89,8 @@ class HistoryLedgerRow extends StatelessWidget {
     required this.when,
     required this.onTap,
     this.highlighted = false,
+    this.keyPrefix = 'history-entry',
+    this.showDivider = true,
   });
 
   @override
@@ -111,7 +115,7 @@ class HistoryLedgerRow extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
-                  key: Key('history-entry-details-$id'),
+                  key: Key('$keyPrefix-details-$id'),
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -144,7 +148,7 @@ class HistoryLedgerRow extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   alignment: AlignmentDirectional.topEnd,
                   child: Column(
-                    key: Key('history-entry-values-$id'),
+                    key: Key('$keyPrefix-values-$id'),
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -190,7 +194,7 @@ class HistoryLedgerRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         InkWell(
-          key: Key('history-entry-$id'),
+          key: Key('$keyPrefix-$id'),
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           highlightColor: palette.title.withValues(alpha: 0.06),
@@ -207,7 +211,7 @@ class HistoryLedgerRow extends StatelessWidget {
             child: row,
           ),
         ),
-        const HistoryLedgerDivider(),
+        if (showDivider) const HistoryLedgerDivider(),
       ],
     );
   }

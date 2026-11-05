@@ -59,7 +59,7 @@ void main() {
     expect(find.byKey(const Key('withdraw')), findsOneWidget);
     expect(find.byKey(const Key('home-actions-panel')), findsOneWidget);
 
-    final sendCash = tester.widget<FilledButton>(
+    final sendCash = tester.widget<OutlinedButton>(
       find.byKey(const Key('send-cash')),
     );
     expect(

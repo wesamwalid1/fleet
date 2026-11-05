@@ -206,12 +206,11 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                                             return ApprovalInboxRow(
                                               item: item,
                                               busy: state.busy,
-                                              onOpen: actionsLocked
-                                                  ? null
-                                                  : () => openApprovalRequest(
-                                                      context,
-                                                      item,
-                                                    ),
+                                              actionsLocked: actionsLocked,
+                                              onOpen: () => openApprovalRequest(
+                                                context,
+                                                item,
+                                              ),
                                             );
                                           },
                                         ),

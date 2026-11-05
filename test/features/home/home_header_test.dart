@@ -166,6 +166,13 @@ void main() {
       const Key('withdraw'),
       'Withdraw',
     );
+    _expectIdenticalActionTypography(tester, const [
+      Key('send-cash'),
+      Key('request-cash'),
+      Key('withdraw'),
+    ]);
+    _expectRecordExpenseLabelFitsOneLine(tester);
+    _expectSharedActionFill(tester);
 
     await tester.pumpWidget(
       _app(locale: const Locale('ar'), now: () => DateTime(2026, 10, 20, 9)),
@@ -185,6 +192,13 @@ void main() {
       const Key('withdraw'),
       'تسليم نقد',
     );
+    _expectIdenticalActionTypography(tester, const [
+      Key('send-cash'),
+      Key('request-cash'),
+      Key('withdraw'),
+    ]);
+    _expectRecordExpenseLabelFitsOneLine(tester);
+    _expectSharedActionFill(tester);
     expect(tester.takeException(), isNull);
   });
 
@@ -238,6 +252,7 @@ void _expectEqualActionButtons(
   final left = find.byKey(leftKey);
   final right = find.byKey(rightKey);
   expect(tester.getSize(left).width, tester.getSize(right).width);
+  expect(tester.getSize(left).height, tester.getSize(right).height);
   expect(
     find.descendant(of: left, matching: find.text(leftLabel)),
     findsOneWidget,
@@ -249,13 +264,59 @@ void _expectEqualActionButtons(
   expect(tester.takeException(), isNull);
 }
 
+void _expectIdenticalActionTypography(WidgetTester tester, List<Key> keys) {
+  TextStyle? shared;
+  for (final key in keys) {
+    final label = tester.widget<Text>(
+      find.descendant(of: find.byKey(key), matching: find.byType(Text)).first,
+    );
+    final style = label.style!;
+    shared ??= style;
+    expect(style.fontSize, shared.fontSize, reason: '$key fontSize');
+    expect(style.fontWeight, shared.fontWeight, reason: '$key fontWeight');
+    expect(style.height, shared.height, reason: '$key height');
+  }
+}
+
+void _expectRecordExpenseLabelFitsOneLine(WidgetTester tester) {
+  final label = tester.widget<Text>(
+    find
+        .descendant(
+          of: find.byKey(const Key('record-expense')),
+          matching: find.byType(Text),
+        )
+        .first,
+  );
+  expect(label.maxLines, 1);
+  final peers = tester
+      .widget<Text>(
+        find
+            .descendant(
+              of: find.byKey(const Key('send-cash')),
+              matching: find.byType(Text),
+            )
+            .first,
+      )
+      .style!;
+  expect(label.style!.fontSize, lessThan(peers.fontSize!));
+  expect(label.style!.fontWeight, peers.fontWeight);
+}
+
+void _expectSharedActionFill(WidgetTester tester) {
+  Color? fillOf(Key key) {
+    final button = tester.widget<OutlinedButton>(find.byKey(key));
+    return button.style?.backgroundColor?.resolve({});
+  }
+
+  final send = fillOf(const Key('send-cash'));
+  expect(fillOf(const Key('record-expense')), send);
+  expect(fillOf(const Key('request-cash')), send);
+  expect(fillOf(const Key('withdraw')), send);
+}
+
 Future<void> _finalize(WidgetTester tester, String id, String actionKey) async {
   await tester.ensureVisible(find.byKey(Key('approval-action-$id')));
   await tester.tap(find.byKey(Key('approval-action-$id')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
-  await tester.ensureVisible(find.byKey(Key(actionKey)));
-  await tester.tap(find.byKey(Key(actionKey)));
   await tester.pumpAndSettle();
 }
 

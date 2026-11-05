@@ -113,9 +113,7 @@ void main() {
       find.byKey(const Key('approval-action-DSB-2025-0441')),
     );
     await tester.tap(find.byKey(const Key('approval-action-DSB-2025-0441')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const Key('approval-approve')));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('nav-history')));
@@ -146,10 +144,7 @@ void main() {
       find.byKey(const Key('approval-action-TRF-2025-0123')),
     );
     await tester.tap(find.byKey(const Key('approval-action-TRF-2025-0123')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-approve')));
-    await tester.tap(find.byKey(const Key('approval-approve')));
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('nav-history')));
@@ -174,13 +169,9 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-TRF-2025-0123')),
+      find.byKey(const Key('approval-decline-TRF-2025-0123')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-TRF-2025-0123')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-decline')));
-    await tester.tap(find.byKey(const Key('approval-decline')));
+    await tester.tap(find.byKey(const Key('approval-decline-TRF-2025-0123')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('nav-history')));
@@ -210,10 +201,6 @@ void main() {
       find.byKey(const Key('approval-action-RE-2026-1041')),
     );
     await tester.tap(find.byKey(const Key('approval-action-RE-2026-1041')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-confirm')));
-    await tester.tap(find.byKey(const Key('approval-confirm')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('nav-history')));
@@ -236,13 +223,9 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
-      find.byKey(const Key('approval-action-RE-2026-1041')),
+      find.byKey(const Key('approval-reject-RE-2026-1041')),
     );
-    await tester.tap(find.byKey(const Key('approval-action-RE-2026-1041')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.byKey(const Key('approval-reject')));
-    await tester.tap(find.byKey(const Key('approval-reject')));
+    await tester.tap(find.byKey(const Key('approval-reject-RE-2026-1041')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('approval-reject-yes')));
     await tester.pumpAndSettle();

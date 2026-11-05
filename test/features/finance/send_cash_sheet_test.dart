@@ -47,11 +47,12 @@ void main() {
     await tester.pumpAndSettle();
 
     // Pending Send Cash: Available 1,700, Frozen 500, Total stays 2,200.
-    expect(find.text('1,700 EGP'), findsOneWidget);
-    expect(find.text('500 EGP'), findsOneWidget);
-    expect(find.text('3,200 EGP'), findsOneWidget);
-    expect(find.text('5,000 EGP'), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsOneWidget);
+    // Amounts are asserted by key so unsigned pending rows do not collide.
+    expect(_keyedText(tester, 'home-balance'), '1,700 EGP');
+    expect(_keyedText(tester, 'home-frozen-balance'), '500 EGP');
+    expect(_keyedText(tester, 'home-total-balance'), '2,200 EGP');
+    expect(_keyedText(tester, 'home-charge'), '3,200 EGP');
+    expect(_keyedText(tester, 'home-max-limit'), '5,000 EGP');
     expect(find.byKey(const Key('record-expense')), findsOneWidget);
     expect(find.text('Pending Approvals'), findsOneWidget);
     expect(find.byKey(const Key('home-pending-TRF-2026-0124')), findsNothing);
@@ -133,6 +134,11 @@ void main() {
       findsOneWidget,
     );
   });
+}
+
+String _keyedText(WidgetTester tester, String key) {
+  final text = tester.widget<Text>(find.byKey(Key(key)));
+  return text.data ?? text.textSpan!.toPlainText();
 }
 
 Future<void> _openForm(WidgetTester tester) async {
