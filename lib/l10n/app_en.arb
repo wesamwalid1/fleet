@@ -491,6 +491,7 @@
   "notificationsNoUnread": "No unread notifications",
   "notificationsNoUnreadHint": "You're all caught up.",
   "notificationsLoadError": "Unable to load notifications.",
+  "notificationsRetry": "Retry",
   "notificationUnread": "Unread",
   "notificationVaultPendingTitle": "Vault cash awaiting your approval",
   "notificationIncomingTitle": "Cash from {name} awaiting your approval",

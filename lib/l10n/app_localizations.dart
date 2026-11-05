@@ -1886,6 +1886,12 @@ abstract class AppLocalizations {
   /// **'Unable to load notifications.'**
   String get notificationsLoadError;
 
+  /// No description provided for @notificationsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get notificationsRetry;
+
   /// No description provided for @notificationUnread.
   ///
   /// In en, this message translates to:

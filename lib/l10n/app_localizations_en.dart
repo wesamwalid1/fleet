@@ -1014,6 +1014,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsLoadError => 'Unable to load notifications.';
 
   @override
+  String get notificationsRetry => 'Retry';
+
+  @override
   String get notificationUnread => 'Unread';
 
   @override

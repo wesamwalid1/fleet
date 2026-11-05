@@ -3,17 +3,16 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../theme/app_colors.dart';
-import '../../theme/app_surfaces.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../../features/approvals/presentation/bloc/approvals_bloc.dart';
 import '../../../features/approvals/presentation/bloc/approvals_state.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_surfaces.dart';
 
 /// Floating frosted bar shared by every tab: icon-only tabs in equal slots, a
 /// compact tinted backdrop behind the active icon, and a pending-count badge
 /// on Approvals. Tab names live in tooltips, which also label each tab for
-/// screen readers. It sits in the Scaffold's bottom slot (not extended
-/// behind the body), so it never covers content.
+/// screen readers.
 class PortalBottomNav extends StatelessWidget {
   final int index;
   final ValueChanged<int> onSelected;
@@ -27,7 +26,13 @@ class PortalBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final surfaces = AppSurfaces.of(context);
+    final palette = AppPalette.of(context);
+    final glass = palette.isDark
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.92);
+    final edge = palette.isDark
+        ? Colors.white.withValues(alpha: 0.14)
+        : palette.hairline;
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.only(bottom: 10),
@@ -42,8 +47,8 @@ class PortalBottomNav extends StatelessWidget {
                 borderRadius: BorderRadius.circular(_radius),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.title.withValues(
-                      alpha: surfaces.isDark ? 0.35 : 0.07,
+                    color: AppColors.ink950.withValues(
+                      alpha: palette.isDark ? 0.35 : 0.07,
                     ),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
@@ -57,11 +62,11 @@ class PortalBottomNav extends StatelessWidget {
                   child: DecoratedBox(
                     key: const Key('portal-bottom-nav'),
                     decoration: BoxDecoration(
-                      color: surfaces.navGlass,
+                      color: glass,
                       borderRadius: BorderRadius.circular(_radius),
-                      border: Border.all(color: surfaces.navEdge),
+                      border: Border.all(color: edge),
                     ),
-                    child: _tabs(l10n, surfaces),
+                    child: _tabs(l10n),
                   ),
                 ),
               ),
@@ -72,7 +77,7 @@ class PortalBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _tabs(AppLocalizations l10n, AppSurfaces surfaces) {
+  Widget _tabs(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(5),
       child: Row(
@@ -82,7 +87,6 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.home_outlined,
             selectedIcon: Icons.home_rounded,
             label: l10n.navHome,
-            inactiveColor: surfaces.navIcon,
             selected: index == 0,
             onTap: () => onSelected(0),
           ),
@@ -91,17 +95,15 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.fact_check_outlined,
             selectedIcon: Icons.fact_check_rounded,
             label: l10n.approvals,
-            inactiveColor: surfaces.navIcon,
             selected: index == 1,
             showBadge: true,
             onTap: () => onSelected(1),
           ),
           _Item(
             itemKey: const Key('nav-history'),
-            icon: Icons.history_rounded,
+            icon: Icons.history_outlined,
             selectedIcon: Icons.history_rounded,
             label: l10n.navHistory,
-            inactiveColor: surfaces.navIcon,
             selected: index == 2,
             onTap: () => onSelected(2),
           ),
@@ -110,7 +112,6 @@ class PortalBottomNav extends StatelessWidget {
             icon: Icons.account_circle_outlined,
             selectedIcon: Icons.account_circle,
             label: l10n.navProfile,
-            inactiveColor: surfaces.navIcon,
             selected: index == 3,
             onTap: () => onSelected(3),
           ),
@@ -127,7 +128,6 @@ class _Item extends StatelessWidget {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
-  final Color inactiveColor;
   final bool selected;
   final bool showBadge;
   final VoidCallback onTap;
@@ -137,7 +137,6 @@ class _Item extends StatelessWidget {
     required this.icon,
     required this.selectedIcon,
     required this.label,
-    required this.inactiveColor,
     required this.selected,
     required this.onTap,
     this.showBadge = false,
@@ -145,7 +144,9 @@ class _Item extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeFill = AppColors.primary.withValues(alpha: 0.12);
+    final palette = AppPalette.of(context);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final activeFill = palette.action.withValues(alpha: 0.12);
     return Expanded(
       child: Tooltip(
         message: label,
@@ -159,10 +160,12 @@ class _Item extends StatelessWidget {
             splashFactory: NoSplash.splashFactory,
             overlayColor: const WidgetStatePropertyAll(Colors.transparent),
             child: SizedBox(
-              height: 44,
+              height: 48,
               child: Center(
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 160),
                   curve: Curves.easeOut,
                   width: 52,
                   height: 36,
@@ -178,7 +181,7 @@ class _Item extends StatelessWidget {
                     children: [
                       Icon(
                         selected ? selectedIcon : icon,
-                        color: selected ? AppColors.primary : inactiveColor,
+                        color: selected ? palette.action : palette.muted,
                         size: 23,
                       ),
                       if (showBadge) const _PendingBadge(),
@@ -202,6 +205,7 @@ class _PendingBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return BlocBuilder<ApprovalsBloc, ApprovalsState>(
       buildWhen: (previous, current) =>
           previous.pendingCount != current.pendingCount,
@@ -218,18 +222,18 @@ class _PendingBadge extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.error,
+                color: palette.error,
                 borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: Colors.white, width: 1.5),
+                border: Border.all(color: palette.surface, width: 1.5),
               ),
               child: Text(
                 count > 9 ? '9+' : '$count',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: palette.onError,
                   fontSize: 10,
                   height: 1,
                   fontWeight: FontWeight.w800,
-                  fontFeatures: [FontFeature.tabularFigures()],
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),

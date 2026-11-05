@@ -1008,6 +1008,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notificationsLoadError => 'تعذر تحميل الإشعارات.';
 
   @override
+  String get notificationsRetry => 'إعادة المحاولة';
+
+  @override
   String get notificationUnread => 'غير مقروء';
 
   @override

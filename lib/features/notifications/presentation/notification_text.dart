@@ -150,7 +150,7 @@ String notificationWhen(
     ),
     NotificationType.roadExpensePending => (
       asset: AppIcons.invoice,
-      tint: AppColors.primary.withValues(alpha: 0.1),
+      tint: AppColors.neutralBackground,
     ),
     NotificationType.expenseRecorded => (
       asset: AppIcons.money,

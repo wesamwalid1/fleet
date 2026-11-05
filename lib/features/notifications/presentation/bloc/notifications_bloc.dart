@@ -30,6 +30,11 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     NotificationsEvent event,
     Emitter<NotificationsState> emit,
   ) async {
+    if (state.items.isEmpty) {
+      emit(state.copyWith(loading: true, failed: false));
+    } else {
+      emit(state.copyWith(failed: false));
+    }
     try {
       final items = await repository.getNotifications(driverId);
       emit(state.copyWith(loading: false, failed: false, items: items));

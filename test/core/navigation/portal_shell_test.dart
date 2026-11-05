@@ -1,5 +1,5 @@
 import 'package:driver_portal_app/core/session/home_scope.dart';
-import 'package:driver_portal_app/core/theme/app_colors.dart';
+import 'package:driver_portal_app/core/theme/app_surfaces.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -454,7 +454,8 @@ ScrollableState _tabScrollable(WidgetTester tester) {
 }
 
 void _expectSelected(WidgetTester tester, Key key) {
-  expect(_navIcon(tester, key).color, AppColors.primary);
+  final palette = AppPalette.of(tester.element(find.byKey(key)));
+  expect(_navIcon(tester, key).color, palette.action);
   expect(_backdropColor(tester, key)?.a, greaterThan(0));
   expect(
     find.descendant(
@@ -469,11 +470,10 @@ void _expectSelected(WidgetTester tester, Key key) {
 }
 
 void _expectUnselected(WidgetTester tester, Key key) {
-  expect(_navIcon(tester, key).color, _inactiveNav);
+  final palette = AppPalette.of(tester.element(find.byKey(key)));
+  expect(_navIcon(tester, key).color, palette.muted);
   expect(_backdropColor(tester, key)?.a, 0);
 }
-
-final _inactiveNav = Color.lerp(AppColors.title, AppColors.muted, 0.2);
 
 Icon _navIcon(WidgetTester tester, Key key) {
   return tester.widget<Icon>(

@@ -7,6 +7,7 @@ import 'package:driver_portal_app/features/notifications/data/datasources/notifi
 import 'package:driver_portal_app/features/notifications/data/repositories/notification_repository_impl.dart';
 import 'package:driver_portal_app/features/notifications/domain/entities/app_notification.dart';
 import 'package:driver_portal_app/features/notifications/domain/notification_for_finance_event.dart';
+import 'package:driver_portal_app/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:driver_portal_app/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:driver_portal_app/features/notifications/presentation/bloc/notifications_event.dart';
 import 'package:driver_portal_app/features/notifications/presentation/bloc/notifications_state.dart';
@@ -335,4 +336,54 @@ void main() {
     expect(await repository.getNotifications(_driver), hasLength(4));
     await bloc.close();
   });
+
+  test(
+    'NotificationsStarted surfaces a load failure and Retry recovers',
+    () async {
+      final inner = _repository();
+      final failing = _FailingNotifications(inner);
+      final bloc = NotificationsBloc(driverId: _driver, repository: failing);
+      addTearDown(bloc.close);
+
+      bloc.add(const NotificationsStarted());
+      final failed = await bloc.stream.firstWhere(
+        (state) => state.failed && !state.loading,
+      );
+      expect(failed.items, isEmpty);
+
+      failing.fail = false;
+      bloc.add(const NotificationsStarted());
+      final recovered = await bloc.stream.firstWhere(
+        (state) => !state.failed && !state.loading,
+      );
+      expect(recovered.items, isNotEmpty);
+    },
+  );
+}
+
+class _FailingNotifications implements NotificationRepository {
+  _FailingNotifications(this._inner);
+
+  final NotificationRepositoryImpl _inner;
+  bool fail = true;
+
+  @override
+  Stream<String> get changes => _inner.changes;
+
+  @override
+  Future<List<AppNotification>> getNotifications(String driverId) {
+    if (fail) return Future.error(Exception('unavailable'));
+    return _inner.getNotifications(driverId);
+  }
+
+  @override
+  Future<bool> add(AppNotification notification) => _inner.add(notification);
+
+  @override
+  Future<void> update(AppNotification notification) =>
+      _inner.update(notification);
+
+  @override
+  Future<void> markRead({required String driverId, required String id}) =>
+      _inner.markRead(driverId: driverId, id: id);
 }

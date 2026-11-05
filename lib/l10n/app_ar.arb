@@ -298,6 +298,7 @@
   "notificationsNoUnread": "لا توجد إشعارات غير مقروءة",
   "notificationsNoUnreadHint": "لا يوجد ما يحتاج إلى متابعتك.",
   "notificationsLoadError": "تعذر تحميل الإشعارات.",
+  "notificationsRetry": "إعادة المحاولة",
   "notificationUnread": "غير مقروء",
   "notificationVaultPendingTitle": "نقدية من الخزينة بانتظار موافقتك",
   "notificationIncomingTitle": "نقدية من {name} بانتظار موافقتك",
