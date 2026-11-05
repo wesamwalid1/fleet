@@ -309,7 +309,16 @@ void main() {
     ]) {
       await tester.tap(find.byKey(Key(tab)));
       await tester.pumpAndSettle();
-      await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
+      await tester.drag(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is ScrollView &&
+                  widget.scrollDirection == Axis.vertical,
+            )
+            .first,
+        const Offset(0, -2000),
+      );
       await tester.pumpAndSettle();
       final row = tester.getRect(find.byKey(Key(last)));
       expect(row.bottom, lessThanOrEqualTo(bar.top), reason: tab);

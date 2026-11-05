@@ -902,23 +902,119 @@ abstract class AppLocalizations {
   /// **'Balance After'**
   String get balanceAfter;
 
-  /// No description provided for @balanceBefore.
-  ///
-  /// In en, this message translates to:
-  /// **'Balance Before'**
-  String get balanceBefore;
-
   /// No description provided for @balanceSnapshotTitle.
   ///
   /// In en, this message translates to:
   /// **'Balance change'**
   String get balanceSnapshotTitle;
 
-  /// No description provided for @balanceSnapshotUnavailable.
+  /// No description provided for @historyBalanceBefore.
   ///
   /// In en, this message translates to:
-  /// **'Not available'**
-  String get balanceSnapshotUnavailable;
+  /// **'Balance before'**
+  String get historyBalanceBefore;
+
+  /// No description provided for @historyBalanceAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance after'**
+  String get historyBalanceAfter;
+
+  /// No description provided for @historyBalanceNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'No change'**
+  String get historyBalanceNoChange;
+
+  /// No description provided for @historyBalanceNotCreditedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not credited yet'**
+  String get historyBalanceNotCreditedYet;
+
+  /// No description provided for @historyBalanceNotRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded'**
+  String get historyBalanceNotRecorded;
+
+  /// No description provided for @historyBalanceExpenseNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when recorded.'**
+  String get historyBalanceExpenseNote;
+
+  /// No description provided for @historyBalanceRoadNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Road expenses don\'t affect your balance.'**
+  String get historyBalanceRoadNote;
+
+  /// No description provided for @historyBalanceCreditAfterYouApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Credited after you approve.'**
+  String get historyBalanceCreditAfterYouApprove;
+
+  /// No description provided for @historyBalanceCreditAfterApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Credited after approval.'**
+  String get historyBalanceCreditAfterApproval;
+
+  /// No description provided for @historyBalanceCreditedWhenApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Credited when approved.'**
+  String get historyBalanceCreditedWhenApproved;
+
+  /// No description provided for @historyBalanceNeverCredited.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected, so it was never credited.'**
+  String get historyBalanceNeverCredited;
+
+  /// No description provided for @historyBalanceSentPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when sent. Returned to your balance if rejected.'**
+  String get historyBalanceSentPending;
+
+  /// No description provided for @historyBalanceSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when sent.'**
+  String get historyBalanceSent;
+
+  /// No description provided for @historyBalanceSentReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when sent, then returned to your balance after rejection.'**
+  String get historyBalanceSentReturned;
+
+  /// No description provided for @historyBalanceWithdrawPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when requested. Returned to your balance if rejected.'**
+  String get historyBalanceWithdrawPending;
+
+  /// No description provided for @historyBalanceWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when requested.'**
+  String get historyBalanceWithdraw;
+
+  /// No description provided for @historyBalanceWithdrawReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Deducted when requested, then returned to your balance after rejection.'**
+  String get historyBalanceWithdrawReturned;
+
+  /// No description provided for @historyAmountReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount returned to your balance'**
+  String get historyAmountReturned;
 
   /// No description provided for @back.
   ///
@@ -1256,12 +1352,6 @@ abstract class AppLocalizations {
   /// **'History'**
   String get navHistory;
 
-  /// No description provided for @expenseCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 expense} other{{count} expenses}}'**
-  String expenseCount(int count);
-
   /// No description provided for @filterExpenses.
   ///
   /// In en, this message translates to:
@@ -1376,23 +1466,89 @@ abstract class AppLocalizations {
   /// **'Still pending'**
   String get timelineStillPending;
 
-  /// No description provided for @timelineStatusUpdated.
+  /// No description provided for @historyTimelineSince.
   ///
   /// In en, this message translates to:
-  /// **'Status updated — {status}'**
-  String timelineStatusUpdated(String status);
+  /// **'{status} · since {time}'**
+  String historyTimelineSince(String status, String time);
 
-  /// No description provided for @createdAtLabel.
+  /// No description provided for @historyTimelineCurrent.
   ///
   /// In en, this message translates to:
-  /// **'Created'**
-  String get createdAtLabel;
+  /// **'Current'**
+  String get historyTimelineCurrent;
 
-  /// No description provided for @updatedAtLabel.
+  /// No description provided for @historyLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Last updated'**
-  String get updatedAtLabel;
+  /// **'Couldn\'t load your history.'**
+  String get historyLoadError;
+
+  /// No description provided for @historySelectTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Select trips'**
+  String get historySelectTrips;
+
+  /// No description provided for @historyTripsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Done} other{Done · {count}}}'**
+  String historyTripsDone(int count);
+
+  /// No description provided for @historyTripsSelectedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected · {count}'**
+  String historyTripsSelectedSection(int count);
+
+  /// No description provided for @historyTripsListSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips · {count}'**
+  String historyTripsListSection(int count);
+
+  /// No description provided for @historyTripCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 trip} other{{count} trips}}'**
+  String historyTripCount(int count);
+
+  /// No description provided for @historyClearTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get historyClearTrips;
+
+  /// No description provided for @historyRelatedTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Related trips'**
+  String get historyRelatedTrips;
+
+  /// No description provided for @historyRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh'**
+  String get historyRefreshFailed;
+
+  /// No description provided for @historyRefreshRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get historyRefreshRetry;
+
+  /// No description provided for @historyRemoveFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove filter: {label}'**
+  String historyRemoveFilter(String label);
+
+  /// No description provided for @historyDateRangeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} – {end}'**
+  String historyDateRangeValue(String start, String end);
 
   /// No description provided for @recipient.
   ///
@@ -1429,12 +1585,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Note'**
   String get note;
-
-  /// No description provided for @status.
-  ///
-  /// In en, this message translates to:
-  /// **'Status'**
-  String get status;
 
   /// No description provided for @noTransactions.
   ///

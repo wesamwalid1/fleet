@@ -102,6 +102,19 @@ class HistoryRepositoryImpl implements HistoryRepository {
 
   HistoryEntry _roadExpense(RoadExpenseApproval approval) {
     final createdAt = approval.submittedAt;
+    final relatedTripCodes = <String>[];
+    final relatedTripIds = <String>[];
+    final seenCodes = <String>{};
+    final seenIds = <String>{};
+    for (final line in approval.lines) {
+      final code = line.code.trim();
+      if (code.isEmpty || !seenCodes.add(code)) continue;
+      relatedTripCodes.add(code);
+      final trip = _ledger.tripByCode(code);
+      if (trip != null && seenIds.add(trip.id)) {
+        relatedTripIds.add(trip.id);
+      }
+    }
     return HistoryEntry(
       id: approval.id,
       kind: HistoryKind.roadExpense,
@@ -117,7 +130,8 @@ class HistoryRepositoryImpl implements HistoryRepository {
         RoadExpenseStatus.rejected => HistoryDisplayStatus.rejected,
         RoadExpenseStatus.approved => HistoryDisplayStatus.approved,
       },
-      tripCode: approval.id,
+      relatedTripIds: List.unmodifiable(relatedTripIds),
+      relatedTripCodes: List.unmodifiable(relatedTripCodes),
       note: approval.submittedBy,
       // Road expense confirm/reject does not move the driver balance.
     );

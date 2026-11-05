@@ -3,7 +3,7 @@ import 'package:driver_portal_app/features/finance/domain/entities/settlement_ty
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/core/theme/app_colors.dart';
 import 'package:driver_portal_app/core/theme/app_text_styles.dart';
-import 'package:driver_portal_app/features/history/presentation/widgets/history_entry_tile.dart';
+import 'package:driver_portal_app/features/history/presentation/widgets/history_ledger_row.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -16,7 +16,7 @@ void main() {
     await _openHistory(tester);
 
     expect(find.byKey(const Key('history-title')), findsOneWidget);
-    expect(find.text('0 expenses'), findsOneWidget);
+    expect(find.byKey(const Key('history-expense-count')), findsNothing);
     expect(find.text('Received from Vault'), findsWidgets);
     expect(find.text('Pending — from Khaled Ramadan'), findsOneWidget);
     expect(find.text('Road Expense Approval'), findsOneWidget);
@@ -26,7 +26,6 @@ void main() {
     await _selectHistoryType(tester, const Key('history-filter-expenses'));
     expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.text('Received from Vault'), findsNothing);
-    expect(find.text('0 expenses'), findsOneWidget);
 
     await _selectHistoryType(tester, const Key('history-filter-vault'));
     expect(find.text('Received from Vault'), findsWidgets);
@@ -68,18 +67,16 @@ void main() {
       },
     );
 
-    expect(find.text('1 expense'), findsOneWidget);
     expect(find.text('Today — 21 Oct 2026'), findsOneWidget);
     expect(find.text('Yesterday — 20 Oct 2026'), findsOneWidget);
     expect(find.text('Cross Border'), findsOneWidget);
-    expect(find.textContaining('TR-2026-0927 · Recorded'), findsOneWidget);
+    expect(_line('TR-2026-0927', 'Recorded'), findsOneWidget);
     expect(find.text('Sent to Mohamed Said'), findsOneWidget);
-    expect(find.textContaining('DR-002 · Pending confirm'), findsOneWidget);
+    expect(_line('DR-002', 'Pending confirm'), findsOneWidget);
 
     await _selectHistoryType(tester, const Key('history-filter-cash'));
     expect(find.text('Sent to Mohamed Said'), findsOneWidget);
     expect(find.text('Cross Border'), findsNothing);
-    expect(find.text('1 expense'), findsOneWidget);
 
     await _selectHistoryType(tester, const Key('history-filter-expenses'));
     expect(find.text('Cross Border'), findsOneWidget);
@@ -89,7 +86,10 @@ void main() {
     await tester.tap(find.byKey(const Key('history-entry-EXP-412138')));
     await tester.pumpAndSettle();
     expect(find.text('Transaction Details'), findsOneWidget);
-    expect(find.text('DEBIT'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('history-detail-amount'))).data,
+      startsWith('-'),
+    );
     expect(find.text('EXP-412138'), findsWidgets);
     await tester.tap(find.byKey(const Key('history-expense-close')));
     await tester.pumpAndSettle();
@@ -105,7 +105,7 @@ void main() {
     tester,
   ) async {
     await _openHistory(tester);
-    expect(find.text('Drivers Vault · Awaiting your approval'), findsOneWidget);
+    expect(_line('Drivers Vault', 'Awaiting your approval'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
@@ -120,8 +120,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-history')));
     await tester.pumpAndSettle();
-    expect(find.text('Drivers Vault · Awaiting your approval'), findsNothing);
-    expect(find.textContaining('Drivers Vault · Approved'), findsWidgets);
+    expect(_line('Drivers Vault', 'Awaiting your approval'), findsNothing);
+    expect(_line('Drivers Vault', 'Approved'), findsWidgets);
     expect(find.text('4,200 EGP'), findsNothing);
 
     await tester.tap(find.byKey(const Key('nav-home')));
@@ -160,7 +160,7 @@ void main() {
       find.byKey(const Key('history-entry-TRF-2025-0123')),
       findsOneWidget,
     );
-    expect(find.textContaining('DR-003 · Approved'), findsOneWidget);
+    expect(_line('DR-003', 'Approved'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
@@ -202,11 +202,7 @@ void main() {
   ) async {
     await _openHistory(tester);
     expect(find.text('Road Expense Approval'), findsOneWidget);
-    expect(
-      find.textContaining('RE-2026-1041 · Awaiting your approval'),
-      findsOneWidget,
-    );
-    expect(find.text('0 expenses'), findsOneWidget);
+    expect(_line('RE-2026-1041', 'Awaiting your approval'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
@@ -224,8 +220,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.byKey(const Key('history-entry-RE-2026-1041')), findsOneWidget);
-    expect(find.textContaining('RE-2026-1041 · Approved'), findsOneWidget);
-    expect(find.text('1 expense'), findsOneWidget);
+    expect(_line('RE-2026-1041', 'Approved'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
@@ -256,8 +251,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Road Expense Approval'), findsOneWidget);
     expect(find.byKey(const Key('history-entry-RE-2026-1041')), findsOneWidget);
-    expect(find.textContaining('RE-2026-1041 · Rejected'), findsOneWidget);
-    expect(find.text('0 expenses'), findsOneWidget);
+    expect(_line('RE-2026-1041', 'Rejected'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pumpAndSettle();
@@ -268,7 +262,6 @@ void main() {
     await _openHistory(tester, locale: const Locale('ar'));
 
     expect(find.text('السجل'), findsWidgets);
-    expect(find.text('0 مصروفات'), findsOneWidget);
     expect(find.text('تصفية'), findsOneWidget);
     expect(find.text('بانتظار موافقتك'), findsWidgets);
     expect(
@@ -308,9 +301,11 @@ void main() {
     final values = find.byKey(const Key('history-entry-values-EXP-412138'));
     final title = tester.getRect(find.text('Cross Border'));
     final amount = tester.getRect(find.text('-555 EGP'));
-    final reference = tester.getRect(
-      find.textContaining('TR-2026-0927 · Recorded'),
+    final referenceText = find.descendant(
+      of: tile,
+      matching: find.text('TR-2026-0927'),
     );
+    final reference = tester.getRect(referenceText);
     final time = tester.getRect(find.textContaining('11:37'));
     final tileRect = tester.getRect(tile);
     final detailsRect = tester.getRect(details);
@@ -330,14 +325,13 @@ void main() {
 
     final titleStyle = tester.widget<Text>(find.text('Cross Border')).style!;
     final amountStyle = tester.widget<Text>(find.text('-555 EGP')).style!;
-    final referenceStyle = tester
-        .widget<Text>(find.textContaining('TR-2026-0927 · Recorded'))
-        .style!;
+    final referenceStyle = tester.widget<Text>(referenceText).style!;
     final timeStyle = tester.widget<Text>(find.textContaining('11:37')).style!;
-    expect(titleStyle.fontSize, AppTextStyles.rowTitle.fontSize);
-    expect(amountStyle.fontSize, AppTextStyles.amount.fontSize);
+    expect(titleStyle.fontSize, AppTextStyles.bodyLarge.fontSize);
+    expect(amountStyle.fontSize, AppTextStyles.bodyLarge.fontSize);
+    expect(amountStyle.fontFeatures, AppTextStyles.tabular);
     expect(referenceStyle.fontSize, lessThan(titleStyle.fontSize!));
-    expect(timeStyle.fontSize, AppTextStyles.caption.fontSize);
+    expect(timeStyle.fontSize, AppTextStyles.helper.fontSize);
     expect(timeStyle.fontSize, lessThanOrEqualTo(referenceStyle.fontSize!));
     expect(tester.takeException(), isNull);
   });
@@ -352,11 +346,11 @@ void main() {
       'TRF-2025-0090',
       'DSB-2025-0301',
     ];
-    expect(find.byType(HistoryEntryDivider), findsNWidgets(ids.length));
+    expect(find.byType(HistoryLedgerDivider), findsNWidgets(ids.length));
     final line = tester.widget<Divider>(find.byType(Divider).first);
     expect(line.height, 1);
     expect(line.thickness, 1);
-    expect(line.color, AppColors.title.withValues(alpha: 0.08));
+    expect(line.color, AppColors.slate100);
 
     for (final id in ids) {
       final tile = tester.getRect(find.byKey(Key('history-entry-$id')));
@@ -443,11 +437,12 @@ void main() {
     expect(find.text('Apply Filters'), findsOneWidget);
     await tester.tap(find.byKey(const Key('history-filter-expenses')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('history-trip-all')), findsOneWidget);
-    await tester.ensureVisible(
-      find.byKey(const Key('history-trip-trip-2026-0927')),
-    );
+    expect(find.byKey(const Key('history-trip-field')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('history-trip-field')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('history-trip-trip-2026-0927')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-trip-done')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('history-filter-apply')));
     await tester.pumpAndSettle();
@@ -456,11 +451,11 @@ void main() {
 
     await tester.tap(find.byKey(const Key('history-filter-button')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('history-trip-all')), findsOneWidget);
+    expect(find.byKey(const Key('history-trip-field')), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('history-filter-cash')));
     await tester.tap(find.byKey(const Key('history-filter-cash')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('history-trip-all')), findsNothing);
+    expect(find.byKey(const Key('history-trip-field')), findsNothing);
     await tester.tap(find.byKey(const Key('history-filter-reset')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('history-filter-apply')));
@@ -487,6 +482,12 @@ void main() {
       },
     );
 
+    // MediaQuery follows the view, not the surface size; match the surface so
+    // the sheet's 85% height cap is measured against the same screen.
+    tester.view.physicalSize = const Size(1200, 4200);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('history-filter-button')));
     await tester.pumpAndSettle();
 
@@ -497,13 +498,13 @@ void main() {
 
     await tester.tap(find.byKey(const Key('history-filter-expenses')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('history-trip-all')), findsOneWidget);
+    expect(find.byKey(const Key('history-trip-field')), findsOneWidget);
     final withTripsHeight = tester.getSize(sheet).height;
     expect(withTripsHeight, greaterThan(baseHeight));
 
     await tester.tap(find.byKey(const Key('history-filter-cash')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('history-trip-all')), findsNothing);
+    expect(find.byKey(const Key('history-trip-field')), findsNothing);
     expect(tester.getSize(sheet).height, lessThan(withTripsHeight));
 
     await tester.tap(find.byKey(const Key('history-date-range')));
@@ -618,8 +619,18 @@ Future<void> _openHistory(
   await tester.pumpAndSettle();
 }
 
+/// A History row line showing [reference] and a status starting with [status].
+Finder _line(String reference, String status) {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is HistoryReferenceLine &&
+        widget.reference == reference &&
+        widget.status.startsWith(status),
+  );
+}
+
 Rect _dividerBelow(WidgetTester tester, Rect tile) {
-  final dividers = find.byType(HistoryEntryDivider);
+  final dividers = find.byType(HistoryLedgerDivider);
   final count = tester.widgetList(dividers).length;
   return [
     for (var index = 0; index < count; index++)

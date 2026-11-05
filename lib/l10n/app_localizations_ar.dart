@@ -453,13 +453,67 @@ class AppLocalizationsAr extends AppLocalizations {
   String get balanceAfter => 'الرصيد بعد';
 
   @override
-  String get balanceBefore => 'الرصيد قبل';
-
-  @override
   String get balanceSnapshotTitle => 'تغيّر الرصيد';
 
   @override
-  String get balanceSnapshotUnavailable => 'غير متاح';
+  String get historyBalanceBefore => 'الرصيد قبل';
+
+  @override
+  String get historyBalanceAfter => 'الرصيد بعد';
+
+  @override
+  String get historyBalanceNoChange => 'لا تغيير';
+
+  @override
+  String get historyBalanceNotCreditedYet => 'لم يضف بعد';
+
+  @override
+  String get historyBalanceNotRecorded => 'غير مسجل';
+
+  @override
+  String get historyBalanceExpenseNote => 'خصم عند التسجيل.';
+
+  @override
+  String get historyBalanceRoadNote => 'مصروفات الطريق لا تؤثر على رصيدك.';
+
+  @override
+  String get historyBalanceCreditAfterYouApprove =>
+      'يضاف إلى رصيدك بعد موافقتك.';
+
+  @override
+  String get historyBalanceCreditAfterApproval =>
+      'يضاف إلى رصيدك بعد الموافقة.';
+
+  @override
+  String get historyBalanceCreditedWhenApproved => 'أضيف عند الموافقة.';
+
+  @override
+  String get historyBalanceNeverCredited => 'رفض، لذلك لم يضف إلى رصيدك.';
+
+  @override
+  String get historyBalanceSentPending =>
+      'خصم عند الإرسال، ويعاد إلى رصيدك إذا رفض.';
+
+  @override
+  String get historyBalanceSent => 'خصم عند الإرسال.';
+
+  @override
+  String get historyBalanceSentReturned =>
+      'خصم عند الإرسال، ثم أعيد إلى رصيدك بعد الرفض.';
+
+  @override
+  String get historyBalanceWithdrawPending =>
+      'خصم عند الطلب، ويعاد إلى رصيدك إذا رفض.';
+
+  @override
+  String get historyBalanceWithdraw => 'خصم عند الطلب.';
+
+  @override
+  String get historyBalanceWithdrawReturned =>
+      'خصم عند الطلب، ثم أعيد إلى رصيدك بعد الرفض.';
+
+  @override
+  String get historyAmountReturned => 'أعيد المبلغ إلى رصيدك';
 
   @override
   String get back => 'رجوع';
@@ -646,17 +700,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navHistory => 'السجل';
 
   @override
-  String expenseCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count مصروفات',
-      one: 'مصروف واحد',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get filterExpenses => 'المصروفات';
 
   @override
@@ -722,15 +765,75 @@ class AppLocalizationsAr extends AppLocalizations {
   String get timelineStillPending => 'ما زال معلقاً';
 
   @override
-  String timelineStatusUpdated(String status) {
-    return 'تم تحديث الحالة — $status';
+  String historyTimelineSince(String status, String time) {
+    return '$status · منذ $time';
   }
 
   @override
-  String get createdAtLabel => 'تاريخ الإنشاء';
+  String get historyTimelineCurrent => 'الحالي';
 
   @override
-  String get updatedAtLabel => 'آخر تحديث';
+  String get historyLoadError => 'تعذر تحميل السجل.';
+
+  @override
+  String get historySelectTrips => 'اختر الرحلات';
+
+  @override
+  String historyTripsDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم · $count',
+      zero: 'تم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String historyTripsSelectedSection(int count) {
+    return 'المحددة · $count';
+  }
+
+  @override
+  String historyTripsListSection(int count) {
+    return 'الرحلات · $count';
+  }
+
+  @override
+  String historyTripCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رحلة',
+      many: '$count رحلة',
+      few: '$count رحلات',
+      two: 'رحلتان',
+      one: 'رحلة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get historyClearTrips => 'مسح';
+
+  @override
+  String get historyRelatedTrips => 'الرحلات المرتبطة';
+
+  @override
+  String get historyRefreshFailed => 'تعذر التحديث';
+
+  @override
+  String get historyRefreshRetry => 'إعادة المحاولة';
+
+  @override
+  String historyRemoveFilter(String label) {
+    return 'إزالة عامل التصفية: $label';
+  }
+
+  @override
+  String historyDateRangeValue(String start, String end) {
+    return '$start – $end';
+  }
 
   @override
   String get recipient => 'المستلم';
@@ -749,9 +852,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get note => 'ملاحظة';
-
-  @override
-  String get status => 'الحالة';
 
   @override
   String get noTransactions => 'لا توجد حركات';

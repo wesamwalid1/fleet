@@ -308,8 +308,9 @@ void main() {
         find.byKey(const Key('history-detail-balance-snapshot')),
         findsOneWidget,
       );
-      expect(find.text('Balance Before'), findsOneWidget);
-      expect(find.text('Balance After'), findsOneWidget);
+      expect(find.text('Balance before'), findsOneWidget);
+      expect(find.text('Balance after'), findsOneWidget);
+      expect(find.text('Deducted when recorded.'), findsOneWidget);
       expect(
         tester
             .widget<Text>(
@@ -329,7 +330,12 @@ void main() {
 
       await tester.tap(find.byKey(const Key('history-entry-DSB-2025-0441')));
       await tester.pumpAndSettle();
-      expect(find.text('Not available'), findsNWidgets(2));
+      expect(find.text('Not credited yet'), findsOneWidget);
+      expect(find.text('Credited after you approve.'), findsOneWidget);
+      expect(
+        find.byKey(const Key('history-detail-balance-before')),
+        findsNothing,
+      );
       await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
       await tester.pumpAndSettle();
     });
@@ -360,9 +366,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('تغيّر الرصيد'), findsOneWidget);
-      expect(find.text('الرصيد قبل'), findsOneWidget);
-      expect(find.text('الرصيد بعد'), findsOneWidget);
-      expect(find.text('غير متاح'), findsNWidgets(2));
+      expect(find.text('لا تغيير'), findsOneWidget);
+      expect(find.text('مصروفات الطريق لا تؤثر على رصيدك.'), findsOneWidget);
+      expect(find.text('الرصيد قبل'), findsNothing);
     });
   });
 }

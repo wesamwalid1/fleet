@@ -370,7 +370,7 @@ void main() {
 
       await open('EXP-412138');
       expect(find.text('Transaction Details'), findsOneWidget);
-      expect(find.text('DEBIT'), findsOneWidget);
+      expect(_detailAmount(tester), startsWith('-'));
       expect(find.text('Recorded'), findsWidgets);
       expect(find.text('Still pending'), findsNothing);
       await tester.tap(find.byKey(const Key('history-expense-close')));
@@ -378,7 +378,7 @@ void main() {
 
       await open('TRF-2026-0124');
       expect(find.text('Transaction Details'), findsOneWidget);
-      expect(find.text('DEBIT'), findsOneWidget);
+      expect(_detailAmount(tester), startsWith('-'));
       expect(find.text('Still pending'), findsOneWidget);
       expect(find.text('Created'), findsWidgets);
       await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
@@ -386,7 +386,7 @@ void main() {
 
       await open('RC-001');
       expect(find.text('Request number'), findsOneWidget);
-      expect(find.text('CREDIT'), findsOneWidget);
+      expect(_detailAmount(tester), startsWith('+'));
       expect(find.text('ops'), findsOneWidget);
       expect(find.text('Still pending'), findsOneWidget);
       await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
@@ -394,13 +394,13 @@ void main() {
 
       await open('RE-2026-1041');
       expect(find.text('Expense type'), findsOneWidget);
-      expect(find.text('DEBIT'), findsOneWidget);
+      expect(_detailAmount(tester), startsWith('-'));
       expect(find.text('Still pending'), findsOneWidget);
       await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
       await tester.pumpAndSettle();
 
       await open('DSB-2025-0441');
-      expect(find.text('CREDIT'), findsOneWidget);
+      expect(_detailAmount(tester), startsWith('+'));
       expect(find.text('Drivers Vault'), findsWidgets);
       expect(find.text('Still pending'), findsOneWidget);
       await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
@@ -434,7 +434,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('تفاصيل الحركة'), findsOneWidget);
-      expect(find.text('دائن'), findsOneWidget);
+      expect(_detailAmount(tester), startsWith('+'));
       expect(find.text('الجدول الزمني'), findsOneWidget);
       expect(find.text('ما زال معلقاً'), findsOneWidget);
       expect(
@@ -468,3 +468,6 @@ HistoryEntry _entry({
         : HistoryDisplayStatus.approved,
   );
 }
+
+String _detailAmount(WidgetTester tester) =>
+    tester.widget<Text>(find.byKey(const Key('history-detail-amount'))).data!;

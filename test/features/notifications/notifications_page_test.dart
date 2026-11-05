@@ -9,6 +9,7 @@ import 'package:driver_portal_app/features/finance/domain/entities/custody_recei
 import 'package:driver_portal_app/features/finance/domain/entities/expense_request.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/history/presentation/bloc/history_bloc.dart';
+import 'package:driver_portal_app/features/history/presentation/widgets/history_ledger_row.dart';
 import 'package:driver_portal_app/features/notifications/data/datasources/mock_notification_seed.dart';
 import 'package:driver_portal_app/features/notifications/data/datasources/notification_local_data_source.dart';
 import 'package:driver_portal_app/features/notifications/data/repositories/notification_repository_impl.dart';
@@ -427,7 +428,10 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: row, matching: find.text('DR-004 · Pending confirm')),
+      find.descendant(
+        of: row,
+        matching: _historyLine('DR-004', 'Pending confirm'),
+      ),
       findsOneWidget,
     );
     await tester.pump(historyHighlightDuration);
@@ -483,7 +487,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(Key('history-entry-${declined.id}')),
-        matching: find.text('DR-002 · Rejected'),
+        matching: _historyLine('DR-002', 'Rejected'),
       ),
       findsOneWidget,
     );
@@ -1035,4 +1039,14 @@ Future<void> _pumpAboveLauncher(
   );
   await tester.tap(find.byKey(const Key('launcher-open')));
   await tester.pumpAndSettle();
+}
+
+/// A History row line showing [reference] and a status starting with [status].
+Finder _historyLine(String reference, String status) {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is HistoryReferenceLine &&
+        widget.reference == reference &&
+        widget.status.startsWith(status),
+  );
 }

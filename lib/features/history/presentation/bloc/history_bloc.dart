@@ -39,14 +39,21 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     Emitter<HistoryState> emit,
   ) async {
     final load = ++_loads;
-    emit(state.copyWith(loading: true, failed: false));
+    emit(state.copyWith(loading: true, failed: false, refreshFailed: false));
     try {
       final entries = await repository.getHistory(driverId);
       if (load != _loads) return;
-      emit(state.copyWith(loading: false, failed: false, entries: entries));
+      emit(
+        state.copyWith(
+          loading: false,
+          failed: false,
+          refreshFailed: false,
+          entries: entries,
+        ),
+      );
     } catch (_) {
       if (load != _loads) return;
-      emit(state.copyWith(loading: false, failed: true));
+      emit(state.copyWith(loading: false, failed: true, refreshFailed: false));
     }
   }
 
@@ -58,9 +65,18 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     try {
       final entries = await repository.getHistory(driverId);
       if (load != _loads) return;
-      emit(state.copyWith(loading: false, failed: false, entries: entries));
+      emit(
+        state.copyWith(
+          loading: false,
+          failed: false,
+          refreshFailed: false,
+          entries: entries,
+        ),
+      );
     } catch (_) {
-      // Keep the current entries; the next ledger change reloads again.
+      if (load != _loads) return;
+      // Keep the current entries; surface a compact retry banner.
+      emit(state.copyWith(loading: false, refreshFailed: true));
     }
   }
 

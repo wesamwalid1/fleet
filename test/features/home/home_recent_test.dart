@@ -95,7 +95,10 @@ void main() {
     await tester.tap(find.byKey(const Key('home-recent-DSB-2025-0441')));
     await tester.pumpAndSettle();
     expect(find.text('Transaction Details'), findsOneWidget);
-    expect(find.text('CREDIT'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('history-detail-amount'))).data,
+      startsWith('+'),
+    );
     await tester.tap(find.byKey(const Key('history-transaction-dismiss')));
     await tester.pumpAndSettle();
     expect(_text(tester, 'home-balance'), '2,200 EGP');
@@ -166,7 +169,10 @@ void main() {
     await tester.tap(find.byKey(const Key('home-recent-EXP-412138')));
     await tester.pumpAndSettle();
     expect(find.text('Transaction Details'), findsOneWidget);
-    expect(find.text('DEBIT'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('history-detail-amount'))).data,
+      startsWith('-'),
+    );
     expect(find.text('EXP-412138'), findsWidgets);
 
     await tester.tap(find.byKey(const Key('history-expense-close')));

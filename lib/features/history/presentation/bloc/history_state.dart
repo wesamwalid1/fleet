@@ -5,6 +5,10 @@ import '../../domain/entities/history_entry.dart';
 class HistoryState extends Equatable {
   final bool loading;
   final bool failed;
+
+  /// Background refresh failed while existing entries remain visible.
+  final bool refreshFailed;
+
   final HistoryFilter filter;
   final String query;
   final HistoryDateMode dateMode;
@@ -17,6 +21,7 @@ class HistoryState extends Equatable {
   const HistoryState({
     this.loading = true,
     this.failed = false,
+    this.refreshFailed = false,
     this.filter = HistoryFilter.all,
     this.query = '',
     this.dateMode = HistoryDateMode.all,
@@ -58,6 +63,7 @@ class HistoryState extends Equatable {
   HistoryState copyWith({
     bool? loading,
     bool? failed,
+    bool? refreshFailed,
     HistoryFilter? filter,
     String? query,
     HistoryDateMode? dateMode,
@@ -70,6 +76,7 @@ class HistoryState extends Equatable {
     return HistoryState(
       loading: loading ?? this.loading,
       failed: failed ?? this.failed,
+      refreshFailed: refreshFailed ?? this.refreshFailed,
       filter: filter ?? this.filter,
       query: query ?? this.query,
       dateMode: dateMode ?? this.dateMode,
@@ -89,6 +96,7 @@ class HistoryState extends Equatable {
   List<Object?> get props => [
     loading,
     failed,
+    refreshFailed,
     filter,
     query,
     dateMode,

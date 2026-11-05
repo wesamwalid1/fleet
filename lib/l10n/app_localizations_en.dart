@@ -457,13 +457,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get balanceAfter => 'Balance After';
 
   @override
-  String get balanceBefore => 'Balance Before';
-
-  @override
   String get balanceSnapshotTitle => 'Balance change';
 
   @override
-  String get balanceSnapshotUnavailable => 'Not available';
+  String get historyBalanceBefore => 'Balance before';
+
+  @override
+  String get historyBalanceAfter => 'Balance after';
+
+  @override
+  String get historyBalanceNoChange => 'No change';
+
+  @override
+  String get historyBalanceNotCreditedYet => 'Not credited yet';
+
+  @override
+  String get historyBalanceNotRecorded => 'Not recorded';
+
+  @override
+  String get historyBalanceExpenseNote => 'Deducted when recorded.';
+
+  @override
+  String get historyBalanceRoadNote =>
+      'Road expenses don\'t affect your balance.';
+
+  @override
+  String get historyBalanceCreditAfterYouApprove =>
+      'Credited after you approve.';
+
+  @override
+  String get historyBalanceCreditAfterApproval => 'Credited after approval.';
+
+  @override
+  String get historyBalanceCreditedWhenApproved => 'Credited when approved.';
+
+  @override
+  String get historyBalanceNeverCredited =>
+      'Rejected, so it was never credited.';
+
+  @override
+  String get historyBalanceSentPending =>
+      'Deducted when sent. Returned to your balance if rejected.';
+
+  @override
+  String get historyBalanceSent => 'Deducted when sent.';
+
+  @override
+  String get historyBalanceSentReturned =>
+      'Deducted when sent, then returned to your balance after rejection.';
+
+  @override
+  String get historyBalanceWithdrawPending =>
+      'Deducted when requested. Returned to your balance if rejected.';
+
+  @override
+  String get historyBalanceWithdraw => 'Deducted when requested.';
+
+  @override
+  String get historyBalanceWithdrawReturned =>
+      'Deducted when requested, then returned to your balance after rejection.';
+
+  @override
+  String get historyAmountReturned => 'Amount returned to your balance';
 
   @override
   String get back => 'Back';
@@ -651,17 +706,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHistory => 'History';
 
   @override
-  String expenseCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count expenses',
-      one: '1 expense',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get filterExpenses => 'Expenses';
 
   @override
@@ -727,15 +771,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timelineStillPending => 'Still pending';
 
   @override
-  String timelineStatusUpdated(String status) {
-    return 'Status updated — $status';
+  String historyTimelineSince(String status, String time) {
+    return '$status · since $time';
   }
 
   @override
-  String get createdAtLabel => 'Created';
+  String get historyTimelineCurrent => 'Current';
 
   @override
-  String get updatedAtLabel => 'Last updated';
+  String get historyLoadError => 'Couldn\'t load your history.';
+
+  @override
+  String get historySelectTrips => 'Select trips';
+
+  @override
+  String historyTripsDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Done · $count',
+      zero: 'Done',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String historyTripsSelectedSection(int count) {
+    return 'Selected · $count';
+  }
+
+  @override
+  String historyTripsListSection(int count) {
+    return 'Trips · $count';
+  }
+
+  @override
+  String historyTripCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips',
+      one: '1 trip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get historyClearTrips => 'Clear';
+
+  @override
+  String get historyRelatedTrips => 'Related trips';
+
+  @override
+  String get historyRefreshFailed => 'Couldn\'t refresh';
+
+  @override
+  String get historyRefreshRetry => 'Retry';
+
+  @override
+  String historyRemoveFilter(String label) {
+    return 'Remove filter: $label';
+  }
+
+  @override
+  String historyDateRangeValue(String start, String end) {
+    return '$start – $end';
+  }
 
   @override
   String get recipient => 'Recipient';
@@ -754,9 +855,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get note => 'Note';
-
-  @override
-  String get status => 'Status';
 
   @override
   String get noTransactions => 'No transactions';

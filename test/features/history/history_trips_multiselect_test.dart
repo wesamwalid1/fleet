@@ -342,25 +342,17 @@ void main() {
       await tester.tap(find.byKey(const Key('history-filter-expenses')));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(
-        find.byKey(const Key('history-trip-trip-2026-0927')),
-      );
-      await tester.tap(find.byKey(const Key('history-trip-trip-2026-0927')));
-      await tester.pumpAndSettle();
+      await _pickTrip(tester, 'trip-2026-0927');
       expect(find.text('1 trip selected'), findsOneWidget);
 
-      await tester.ensureVisible(
-        find.byKey(const Key('history-trip-trip-2026-0904')),
-      );
-      await tester.tap(find.byKey(const Key('history-trip-trip-2026-0904')));
-      await tester.pumpAndSettle();
+      await _pickTrip(tester, 'trip-2026-0904');
       expect(find.text('2 trips selected'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('history-filter-apply')));
       await tester.pumpAndSettle();
       expect(find.text('Fuel'), findsOneWidget);
       expect(find.text('Cross Border'), findsOneWidget);
-      expect(find.text('Road Expense Approval'), findsNothing);
+      expect(find.text('Road Expense Approval'), findsOneWidget);
     });
 
     testWidgets('16. Arabic multi-select state renders correctly', (
@@ -373,18 +365,10 @@ void main() {
       await tester.tap(find.byKey(const Key('history-filter-expenses')));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(
-        find.byKey(const Key('history-trip-trip-2026-0927')),
-      );
-      await tester.tap(find.byKey(const Key('history-trip-trip-2026-0927')));
-      await tester.pumpAndSettle();
+      await _pickTrip(tester, 'trip-2026-0927');
       expect(find.text('رحلة واحدة محددة'), findsOneWidget);
 
-      await tester.ensureVisible(
-        find.byKey(const Key('history-trip-trip-2026-0904')),
-      );
-      await tester.tap(find.byKey(const Key('history-trip-trip-2026-0904')));
-      await tester.pumpAndSettle();
+      await _pickTrip(tester, 'trip-2026-0904');
       expect(find.text('رحلتان محددتان'), findsOneWidget);
     });
 
@@ -446,6 +430,16 @@ HistoryEntry _expense({
     tripId: tripId,
     tripCode: tripId.isEmpty ? '' : 'TR-$tripId',
   );
+}
+
+/// Opens the trip picker from the filter sheet, adds [tripId], and returns.
+Future<void> _pickTrip(WidgetTester tester, String tripId) async {
+  await tester.tap(find.byKey(const Key('history-trip-field')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key('history-trip-$tripId')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('history-trip-done')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openHistoryWithTwoExpenses(

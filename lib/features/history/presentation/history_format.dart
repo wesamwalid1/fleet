@@ -92,26 +92,48 @@ bool historyMatches(AppLocalizations l10n, HistoryEntry entry, String query) {
       hit(entry.id) ||
       hit(entry.tripCode) ||
       hit(entry.tripId) ||
+      entry.relatedTripCodes.any(hit) ||
       hit(entry.requestNumber) ||
       hit(entry.note ?? '') ||
       entry.counterpartyName.matchesQuery(needle) ||
       hit(entry.counterpartyId);
 }
 
+/// Day and clock, such as "22 Jun 2026 · 10:15 AM".
+String historyStamp(DateTime at, String locale) {
+  return '${historyDayLabel(at, locale)} · ${historyClock(at, locale)}';
+}
+
 String historySubtitle(AppLocalizations l10n, HistoryEntry entry) {
+  final parts = historySubtitleParts(l10n, entry);
+  final reference = parts.reference;
+  return reference == null ? parts.status : '$reference · ${parts.status}';
+}
+
+/// The reference and status shown under a row title. [reference] is null when
+/// the status alone is shown, as for an incoming transfer awaiting approval.
+/// [markSettled] appends a check to settled statuses for rows that carry no
+/// status mark of their own.
+({String? reference, String status}) historySubtitleParts(
+  AppLocalizations l10n,
+  HistoryEntry entry, {
+  bool markSettled = true,
+}) {
   final status = historyStatusText(l10n, entry.status);
   final marked = switch (entry.status) {
     HistoryDisplayStatus.recorded ||
     HistoryDisplayStatus.approved ||
-    HistoryDisplayStatus.confirmed => '$status ✓',
+    HistoryDisplayStatus.confirmed when markSettled => '$status ✓',
     _ => status,
   };
   if (entry.status == HistoryDisplayStatus.awaitingApproval &&
       entry.kind == HistoryKind.incoming) {
-    return marked;
+    return (reference: null, status: marked);
   }
   final reference = switch (entry.kind) {
-    HistoryKind.expense || HistoryKind.roadExpense => entry.tripCode,
+    HistoryKind.expense => entry.tripCode,
+    // Approval ID is the operation reference, never a trip code.
+    HistoryKind.roadExpense => entry.id,
     HistoryKind.vault => l10n.driversVault,
     HistoryKind.incoming || HistoryKind.outgoing => entry.counterpartyId,
     HistoryKind.requestCash || HistoryKind.withdraw =>
@@ -120,5 +142,5 @@ String historySubtitle(AppLocalizations l10n, HistoryEntry entry) {
   final pendingHint = entry.isPending && entry.kind == HistoryKind.requestCash
       ? ' · ${l10n.historyPendingBalanceUnchanged}'
       : '';
-  return '$reference · $marked$pendingHint';
+  return (reference: reference, status: '$marked$pendingHint');
 }

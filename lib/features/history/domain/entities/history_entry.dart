@@ -43,6 +43,14 @@ class HistoryEntry extends Equatable {
   final SettlementType? settlementType;
   final String tripCode;
   final String tripId;
+
+  /// Trip ids linked to a Road Expense Approval. Empty for other kinds.
+  final List<String> relatedTripIds;
+
+  /// Trip codes linked to a Road Expense Approval, in original line order.
+  /// Empty for other kinds.
+  final List<String> relatedTripCodes;
+
   final LocalizedString counterpartyName;
   final String counterpartyId;
   final String? note;
@@ -73,6 +81,8 @@ class HistoryEntry extends Equatable {
     this.settlementType,
     this.tripCode = '',
     this.tripId = '',
+    this.relatedTripIds = const [],
+    this.relatedTripCodes = const [],
     this.counterpartyName = LocalizedString.empty,
     this.counterpartyId = '',
     this.note,
@@ -147,9 +157,11 @@ class HistoryEntry extends Equatable {
   }) {
     if (filter != HistoryFilter.expenses) return true;
     if (tripIds.isEmpty) return true;
-    return kind == HistoryKind.expense &&
-        tripId.isNotEmpty &&
-        tripIds.contains(tripId);
+    return switch (kind) {
+      HistoryKind.expense => tripId.isNotEmpty && tripIds.contains(tripId),
+      HistoryKind.roadExpense => relatedTripIds.any(tripIds.contains),
+      _ => false,
+    };
   }
 
   @override
@@ -164,6 +176,8 @@ class HistoryEntry extends Equatable {
     settlementType,
     tripCode,
     tripId,
+    relatedTripIds,
+    relatedTripCodes,
     counterpartyName,
     counterpartyId,
     note,

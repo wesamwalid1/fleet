@@ -224,9 +224,25 @@
   "settlementType": "Settlement Type",
   "trip": "Trip",
   "balanceAfter": "Balance After",
-  "balanceBefore": "Balance Before",
   "balanceSnapshotTitle": "Balance change",
-  "balanceSnapshotUnavailable": "Not available",
+  "historyBalanceBefore": "Balance before",
+  "historyBalanceAfter": "Balance after",
+  "historyBalanceNoChange": "No change",
+  "historyBalanceNotCreditedYet": "Not credited yet",
+  "historyBalanceNotRecorded": "Not recorded",
+  "historyBalanceExpenseNote": "Deducted when recorded.",
+  "historyBalanceRoadNote": "Road expenses don't affect your balance.",
+  "historyBalanceCreditAfterYouApprove": "Credited after you approve.",
+  "historyBalanceCreditAfterApproval": "Credited after approval.",
+  "historyBalanceCreditedWhenApproved": "Credited when approved.",
+  "historyBalanceNeverCredited": "Rejected, so it was never credited.",
+  "historyBalanceSentPending": "Deducted when sent. Returned to your balance if rejected.",
+  "historyBalanceSent": "Deducted when sent.",
+  "historyBalanceSentReturned": "Deducted when sent, then returned to your balance after rejection.",
+  "historyBalanceWithdrawPending": "Deducted when requested. Returned to your balance if rejected.",
+  "historyBalanceWithdraw": "Deducted when requested.",
+  "historyBalanceWithdrawReturned": "Deducted when requested, then returned to your balance after rejection.",
+  "historyAmountReturned": "Amount returned to your balance",
   "back": "Back",
   "confirmDeduction": "Confirm Deduction",
   "expenseRecorded": "Expense Recorded",
@@ -324,12 +340,6 @@
   "rejected": "Rejected",
   "navHome": "Home",
   "navHistory": "History",
-  "expenseCount": "{count, plural, =1{1 expense} other{{count} expenses}}",
-  "@expenseCount": {
-    "placeholders": {
-      "count": {"type": "int"}
-    }
-  },
   "filterExpenses": "Expenses",
   "filterSent": "Sent",
   "filterPending": "Pending",
@@ -369,21 +379,63 @@
   "historyTimeline": "Timeline",
   "timelineCreated": "Created",
   "timelineStillPending": "Still pending",
-  "timelineStatusUpdated": "Status updated — {status}",
-  "@timelineStatusUpdated": {
+  "historyTimelineSince": "{status} · since {time}",
+  "@historyTimelineSince": {
     "placeholders": {
-      "status": {"type": "String"}
+      "status": {"type": "String"},
+      "time": {"type": "String"}
     }
   },
-  "createdAtLabel": "Created",
-  "updatedAtLabel": "Last updated",
+  "historyTimelineCurrent": "Current",
+  "historyLoadError": "Couldn't load your history.",
+  "historySelectTrips": "Select trips",
+  "historyTripsDone": "{count, plural, =0{Done} other{Done · {count}}}",
+  "@historyTripsDone": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "historyTripsSelectedSection": "Selected · {count}",
+  "@historyTripsSelectedSection": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "historyTripsListSection": "Trips · {count}",
+  "@historyTripsListSection": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "historyTripCount": "{count, plural, =1{1 trip} other{{count} trips}}",
+  "@historyTripCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "historyClearTrips": "Clear",
+  "historyRelatedTrips": "Related trips",
+  "historyRefreshFailed": "Couldn't refresh",
+  "historyRefreshRetry": "Retry",
+  "historyRemoveFilter": "Remove filter: {label}",
+  "@historyRemoveFilter": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "historyDateRangeValue": "{start} – {end}",
+  "@historyDateRangeValue": {
+    "placeholders": {
+      "start": {"type": "String"},
+      "end": {"type": "String"}
+    }
+  },
   "recipient": "Recipient",
   "driverId": "Driver ID",
   "requestNumber": "Request number",
   "source": "Source",
   "expenseType": "Expense type",
   "note": "Note",
-  "status": "Status",
   "noTransactions": "No transactions",
   "navProfile": "Profile",
   "myBalance": "My Balance",
