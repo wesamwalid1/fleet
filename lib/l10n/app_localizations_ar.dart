@@ -171,6 +171,54 @@ class AppLocalizationsAr extends AppLocalizations {
       'أضف إيصالات أو ملاحظات إن لزم. كلاهما اختياري.';
 
   @override
+  String get requestCashStepAmount => 'المبلغ';
+
+  @override
+  String get requestCashStepReview => 'مراجعة';
+
+  @override
+  String get requestCashContinue => 'متابعة';
+
+  @override
+  String get requestCashEdit => 'تعديل';
+
+  @override
+  String get requestCashReviewHeading => 'مراجعة الطلب';
+
+  @override
+  String requestCashStepProgress(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get requestCashPendingExplain =>
+      'يبقى هذا الطلب معلّقاً حتى تؤكده الشركة. لن يتغير رصيدك الآن.';
+
+  @override
+  String get withdrawStepAmount => 'المبلغ';
+
+  @override
+  String get withdrawStepReview => 'مراجعة';
+
+  @override
+  String get withdrawContinue => 'متابعة';
+
+  @override
+  String get withdrawEdit => 'تعديل';
+
+  @override
+  String get withdrawReviewHeading => 'مراجعة التسليم';
+
+  @override
+  String withdrawStepProgress(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get withdrawPendingExplain =>
+      'يُخصم المبلغ الآن ويُحجز حتى تؤكد الشركة التسليم.';
+
+  @override
   String get requestCash => 'طلب نقد';
 
   @override

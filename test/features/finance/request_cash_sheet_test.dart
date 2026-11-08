@@ -16,7 +16,7 @@ void main() {
 
   testWidgets('shows Total Balance instead of Current Balance', (tester) async {
     await _openRequestCash(tester);
-    final sheet = find.byType(BottomSheet);
+    final sheet = find.byKey(const Key('request-cash-flow'));
 
     expect(
       find.descendant(of: sheet, matching: find.text('Total Balance')),
@@ -52,7 +52,7 @@ void main() {
         ledger.submitWithdraw(driverId: _me, amountEgp: 200, createdAt: _at);
       },
     );
-    final sheet = find.byType(BottomSheet);
+    final sheet = find.byKey(const Key('request-cash-flow'));
 
     expect(ledger.availableBalance(_me), 1700);
     expect(_text(tester, 'request-cash-total-balance'), '2,200 EGP');
@@ -87,6 +87,8 @@ void main() {
     await tester.pump();
     expect(_canSubmit(tester), isTrue);
 
+    await tester.tap(find.byKey(const Key('request-cash-continue')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('request-cash-submit')));
     await tester.pumpAndSettle();
     expect(ledger.pendingRequestCash(_me), 1000);
@@ -97,7 +99,7 @@ void main() {
     tester,
   ) async {
     await _openRequestCash(tester);
-    final sheet = find.byType(BottomSheet);
+    final sheet = find.byKey(const Key('request-cash-flow'));
     double y(String label) => tester
         .getCenter(find.descendant(of: sheet, matching: find.text(label)))
         .dy;
@@ -144,6 +146,8 @@ void main() {
       '1000',
     );
     await tester.pump();
+    await tester.tap(find.byKey(const Key('request-cash-continue')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('request-cash-submit')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('cash-request-home')));
@@ -242,7 +246,10 @@ void main() {
         },
       );
 
-      expect(find.byKey(const Key('balance-error')), findsOneWidget);
+      expect(
+        find.byKey(const Key('balance-error'), skipOffstage: false),
+        findsOneWidget,
+      );
       _expectSummary(
         tester,
         total: '2,200 EGP',
@@ -251,7 +258,7 @@ void main() {
       );
       expect(
         find.descendant(
-          of: find.byType(BottomSheet),
+          of: find.byKey(const Key('request-cash-flow')),
           matching: find.text('5,000 EGP'),
         ),
         findsOneWidget,
@@ -293,7 +300,7 @@ void main() {
 
   testWidgets('arabic shows the localized Total Balance label', (tester) async {
     await _openRequestCash(tester, locale: const Locale('ar'));
-    final sheet = find.byType(BottomSheet);
+    final sheet = find.byKey(const Key('request-cash-flow'));
 
     expect(
       find.descendant(of: sheet, matching: find.text('إجمالي الرصيد')),
@@ -312,6 +319,164 @@ void main() {
       TextDirection.rtl,
     );
     expect(_text(tester, 'request-cash-total-balance'), contains('ج.م'));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('amount chips fill the field and allow manual edit', (
+    tester,
+  ) async {
+    await _openRequestCash(tester);
+
+    for (final amount in [500, 1000, 1500, 2000]) {
+      expect(find.byKey(Key('request-cash-chip-$amount')), findsOneWidget);
+    }
+
+    await tester.tap(find.byKey(const Key('request-cash-chip-1000')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('request-cash-amount')))
+          .controller!
+          .text,
+      '1000',
+    );
+    expect(_canSubmit(tester), isTrue);
+
+    await tester.enterText(find.byKey(const Key('request-cash-amount')), '750');
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('request-cash-amount')))
+          .controller!
+          .text,
+      '750',
+    );
+  });
+
+  testWidgets('three-stage progress, review impact, edit, and confirm only', (
+    tester,
+  ) async {
+    final ledger = await _openRequestCash(tester);
+
+    expect(find.byKey(const Key('request-cash-step-dot-0')), findsOneWidget);
+    expect(find.byKey(const Key('request-cash-step-dot-1')), findsOneWidget);
+    expect(find.textContaining('Step 1 of 2'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('request-cash-chip-500')));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('request-cash-note')),
+      '  vault top-up  ',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('request-cash-continue')));
+    await tester.pumpAndSettle();
+
+    expect(ledger.cashRequests, isEmpty);
+    expect(find.text('Review request'), findsOneWidget);
+    expect(find.textContaining('Step 2 of 2'), findsOneWidget);
+    expect(find.text('vault top-up'), findsOneWidget);
+    expect(find.textContaining('2,800 EGP'), findsWidgets);
+    expect(find.textContaining('2,300 EGP'), findsWidgets);
+    expect(
+      find.textContaining(
+        'This request stays pending until the company confirms it',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('request-cash-edit')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('request-cash-amount')))
+          .controller!
+          .text,
+      '500',
+    );
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('request-cash-note')))
+          .controller!
+          .text,
+      '  vault top-up  ',
+    );
+
+    await tester.tap(find.byKey(const Key('request-cash-continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('request-cash-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('cash-request-success')), findsOneWidget);
+    expect(find.byKey(const Key('request-cash-step-label')), findsNothing);
+    expect(find.textContaining('RC-'), findsWidgets);
+    expect(ledger.cashRequests.single.requestNumber, startsWith('RC-'));
+    expect(ledger.cashRequests.single.note, 'vault top-up');
+    expect(ledger.pendingRequestCash(_me), 500);
+    expect(ledger.totalBalance(_me), 2200);
+  });
+
+  testWidgets('go home and view transaction highlight the request', (
+    tester,
+  ) async {
+    final ledger = await _openRequestCash(tester);
+    await tester.tap(find.byKey(const Key('request-cash-chip-500')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('request-cash-continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('request-cash-submit')));
+    await tester.pumpAndSettle();
+
+    final id = ledger.cashRequests.single.id;
+    await tester.tap(find.byKey(const Key('cash-request-view')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('history-title')), findsOneWidget);
+    expect(find.byKey(Key('history-highlight-$id')), findsOneWidget);
+    expect(find.byKey(Key('history-entry-$id')), findsOneWidget);
+  });
+
+  testWidgets('go home returns to Home without highlighting', (tester) async {
+    await _openRequestCash(tester);
+    await tester.tap(find.byKey(const Key('request-cash-chip-500')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('request-cash-continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('request-cash-submit')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('cash-request-home')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('request-cash-flow')), findsNothing);
+    expect(find.byKey(const Key('cash-request-success')), findsNothing);
+    expect(find.byKey(const Key('request-cash')), findsOneWidget);
+  });
+
+  testWidgets('dark mode request cash flow does not overflow', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        themeMode: ThemeMode.dark,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeScope(
+          now: () => DateTime(2026, 11, 3, 12),
+          seedApprovals: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('request-cash')));
+    await tester.tap(find.byKey(const Key('request-cash')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('request-cash-flow')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
@@ -339,7 +504,7 @@ String _text(WidgetTester tester, String key) {
 
 bool _canSubmit(WidgetTester tester) {
   return tester
-          .widget<FilledButton>(find.byKey(const Key('request-cash-submit')))
+          .widget<FilledButton>(find.byKey(const Key('request-cash-continue')))
           .onPressed !=
       null;
 }
@@ -387,7 +552,7 @@ Future<void> _openSheet(WidgetTester tester) async {
 }
 
 Future<void> _closeSheet(WidgetTester tester) async {
-  await tester.tap(find.byKey(const Key('request-cash-cancel')));
+  await tester.tap(find.byKey(const Key('request-cash-back')));
   await tester.pumpAndSettle();
 }
 

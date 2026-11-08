@@ -64,6 +64,32 @@
     }
   },
   "recordExpenseAttachmentsNotesHint": "أضف إيصالات أو ملاحظات إن لزم. كلاهما اختياري.",
+  "requestCashStepAmount": "المبلغ",
+  "requestCashStepReview": "مراجعة",
+  "requestCashContinue": "متابعة",
+  "requestCashEdit": "تعديل",
+  "requestCashReviewHeading": "مراجعة الطلب",
+  "requestCashStepProgress": "الخطوة {current} من {total}",
+  "@requestCashStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "requestCashPendingExplain": "يبقى هذا الطلب معلّقاً حتى تؤكده الشركة. لن يتغير رصيدك الآن.",
+  "withdrawStepAmount": "المبلغ",
+  "withdrawStepReview": "مراجعة",
+  "withdrawContinue": "متابعة",
+  "withdrawEdit": "تعديل",
+  "withdrawReviewHeading": "مراجعة التسليم",
+  "withdrawStepProgress": "الخطوة {current} من {total}",
+  "@withdrawStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "withdrawPendingExplain": "يُخصم المبلغ الآن ويُحجز حتى تؤكد الشركة التسليم.",
   "requestCash": "طلب نقد",
   "withdraw": "تسليم نقد",
   "actionComingSoon": "سيكون هذا الإجراء متاحاً قريباً.",

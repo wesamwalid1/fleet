@@ -268,7 +268,9 @@ void main() {
     expect(ledger.balanceOf('DR-001'), 2100);
   });
 
-  testWidgets('request cash and withdraw open real sheets', (tester) async {
+  testWidgets('request cash and withdraw open full-screen flows', (
+    tester,
+  ) async {
     late MockCashLedger ledger;
     await _pump(tester, configureLedger: (value) => ledger = value);
     final balanceBefore = ledger.balanceOf('DR-001');
@@ -276,16 +278,18 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('request-cash')));
     await tester.tap(find.byKey(const Key('request-cash')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('request-cash-flow')), findsOneWidget);
     expect(find.byKey(const Key('request-cash-amount')), findsOneWidget);
-    expect(find.byKey(const Key('request-cash-submit')), findsOneWidget);
+    expect(find.byKey(const Key('request-cash-continue')), findsOneWidget);
     expect(ledger.balanceOf('DR-001'), balanceBefore);
-    await tester.tap(find.byKey(const Key('request-cash-cancel')));
+    await tester.tap(find.byKey(const Key('request-cash-back')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('withdraw')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('withdraw-flow')), findsOneWidget);
     expect(find.byKey(const Key('withdraw-amount')), findsOneWidget);
-    expect(find.byKey(const Key('withdraw-submit')), findsOneWidget);
+    expect(find.byKey(const Key('withdraw-continue')), findsOneWidget);
     expect(ledger.balanceOf('DR-001'), balanceBefore);
   });
 

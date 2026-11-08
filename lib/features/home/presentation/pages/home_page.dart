@@ -1116,7 +1116,7 @@ class _Actions extends StatelessWidget {
                           child: OutlinedButton.icon(
                             key: const Key('request-cash'),
                             onPressed: gated(
-                              () => showRequestCashSheet(
+                              () => openRequestCashFlow(
                                 context,
                                 driverId: driverId,
                                 onViewTransaction: (requestId) {
@@ -1137,7 +1137,7 @@ class _Actions extends StatelessWidget {
                           child: OutlinedButton.icon(
                             key: const Key('withdraw'),
                             onPressed: gated(
-                              () => showWithdrawCashSheet(
+                              () => openWithdrawCashFlow(
                                 context,
                                 driverId: driverId,
                                 onViewTransaction: (requestId) {

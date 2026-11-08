@@ -410,6 +410,90 @@ abstract class AppLocalizations {
   /// **'Add receipts or notes if needed. Both are optional.'**
   String get recordExpenseAttachmentsNotesHint;
 
+  /// No description provided for @requestCashStepAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get requestCashStepAmount;
+
+  /// No description provided for @requestCashStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get requestCashStepReview;
+
+  /// No description provided for @requestCashContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get requestCashContinue;
+
+  /// No description provided for @requestCashEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get requestCashEdit;
+
+  /// No description provided for @requestCashReviewHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Review request'**
+  String get requestCashReviewHeading;
+
+  /// No description provided for @requestCashStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String requestCashStepProgress(int current, int total);
+
+  /// No description provided for @requestCashPendingExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'This request stays pending until the company confirms it. Your balance will not change yet.'**
+  String get requestCashPendingExplain;
+
+  /// No description provided for @withdrawStepAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get withdrawStepAmount;
+
+  /// No description provided for @withdrawStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get withdrawStepReview;
+
+  /// No description provided for @withdrawContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get withdrawContinue;
+
+  /// No description provided for @withdrawEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get withdrawEdit;
+
+  /// No description provided for @withdrawReviewHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Review withdrawal'**
+  String get withdrawReviewHeading;
+
+  /// No description provided for @withdrawStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String withdrawStepProgress(int current, int total);
+
+  /// No description provided for @withdrawPendingExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'The amount is deducted now and held until the company confirms the withdrawal.'**
+  String get withdrawPendingExplain;
+
   /// No description provided for @requestCash.
   ///
   /// In en, this message translates to:

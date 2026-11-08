@@ -172,6 +172,54 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add receipts or notes if needed. Both are optional.';
 
   @override
+  String get requestCashStepAmount => 'Amount';
+
+  @override
+  String get requestCashStepReview => 'Review';
+
+  @override
+  String get requestCashContinue => 'Continue';
+
+  @override
+  String get requestCashEdit => 'Edit';
+
+  @override
+  String get requestCashReviewHeading => 'Review request';
+
+  @override
+  String requestCashStepProgress(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get requestCashPendingExplain =>
+      'This request stays pending until the company confirms it. Your balance will not change yet.';
+
+  @override
+  String get withdrawStepAmount => 'Amount';
+
+  @override
+  String get withdrawStepReview => 'Review';
+
+  @override
+  String get withdrawContinue => 'Continue';
+
+  @override
+  String get withdrawEdit => 'Edit';
+
+  @override
+  String get withdrawReviewHeading => 'Review withdrawal';
+
+  @override
+  String withdrawStepProgress(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get withdrawPendingExplain =>
+      'The amount is deducted now and held until the company confirms the withdrawal.';
+
+  @override
   String get requestCash => 'Request Cash';
 
   @override

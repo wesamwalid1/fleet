@@ -123,7 +123,7 @@ String _text(WidgetTester tester, String key) {
 
 bool _canSubmit(WidgetTester tester) {
   return tester
-          .widget<FilledButton>(find.byKey(const Key('request-cash-submit')))
+          .widget<FilledButton>(find.byKey(const Key('request-cash-continue')))
           .onPressed !=
       null;
 }

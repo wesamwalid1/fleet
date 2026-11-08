@@ -117,7 +117,7 @@ String _text(WidgetTester tester, String key) {
 
 bool _canSubmit(WidgetTester tester) {
   return tester
-          .widget<FilledButton>(find.byKey(const Key('withdraw-submit')))
+          .widget<FilledButton>(find.byKey(const Key('withdraw-continue')))
           .onPressed !=
       null;
 }

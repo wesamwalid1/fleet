@@ -68,6 +68,33 @@
   },
   "recordExpenseAttachmentsNotesHint": "Add receipts or notes if needed. Both are optional.",
 
+  "requestCashStepAmount": "Amount",
+  "requestCashStepReview": "Review",
+  "requestCashContinue": "Continue",
+  "requestCashEdit": "Edit",
+  "requestCashReviewHeading": "Review request",
+  "requestCashStepProgress": "Step {current} of {total}",
+  "@requestCashStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "requestCashPendingExplain": "This request stays pending until the company confirms it. Your balance will not change yet.",
+  "withdrawStepAmount": "Amount",
+  "withdrawStepReview": "Review",
+  "withdrawContinue": "Continue",
+  "withdrawEdit": "Edit",
+  "withdrawReviewHeading": "Review withdrawal",
+  "withdrawStepProgress": "Step {current} of {total}",
+  "@withdrawStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "withdrawPendingExplain": "The amount is deducted now and held until the company confirms the withdrawal.",
+
   "requestCash": "Request Cash",
   "withdraw": "Withdraw",
   "actionComingSoon": "This action will be available soon.",
