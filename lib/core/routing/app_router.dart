@@ -14,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 abstract final class AppRoute {
   static const String login = '/login';
   static const String home = '/home';
+  static const String sendCash = '/send-cash';
 
   static const sessionRestoreTimeout = Duration(seconds: 3);
 

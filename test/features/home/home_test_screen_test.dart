@@ -283,32 +283,33 @@ void main() {
     expect(ledger.balanceOf('DR-001'), balanceBefore);
   });
 
-  testWidgets('send cash is in the actions row and opens the real sheet', (
-    tester,
-  ) async {
-    await _pump(tester);
-    final send = find.byKey(const Key('send-cash'));
+  testWidgets(
+    'send cash is in the actions row and opens the full-screen flow',
+    (tester) async {
+      await _pump(tester);
+      final send = find.byKey(const Key('send-cash'));
 
-    expect(send, findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('home-trip-card')),
-        matching: send,
-      ),
-      findsNothing,
-    );
-    expect(
-      tester.getRect(send).top,
-      greaterThan(
-        tester.getRect(find.byKey(const Key('home-trip-card'))).bottom,
-      ),
-    );
+      expect(send, findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('home-trip-card')),
+          matching: send,
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.getRect(send).top,
+        greaterThan(
+          tester.getRect(find.byKey(const Key('home-trip-card'))).bottom,
+        ),
+      );
 
-    await tester.tap(send);
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('send-cash-driver')), findsOneWidget);
-    expect(find.byKey(const Key('send-cash-amount')), findsOneWidget);
-  });
+      await tester.tap(send);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('send-cash-flow')), findsOneWidget);
+      expect(find.byKey(const Key('send-cash-driver-DR-003')), findsOneWidget);
+    },
+  );
 
   testWidgets('header and section links use the existing tabs', (tester) async {
     await _pump(tester);

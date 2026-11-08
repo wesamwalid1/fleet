@@ -103,6 +103,38 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sendCashSubtitle => 'اختر السائق وأدخل المبلغ';
 
   @override
+  String get sendCashStepRecipient => 'المستلم';
+
+  @override
+  String get sendCashStepAmount => 'المبلغ';
+
+  @override
+  String get sendCashStepReview => 'مراجعة';
+
+  @override
+  String get sendCashContinue => 'متابعة';
+
+  @override
+  String get sendCashEdit => 'تعديل';
+
+  @override
+  String get sendCashReviewHeading => 'مراجعة التحويل';
+
+  @override
+  String get sendCashRecipientLabel => 'المستلم';
+
+  @override
+  String get sendCashSearchHint => 'ابحث بالاسم أو الرمز';
+
+  @override
+  String get sendCashNoSearchResults => 'لا يوجد سائقون مطابقون';
+
+  @override
+  String sendCashStepProgress(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
   String get requestCash => 'طلب نقد';
 
   @override

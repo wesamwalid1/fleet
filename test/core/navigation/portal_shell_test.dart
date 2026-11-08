@@ -153,12 +153,18 @@ void main() {
     _expectSelected(tester, const Key('nav-approvals'));
   });
 
-  testWidgets('send cash blocks tab swipes until the sheet closes', (
+  testWidgets('send cash blocks tab swipes until the flow closes', (
     tester,
   ) async {
     await _pump(tester, const Locale('en'), const Size(400, 1400));
     await tester.ensureVisible(find.byKey(const Key('send-cash')));
     await tester.tap(find.byKey(const Key('send-cash')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('send-cash-flow')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('send-cash-driver-DR-003')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('send-cash-continue')));
     await tester.pumpAndSettle();
 
     await tester.drag(
@@ -167,14 +173,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Full-screen flow covers the shell; tabs stay on Home underneath.
     expect(find.byKey(const Key('send-cash-amount')), findsOneWidget);
     expect(find.byKey(const Key('pending-count')), findsNothing);
-    _expectSelected(tester, const Key('nav-home'));
 
-    await tester.ensureVisible(find.byKey(const Key('send-cash-cancel')));
-    await tester.tap(find.byKey(const Key('send-cash-cancel')));
+    await tester.tap(find.byKey(const Key('send-cash-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('send-cash-back')));
     await tester.pumpAndSettle();
 
+    _expectSelected(tester, const Key('nav-home'));
     await _swipeTabs(tester, forward: true);
     expect(find.byKey(const Key('pending-count')), findsOneWidget);
     _expectSelected(tester, const Key('nav-approvals'));

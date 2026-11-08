@@ -104,6 +104,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendCashSubtitle => 'Select driver and enter amount';
 
   @override
+  String get sendCashStepRecipient => 'Recipient';
+
+  @override
+  String get sendCashStepAmount => 'Amount';
+
+  @override
+  String get sendCashStepReview => 'Review';
+
+  @override
+  String get sendCashContinue => 'Continue';
+
+  @override
+  String get sendCashEdit => 'Edit';
+
+  @override
+  String get sendCashReviewHeading => 'Review transfer';
+
+  @override
+  String get sendCashRecipientLabel => 'Recipient';
+
+  @override
+  String get sendCashSearchHint => 'Search by name or ID';
+
+  @override
+  String get sendCashNoSearchResults => 'No drivers found';
+
+  @override
+  String sendCashStepProgress(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
   String get requestCash => 'Request Cash';
 
   @override

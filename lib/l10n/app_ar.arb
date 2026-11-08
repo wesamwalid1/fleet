@@ -31,6 +31,22 @@
   "sendCash": "إرسال نقد",
   "sendCashTitle": "إرسال نقد إلى سائق",
   "sendCashSubtitle": "اختر السائق وأدخل المبلغ",
+  "sendCashStepRecipient": "المستلم",
+  "sendCashStepAmount": "المبلغ",
+  "sendCashStepReview": "مراجعة",
+  "sendCashContinue": "متابعة",
+  "sendCashEdit": "تعديل",
+  "sendCashReviewHeading": "مراجعة التحويل",
+  "sendCashRecipientLabel": "المستلم",
+  "sendCashSearchHint": "ابحث بالاسم أو الرمز",
+  "sendCashNoSearchResults": "لا يوجد سائقون مطابقون",
+  "sendCashStepProgress": "الخطوة {current} من {total}",
+  "@sendCashStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
   "requestCash": "طلب نقد",
   "withdraw": "تسليم نقد",
   "actionComingSoon": "سيكون هذا الإجراء متاحاً قريباً.",

@@ -25,7 +25,7 @@ import '../../../finance/domain/entities/expense_trip_scope.dart';
 import '../../../finance/domain/repositories/expense_repository.dart';
 import '../../../finance/presentation/widgets/record_expense_sheet.dart';
 import '../../../finance/presentation/widgets/request_cash_sheet.dart';
-import '../../../finance/presentation/widgets/send_cash_sheet.dart';
+import '../../../finance/presentation/pages/send_cash_flow_page.dart';
 import '../../../finance/presentation/widgets/withdraw_cash_sheet.dart';
 import '../../../history/domain/entities/history_entry.dart';
 import '../../../history/domain/latest_history.dart';
@@ -1072,7 +1072,7 @@ class _Actions extends StatelessWidget {
                           child: OutlinedButton.icon(
                             key: const Key('send-cash'),
                             onPressed: gated(
-                              () => showSendCashSheet(
+                              () => openSendCashFlow(
                                 context,
                                 senderId: driverId,
                                 onViewTransaction: (transferId) {

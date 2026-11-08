@@ -34,6 +34,22 @@
   "sendCash": "Send Cash",
   "sendCashTitle": "Send Cash to Driver",
   "sendCashSubtitle": "Select driver and enter amount",
+  "sendCashStepRecipient": "Recipient",
+  "sendCashStepAmount": "Amount",
+  "sendCashStepReview": "Review",
+  "sendCashContinue": "Continue",
+  "sendCashEdit": "Edit",
+  "sendCashReviewHeading": "Review transfer",
+  "sendCashRecipientLabel": "Recipient",
+  "sendCashSearchHint": "Search by name or ID",
+  "sendCashNoSearchResults": "No drivers found",
+  "sendCashStepProgress": "Step {current} of {total}",
+  "@sendCashStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
   "requestCash": "Request Cash",
   "withdraw": "Withdraw",
   "actionComingSoon": "This action will be available soon.",

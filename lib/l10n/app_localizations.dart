@@ -284,6 +284,66 @@ abstract class AppLocalizations {
   /// **'Select driver and enter amount'**
   String get sendCashSubtitle;
 
+  /// No description provided for @sendCashStepRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient'**
+  String get sendCashStepRecipient;
+
+  /// No description provided for @sendCashStepAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get sendCashStepAmount;
+
+  /// No description provided for @sendCashStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get sendCashStepReview;
+
+  /// No description provided for @sendCashContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get sendCashContinue;
+
+  /// No description provided for @sendCashEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get sendCashEdit;
+
+  /// No description provided for @sendCashReviewHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Review transfer'**
+  String get sendCashReviewHeading;
+
+  /// No description provided for @sendCashRecipientLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient'**
+  String get sendCashRecipientLabel;
+
+  /// No description provided for @sendCashSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or ID'**
+  String get sendCashSearchHint;
+
+  /// No description provided for @sendCashNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No drivers found'**
+  String get sendCashNoSearchResults;
+
+  /// No description provided for @sendCashStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String sendCashStepProgress(int current, int total);
+
   /// No description provided for @requestCash.
   ///
   /// In en, this message translates to:
