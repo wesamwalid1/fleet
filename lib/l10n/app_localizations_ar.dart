@@ -135,6 +135,42 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get recordExpenseStepDetails => 'التفاصيل';
+
+  @override
+  String get recordExpenseStepTrip => 'اختيار الرحلة';
+
+  @override
+  String get recordExpenseStepSettlement => 'التسوية';
+
+  @override
+  String get recordExpenseStepAmount => 'المبلغ';
+
+  @override
+  String get recordExpenseStepAttachments => 'المرفقات';
+
+  @override
+  String get recordExpenseStepReview => 'مراجعة';
+
+  @override
+  String get recordExpenseContinue => 'متابعة';
+
+  @override
+  String get recordExpenseEdit => 'تعديل';
+
+  @override
+  String get recordExpenseReviewHeading => 'مراجعة المصروف';
+
+  @override
+  String recordExpenseStepProgress(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get recordExpenseAttachmentsNotesHint =>
+      'أضف إيصالات أو ملاحظات إن لزم. كلاهما اختياري.';
+
+  @override
   String get requestCash => 'طلب نقد';
 
   @override

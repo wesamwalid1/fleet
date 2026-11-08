@@ -1,10 +1,10 @@
+import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/expense_attachment.dart';
+import 'package:driver_portal_app/features/finance/domain/entities/expense_trip_scope.dart';
 import 'package:driver_portal_app/features/finance/domain/entities/settlement_type.dart';
 import 'package:driver_portal_app/features/finance/domain/expense_attachment_picker.dart';
 import 'package:driver_portal_app/features/finance/presentation/bloc/record_expense_bloc.dart';
-import 'package:driver_portal_app/features/finance/presentation/widgets/record_expense_sheet.dart';
-import 'package:driver_portal_app/features/finance/presentation/widgets/trip_picker_sheet.dart';
-import 'package:driver_portal_app/core/session/home_scope.dart';
+import 'package:driver_portal_app/features/finance/presentation/pages/record_expense_flow_page.dart';
 import 'package:driver_portal_app/features/home/presentation/pages/home_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -13,34 +13,104 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('cancel closes the sheet and leaves the balance unchanged', (
+  testWidgets('cancel closes the flow and leaves the balance unchanged', (
     tester,
   ) async {
-    await _openForm(tester);
-    await tester.tap(find.byKey(const Key('expense-close')));
+    await _openFlow(tester);
+    await tester.tap(find.byKey(const Key('expense-back')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('expense-close')), findsNothing);
+    expect(find.byKey(const Key('expense-flow')), findsNothing);
     expect(find.byKey(const Key('record-expense')), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsNWidgets(2));
-    expect(find.text('1,900 EGP'), findsNothing);
+    await _revealHomeBalance(tester);
+    expect(_keyedText(tester, 'home-balance'), '2,200 EGP');
   });
 
-  testWidgets('missing trip shows a validation message', (tester) async {
-    await _openForm(tester);
-    await tester.ensureVisible(find.byKey(const Key('expense-submit')));
-    await tester.tap(find.byKey(const Key('expense-submit')));
-    await tester.pump();
-
-    expect(find.text('Please select a trip'), findsOneWidget);
+  testWidgets('continue stays disabled without a trip', (tester) async {
+    await _openFlow(tester);
+    expect(find.byKey(const Key('expense-step-dot-0')), findsOneWidget);
+    expect(find.byKey(const Key('expense-step-dot-4')), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('expense-continue')))
+          .onPressed,
+      isNull,
+    );
     expect(find.text('Confirm Expense'), findsNothing);
-    expect(find.text('2,200 EGP'), findsWidgets);
+    expect(find.byKey(const Key('expense-flow')), findsOneWidget);
+  });
+
+  testWidgets('review stacks Road Fees Client settlement above its value', (
+    tester,
+  ) async {
+    await _expectStackedSettlementReview(
+      tester,
+      settlementKey: 'roadFeesClient',
+      label: 'Road Fees — Client',
+    );
+  });
+
+  testWidgets('review stacks Road Fees Vendors settlement above its value', (
+    tester,
+  ) async {
+    await _expectStackedSettlementReview(
+      tester,
+      settlementKey: 'roadFeesVendors',
+      label: 'Road Fees — Vendors',
+    );
+  });
+
+  testWidgets('amount chips fill the field and allow manual edit', (
+    tester,
+  ) async {
+    await _openFlow(tester);
+    await _selectTrip(tester, 'trip-2026-0927');
+    await _selectSettlement(tester, 'fuel');
+
+    expect(find.byKey(const Key('expense-chip-500')), findsOneWidget);
+    expect(find.byKey(const Key('expense-chip-1000')), findsOneWidget);
+    expect(find.byKey(const Key('expense-chip-1500')), findsOneWidget);
+    expect(find.byKey(const Key('expense-chip-2000')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('expense-chip-500')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('expense-amount')))
+          .controller
+          ?.text,
+      '500',
+    );
+    expect(find.textContaining('1,700 EGP'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('expense-amount')), '300');
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('expense-amount')))
+          .controller
+          ?.text,
+      '300',
+    );
+    expect(find.textContaining('1,900 EGP'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('expense-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('expense-amount')))
+          .controller
+          ?.text,
+      '300',
+    );
   });
 
   testWidgets('a valid expense deducts the balance after confirmation', (
     tester,
   ) async {
-    await _openForm(tester);
+    await _openFlow(tester);
     await _selectTrip(tester, 'trip-2026-0927');
     await _selectSettlement(tester, 'fuel');
     await tester.ensureVisible(find.byKey(const Key('expense-amount')));
@@ -49,13 +119,13 @@ void main() {
 
     expect(find.textContaining('1,900 EGP'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(const Key('expense-submit')));
+    await _continueToAttachments(tester);
     await tester.tap(find.byKey(const Key('expense-submit')));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Confirm Expense'), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsWidgets);
+    expect(find.text('Review expense'), findsOneWidget);
     expect(find.text('Pending approval'), findsNothing);
+    expect(find.text('TR-2026-0927'), findsWidgets);
 
     await tester.ensureVisible(find.byKey(const Key('expense-confirm')));
     await tester.tap(find.byKey(const Key('expense-confirm')));
@@ -69,58 +139,95 @@ void main() {
     );
     expect(find.textContaining('EXP-'), findsOneWidget);
     expect(find.textContaining('1,900 EGP'), findsWidgets);
+    expect(find.byKey(const Key('expense-step-label')), findsNothing);
 
     await tester.ensureVisible(find.byKey(const Key('expense-done')));
     await tester.tap(find.byKey(const Key('expense-done')));
     await tester.pumpAndSettle();
+    await _revealHomeBalance(tester);
 
-    expect(find.text('1,900 EGP'), findsNWidgets(2));
-    expect(find.text('3,200 EGP'), findsOneWidget);
-    expect(find.text('5,000 EGP'), findsOneWidget);
-    expect(find.text('2,200 EGP'), findsNothing);
-    expect(find.text('Pending Approvals'), findsOneWidget);
-    expect(find.textContaining('EXP-'), findsNothing);
-    expect(find.byKey(const Key('home-pending-DSB-2025-0441')), findsOneWidget);
+    expect(_keyedText(tester, 'home-balance'), '1,900 EGP');
+    expect(_keyedText(tester, 'home-charge'), '3,200 EGP');
+    expect(_keyedText(tester, 'home-max-limit'), '5,000 EGP');
   });
 
-  testWidgets('confirm expense sheet is shorter than the entry sheet', (
+  testWidgets('review shows notes and preserves them after edit', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(400, 1400);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('record-expense')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    final entryHeight = tester.getSize(find.byType(RecordExpenseSheet)).height;
-    expect(entryHeight, greaterThan(1000));
-
+    await _openFlow(tester);
     await _selectTrip(tester, 'trip-2026-0927');
     await _selectSettlement(tester, 'fuel');
-    await tester.ensureVisible(find.byKey(const Key('expense-amount')));
     await tester.enterText(find.byKey(const Key('expense-amount')), '300');
     await tester.pump();
-    await tester.ensureVisible(find.byKey(const Key('expense-submit')));
-    await tester.tap(find.byKey(const Key('expense-submit')));
+    await _continueToAttachments(tester);
+    await tester.enterText(find.byKey(const Key('expense-notes')), ' tolls ');
     await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-submit')));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Confirm Expense'), findsOneWidget);
-    expect(find.byKey(const Key('expense-back')), findsOneWidget);
-    expect(find.byKey(const Key('expense-confirm')), findsOneWidget);
+    expect(find.text('tolls'), findsOneWidget);
 
-    final sheet = tester.getRect(find.byType(RecordExpenseSheet));
-    final confirmButton = tester.getRect(
-      find.byKey(const Key('expense-confirm')),
+    await tester.tap(find.byKey(const Key('expense-edit')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('expense-trip')), findsOneWidget);
+    expect(
+      tester
+          .element(find.byKey(const Key('expense-flow')))
+          .read<RecordExpenseBloc>()
+          .state
+          .notes,
+      ' tolls ',
     );
-    expect(sheet.height, lessThan(entryHeight));
-    final gap = sheet.bottom - confirmButton.bottom;
-    expect(gap, greaterThanOrEqualTo(24));
-    expect(gap, lessThan(48));
-    expect(tester.takeException(), isNull);
+    expect(
+      tester
+          .element(find.byKey(const Key('expense-flow')))
+          .read<RecordExpenseBloc>()
+          .state
+          .amountEgp,
+      300,
+    );
+
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('expense-amount')))
+          .controller
+          ?.text,
+      '300',
+    );
+    await _continueToAttachments(tester);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('expense-notes')))
+          .controller
+          ?.text,
+      ' tolls ',
+    );
+  });
+
+  testWidgets('active trip entry skips trip selection with 4 steps', (
+    tester,
+  ) async {
+    await _openFlow(tester, fromTripCard: true);
+    expect(find.byKey(const Key('expense-flow')), findsOneWidget);
+    expect(find.byKey(const Key('expense-trip')), findsNothing);
+    expect(find.text('Select Trip'), findsNothing);
+    expect(find.byKey(const Key('expense-settlement')), findsOneWidget);
+    expect(find.byKey(const Key('expense-step-dot-0')), findsOneWidget);
+    expect(find.byKey(const Key('expense-step-dot-3')), findsOneWidget);
+    expect(find.byKey(const Key('expense-step-dot-4')), findsNothing);
+
+    await _selectSettlement(tester, 'fuel');
+    await tester.enterText(find.byKey(const Key('expense-amount')), '300');
+    await tester.pump();
+    await _continueToAttachments(tester);
+    await tester.tap(find.byKey(const Key('expense-submit')));
+    await tester.pumpAndSettle();
+    expect(find.text('TR-2026-0927'), findsWidgets);
   });
 
   testWidgets('confirm expense shows added attachments', (tester) async {
@@ -130,26 +237,31 @@ void main() {
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(HomePage));
-    showRecordExpenseSheet(context, driverId: 'DR-001', picker: _FakePicker());
-    await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    await tester.ensureVisible(find.byKey(const Key('expense-camera')));
-    await tester.tap(find.byKey(const Key('expense-camera')));
-    await tester.pump();
+    openRecordExpenseFlow(
+      context,
+      driverId: 'DR-001',
+      tripScope: ExpenseTripScope.anyTrip,
+      picker: _FakePicker(),
+    );
+    await tester.pumpAndSettle();
 
     await _selectTrip(tester, 'trip-2026-0927');
     await _selectSettlement(tester, 'crossBorder');
     await tester.ensureVisible(find.byKey(const Key('expense-amount')));
     await tester.enterText(find.byKey(const Key('expense-amount')), '411');
     await tester.pump();
+    await _continueToAttachments(tester);
+
+    await tester.ensureVisible(find.byKey(const Key('expense-camera')));
+    await tester.tap(find.byKey(const Key('expense-camera')));
+    await tester.pump();
+
     await tester.ensureVisible(find.byKey(const Key('expense-submit')));
     await tester.tap(find.byKey(const Key('expense-submit')));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('1 file'));
 
-    expect(find.text('Confirm Expense'), findsOneWidget);
+    expect(find.text('Review expense'), findsOneWidget);
     expect(find.text('Attachments'), findsOneWidget);
     expect(find.text('1 file'), findsOneWidget);
     expect(find.text('receipt.pdf'), findsOneWidget);
@@ -160,20 +272,14 @@ void main() {
     expect(find.text('Expense Recorded'), findsNothing);
   });
 
-  testWidgets('the general picker lists completed trips and selects them', (
+  testWidgets('trip step lists completed trips and supports search', (
     tester,
   ) async {
-    await _openForm(tester);
-    await tester.tap(find.byKey(const Key('expense-trip')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await _openFlow(tester);
 
-    final picker = find.byType(TripPickerSheet);
-    Finder inPicker(Finder finder) =>
-        find.descendant(of: picker, matching: finder);
-    expect(inPicker(find.text('TR-2026-0927')), findsOneWidget);
-    expect(inPicker(find.text('Active')), findsWidgets);
-    expect(inPicker(find.text('Completed')), findsWidgets);
+    expect(find.text('TR-2026-0927'), findsOneWidget);
+    expect(find.text('Active'), findsWidgets);
+    expect(find.text('Completed'), findsWidgets);
     expect(
       find.byKey(const Key('expense-trip-locked-trip-2026-0904')),
       findsNothing,
@@ -184,35 +290,54 @@ void main() {
       'Suez',
     );
     await tester.pump();
-    expect(inPicker(find.text('TR-2026-0927')), findsOneWidget);
-    expect(inPicker(find.text('TR-2026-0904')), findsOneWidget);
+    expect(find.text('TR-2026-0927'), findsOneWidget);
+    expect(find.text('TR-2026-0904'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('expense-trip-search')),
       '0904',
     );
     await tester.pump();
-    expect(inPicker(find.text('TR-2026-0904')), findsOneWidget);
-    expect(inPicker(find.text('TR-2026-0927')), findsNothing);
-    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0904')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('TR-2026-0904'), findsOneWidget);
+    expect(find.text('TR-2026-0927'), findsNothing);
 
-    expect(picker, findsNothing);
+    await tester.enterText(
+      find.byKey(const Key('expense-trip-search')),
+      'no-such-trip',
+    );
+    await tester.pump();
     expect(
-      find.descendant(
-        of: find.byType(RecordExpenseSheet),
-        matching: find.text('TR-2026-0904'),
-      ),
+      find.byKey(const Key('expense-trip-no-search-results')),
       findsOneWidget,
     );
-    expect(find.text('Select trip...'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('expense-trip-search-clear')));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('expense-trip-search')),
+      '0904',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-trip-trip-2026-0904')));
+    await tester.pump();
+
+    expect(
+      tester
+          .element(find.byKey(const Key('expense-flow')))
+          .read<RecordExpenseBloc>()
+          .state
+          .tripId,
+      'trip-2026-0904',
+    );
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('expense-settlement')), findsOneWidget);
   });
 
   testWidgets('english settlement labels do not include arabic', (
     tester,
   ) async {
-    await _openSettlementPicker(tester);
+    await _openSettlementStep(tester);
     expect(find.text('Fuel'), findsOneWidget);
     expect(find.text('Road Fees — Client'), findsOneWidget);
     expect(find.text('تموين'), findsNothing);
@@ -220,7 +345,6 @@ void main() {
 
     await tester.tap(find.byKey(const Key('expense-settlement-fuel')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Fuel'), findsOneWidget);
     expect(find.textContaining('تموين'), findsNothing);
@@ -237,7 +361,7 @@ void main() {
   testWidgets('arabic settlement labels do not include english', (
     tester,
   ) async {
-    await _openSettlementPicker(tester, const Locale('ar'));
+    await _openSettlementStep(tester, const Locale('ar'));
     expect(find.text('تموين'), findsOneWidget);
     expect(find.text('رسوم الطريق — العميل'), findsOneWidget);
     expect(find.text('Fuel'), findsNothing);
@@ -245,7 +369,6 @@ void main() {
 
     await tester.tap(find.byKey(const Key('expense-settlement-fuel')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('تموين'), findsOneWidget);
     expect(find.text('Fuel'), findsNothing);
@@ -257,6 +380,19 @@ void main() {
           .settlementType,
       SettlementType.fuel,
     );
+  });
+
+  testWidgets('dark mode record expense flow does not overflow', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_app(themeMode: ThemeMode.dark));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('record-expense')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('expense-flow')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 
@@ -278,40 +414,104 @@ class _FakePicker implements ExpenseAttachmentPicker {
   Future<ExpenseAttachment?> pickFile() async => null;
 }
 
-Future<void> _openForm(WidgetTester tester) async {
+String _keyedText(WidgetTester tester, String key) {
+  final text = tester.widget<Text>(find.byKey(Key(key)));
+  return text.data ?? text.textSpan!.toPlainText();
+}
+
+Future<void> _revealHomeBalance(WidgetTester tester) async {
+  final balance = find.byKey(const Key('home-balance'), skipOffstage: false);
+  await tester.ensureVisible(balance);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openFlow(WidgetTester tester, {bool fromTripCard = false}) async {
   await tester.binding.setSurfaceSize(const Size(400, 1200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(_app());
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('record-expense')));
-  await tester.pump();
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
+  if (fromTripCard) {
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('home-trip-card')),
+        matching: find.byKey(const Key('trip-record-expense')),
+      ),
+    );
+  } else {
+    await tester.tap(find.byKey(const Key('record-expense')));
+  }
+  await tester.pumpAndSettle();
 }
 
 Future<void> _selectTrip(WidgetTester tester, String id) async {
-  await tester.ensureVisible(find.byKey(const Key('expense-trip')));
-  await tester.tap(find.byKey(const Key('expense-trip')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
   await tester.ensureVisible(find.byKey(Key('expense-trip-$id')));
   await tester.tap(find.byKey(Key('expense-trip-$id')));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.byKey(const Key('expense-continue')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _selectSettlement(WidgetTester tester, String name) async {
-  await tester.ensureVisible(find.byKey(const Key('expense-settlement')));
-  await tester.tap(find.byKey(const Key('expense-settlement')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
   await tester.ensureVisible(find.byKey(Key('expense-settlement-$name')));
   await tester.tap(find.byKey(Key('expense-settlement-$name')));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.byKey(const Key('expense-continue')));
+  await tester.pumpAndSettle();
 }
 
-Future<void> _openSettlementPicker(
+Future<void> _continueToAttachments(WidgetTester tester) async {
+  await tester.ensureVisible(find.byKey(const Key('expense-continue')));
+  await tester.tap(find.byKey(const Key('expense-continue')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _expectStackedSettlementReview(
+  WidgetTester tester, {
+  required String settlementKey,
+  required String label,
+}) async {
+  await tester.binding.setSurfaceSize(const Size(360, 1200));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  await _openFlow(tester);
+  await _selectTrip(tester, 'trip-2026-0927');
+  await _selectSettlement(tester, settlementKey);
+  await tester.enterText(find.byKey(const Key('expense-amount')), '300');
+  await tester.pump();
+  await _continueToAttachments(tester);
+  await tester.tap(find.byKey(const Key('expense-submit')));
+  await tester.pumpAndSettle();
+
+  final settlement = find.byKey(const Key('expense-review-settlement'));
+  expect(settlement, findsOneWidget);
+  expect(
+    find.descendant(of: settlement, matching: find.text('Settlement Type')),
+    findsOneWidget,
+  );
+  expect(
+    find.descendant(of: settlement, matching: find.text(label)),
+    findsOneWidget,
+  );
+
+  final labelTop = tester
+      .getTopLeft(
+        find.descendant(of: settlement, matching: find.text('Settlement Type')),
+      )
+      .dy;
+  final valueFinder = find.descendant(
+    of: settlement,
+    matching: find.text(label),
+  );
+  final valueTop = tester.getTopLeft(valueFinder).dy;
+  expect(valueTop, greaterThan(labelTop));
+
+  final settlementRect = tester.getRect(settlement);
+  final valueRect = tester.getRect(valueFinder);
+  expect(valueRect.left, greaterThanOrEqualTo(settlementRect.left));
+  expect(valueRect.right, lessThanOrEqualTo(settlementRect.right + 0.5));
+  expect(tester.takeException(), isNull);
+}
+
+Future<void> _openSettlementStep(
   WidgetTester tester, [
   Locale locale = const Locale('en'),
 ]) async {
@@ -319,20 +519,21 @@ Future<void> _openSettlementPicker(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await tester.pumpWidget(_app(locale));
+  await tester.pumpWidget(_app(locale: locale));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('record-expense')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
-  await tester.ensureVisible(find.byKey(const Key('expense-settlement')));
-  await tester.tap(find.byKey(const Key('expense-settlement')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
+  await tester.pumpAndSettle();
+  await _selectTrip(tester, 'trip-2026-0927');
+  expect(find.byKey(const Key('expense-settlement')), findsOneWidget);
 }
 
-Widget _app([Locale locale = const Locale('en')]) {
+Widget _app({
+  Locale locale = const Locale('en'),
+  ThemeMode themeMode = ThemeMode.light,
+}) {
   return MaterialApp(
     locale: locale,
+    themeMode: themeMode,
     localizationsDelegates: const [
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,

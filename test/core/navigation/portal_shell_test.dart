@@ -199,27 +199,26 @@ void main() {
     expect(find.text('Confirm Expense'), findsNothing);
 
     await _selectTrip(tester, 'trip-2026-0927');
-
     await _selectSettlement(tester, 'fuel');
     await tester.ensureVisible(find.byKey(const Key('expense-amount')));
     await tester.enterText(find.byKey(const Key('expense-amount')), '300');
     await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('expense-submit')));
     await tester.tap(find.byKey(const Key('expense-submit')));
     await tester.pump();
 
-    expect(find.text('Confirm Expense'), findsOneWidget);
-    await tester.drag(find.text('Confirm Expense'), const Offset(-320, 0));
+    expect(find.text('Review expense'), findsOneWidget);
+    expect(find.byKey(const Key('expense-flow')), findsOneWidget);
+    await tester.drag(find.text('Review expense'), const Offset(-320, 0));
     await tester.pumpAndSettle();
-    expect(find.text('Confirm Expense'), findsOneWidget);
+    expect(find.text('Review expense'), findsOneWidget);
     expect(find.byKey(const Key('history-title')), findsNothing);
-    _expectSelected(tester, const Key('nav-home'));
 
-    await tester.ensureVisible(find.byKey(const Key('expense-back')));
+    await tester.tap(find.byKey(const Key('expense-edit')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('expense-back')));
-    await tester.pump();
-    await tester.ensureVisible(find.byKey(const Key('expense-close')));
-    await tester.tap(find.byKey(const Key('expense-close')));
     await tester.pumpAndSettle();
 
     await _swipeTabs(tester, forward: true);
@@ -504,23 +503,17 @@ String? _badgeText(WidgetTester tester) {
 }
 
 Future<void> _selectTrip(WidgetTester tester, String id) async {
-  await tester.ensureVisible(find.byKey(const Key('expense-trip')));
-  await tester.tap(find.byKey(const Key('expense-trip')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
   await tester.ensureVisible(find.byKey(Key('expense-trip-$id')));
   await tester.tap(find.byKey(Key('expense-trip-$id')));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.byKey(const Key('expense-continue')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _selectSettlement(WidgetTester tester, String name) async {
-  await tester.ensureVisible(find.byKey(const Key('expense-settlement')));
-  await tester.tap(find.byKey(const Key('expense-settlement')));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 400));
   await tester.ensureVisible(find.byKey(Key('expense-settlement-$name')));
   await tester.tap(find.byKey(Key('expense-settlement-$name')));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.byKey(const Key('expense-continue')));
+  await tester.pumpAndSettle();
 }

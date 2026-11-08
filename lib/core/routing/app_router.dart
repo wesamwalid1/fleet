@@ -15,6 +15,7 @@ abstract final class AppRoute {
   static const String login = '/login';
   static const String home = '/home';
   static const String sendCash = '/send-cash';
+  static const String recordExpense = '/record-expense';
 
   static const sessionRestoreTimeout = Duration(seconds: 3);
 

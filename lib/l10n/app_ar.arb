@@ -47,6 +47,23 @@
       "total": {"type": "int"}
     }
   },
+  "recordExpenseStepDetails": "التفاصيل",
+  "recordExpenseStepTrip": "اختيار الرحلة",
+  "recordExpenseStepSettlement": "التسوية",
+  "recordExpenseStepAmount": "المبلغ",
+  "recordExpenseStepAttachments": "المرفقات",
+  "recordExpenseStepReview": "مراجعة",
+  "recordExpenseContinue": "متابعة",
+  "recordExpenseEdit": "تعديل",
+  "recordExpenseReviewHeading": "مراجعة المصروف",
+  "recordExpenseStepProgress": "الخطوة {current} من {total}",
+  "@recordExpenseStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "recordExpenseAttachmentsNotesHint": "أضف إيصالات أو ملاحظات إن لزم. كلاهما اختياري.",
   "requestCash": "طلب نقد",
   "withdraw": "تسليم نقد",
   "actionComingSoon": "سيكون هذا الإجراء متاحاً قريباً.",

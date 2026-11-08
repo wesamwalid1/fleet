@@ -344,6 +344,72 @@ abstract class AppLocalizations {
   /// **'Step {current} of {total}'**
   String sendCashStepProgress(int current, int total);
 
+  /// No description provided for @recordExpenseStepDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get recordExpenseStepDetails;
+
+  /// No description provided for @recordExpenseStepTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Trip'**
+  String get recordExpenseStepTrip;
+
+  /// No description provided for @recordExpenseStepSettlement.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement'**
+  String get recordExpenseStepSettlement;
+
+  /// No description provided for @recordExpenseStepAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get recordExpenseStepAmount;
+
+  /// No description provided for @recordExpenseStepAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get recordExpenseStepAttachments;
+
+  /// No description provided for @recordExpenseStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get recordExpenseStepReview;
+
+  /// No description provided for @recordExpenseContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get recordExpenseContinue;
+
+  /// No description provided for @recordExpenseEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get recordExpenseEdit;
+
+  /// No description provided for @recordExpenseReviewHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Review expense'**
+  String get recordExpenseReviewHeading;
+
+  /// No description provided for @recordExpenseStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String recordExpenseStepProgress(int current, int total);
+
+  /// No description provided for @recordExpenseAttachmentsNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add receipts or notes if needed. Both are optional.'**
+  String get recordExpenseAttachmentsNotesHint;
+
   /// No description provided for @requestCash.
   ///
   /// In en, this message translates to:

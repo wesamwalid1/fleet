@@ -50,6 +50,24 @@
       "total": {"type": "int"}
     }
   },
+  "recordExpenseStepDetails": "Details",
+  "recordExpenseStepTrip": "Select Trip",
+  "recordExpenseStepSettlement": "Settlement",
+  "recordExpenseStepAmount": "Amount",
+  "recordExpenseStepAttachments": "Attachments",
+  "recordExpenseStepReview": "Review",
+  "recordExpenseContinue": "Continue",
+  "recordExpenseEdit": "Edit",
+  "recordExpenseReviewHeading": "Review expense",
+  "recordExpenseStepProgress": "Step {current} of {total}",
+  "@recordExpenseStepProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "recordExpenseAttachmentsNotesHint": "Add receipts or notes if needed. Both are optional.",
+
   "requestCash": "Request Cash",
   "withdraw": "Withdraw",
   "actionComingSoon": "This action will be available soon.",

@@ -23,7 +23,7 @@ import '../../../approvals/presentation/widgets/approval_inline_actions.dart';
 import '../../../finance/domain/entities/assigned_trip.dart';
 import '../../../finance/domain/entities/expense_trip_scope.dart';
 import '../../../finance/domain/repositories/expense_repository.dart';
-import '../../../finance/presentation/widgets/record_expense_sheet.dart';
+import '../../../finance/presentation/pages/record_expense_flow_page.dart';
 import '../../../finance/presentation/widgets/request_cash_sheet.dart';
 import '../../../finance/presentation/pages/send_cash_flow_page.dart';
 import '../../../finance/presentation/widgets/withdraw_cash_sheet.dart';
@@ -927,7 +927,7 @@ class _TripSection extends StatelessWidget {
                     FilledButton.icon(
                       key: const Key('trip-record-expense'),
                       onPressed: canRecord && activeTripId != null
-                          ? () => showRecordExpenseSheet(
+                          ? () => openRecordExpenseFlow(
                               context,
                               driverId: driverId,
                               tripId: activeTripId,
@@ -1093,7 +1093,7 @@ class _Actions extends StatelessWidget {
                           child: OutlinedButton.icon(
                             key: const Key('record-expense'),
                             onPressed: gated(
-                              () => showRecordExpenseSheet(
+                              () => openRecordExpenseFlow(
                                 context,
                                 driverId: driverId,
                                 tripScope: ExpenseTripScope.anyTrip,

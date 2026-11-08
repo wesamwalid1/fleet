@@ -147,18 +147,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('expense-close')), findsOneWidget);
+    expect(find.byKey(const Key('expense-flow')), findsOneWidget);
     expect(find.byKey(const Key('expense-trip')), findsNothing);
     expect(find.text('Select Trip'), findsNothing);
     expect(_expenseBloc(tester).state.tripId, 'trip-2026-0927');
     expect(_expenseBloc(tester).tripScope, ExpenseTripScope.activeTrip);
 
-    await tester.tap(find.byKey(const Key('expense-settlement')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('expense-settlement')), findsOneWidget);
     await tester.tap(find.byKey(const Key('expense-settlement-fuel')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-continue')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('expense-amount')), '300');
     await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('expense-submit')));
     await tester.tap(find.byKey(const Key('expense-submit')));
     await tester.pumpAndSettle();
@@ -223,8 +226,6 @@ void main() {
     expect(bloc.state.tripId, isNull);
     expect(bloc.state.trips, hasLength(6));
 
-    await tester.tap(find.byKey(const Key('expense-trip')));
-    await tester.pumpAndSettle();
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -242,13 +243,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(bloc.state.tripId, 'trip-2026-0904');
     expect(find.byKey(const Key('expense-trip')), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('expense-settlement')));
+    await tester.tap(find.byKey(const Key('expense-continue')));
     await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('expense-settlement')), findsOneWidget);
     await tester.tap(find.byKey(const Key('expense-settlement-fuel')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-continue')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('expense-amount')), '100');
     await tester.pump();
+    await tester.tap(find.byKey(const Key('expense-continue')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('expense-submit')));
     await tester.tap(find.byKey(const Key('expense-submit')));
     await tester.pumpAndSettle();
@@ -424,7 +430,7 @@ void main() {
 
     await tester.tap(record, warnIfMissed: false);
     await tester.pump();
-    expect(find.byKey(const Key('expense-close')), findsNothing);
+    expect(find.byKey(const Key('expense-flow')), findsNothing);
 
     final general = find.byKey(const Key('record-expense'));
     expect(tester.widget<ButtonStyleButton>(general).onPressed, isNotNull);
@@ -599,7 +605,7 @@ Widget _app(
 
 RecordExpenseBloc _expenseBloc(WidgetTester tester) {
   return BlocProvider.of<RecordExpenseBloc>(
-    tester.element(find.byKey(const Key('expense-amount'))),
+    tester.element(find.byKey(const Key('expense-flow'))),
   );
 }
 

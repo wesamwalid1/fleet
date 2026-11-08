@@ -136,6 +136,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get recordExpenseStepDetails => 'Details';
+
+  @override
+  String get recordExpenseStepTrip => 'Select Trip';
+
+  @override
+  String get recordExpenseStepSettlement => 'Settlement';
+
+  @override
+  String get recordExpenseStepAmount => 'Amount';
+
+  @override
+  String get recordExpenseStepAttachments => 'Attachments';
+
+  @override
+  String get recordExpenseStepReview => 'Review';
+
+  @override
+  String get recordExpenseContinue => 'Continue';
+
+  @override
+  String get recordExpenseEdit => 'Edit';
+
+  @override
+  String get recordExpenseReviewHeading => 'Review expense';
+
+  @override
+  String recordExpenseStepProgress(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get recordExpenseAttachmentsNotesHint =>
+      'Add receipts or notes if needed. Both are optional.';
+
+  @override
   String get requestCash => 'Request Cash';
 
   @override
