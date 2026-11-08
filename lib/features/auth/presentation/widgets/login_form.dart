@@ -178,6 +178,8 @@ class _LoginField extends StatelessWidget {
             cursorColor: palette.focus,
             style: AppTextStyles.input.copyWith(color: palette.title),
             decoration: InputDecoration(
+              hintText: label,
+              hintStyle: AppTextStyles.input.copyWith(color: palette.muted),
               prefixIcon: Icon(icon, size: 20, color: palette.muted),
               suffixIcon: suffix,
               filled: true,

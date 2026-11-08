@@ -83,4 +83,35 @@ void main() {
       TextDirection.rtl,
     );
   });
+
+  testWidgets('email and password fields show localized hints', (tester) async {
+    await tester.pumpWidget(testPortalApp());
+    await tester.pumpAndSettle();
+
+    TextField field(Key key) => tester.widget<TextField>(
+      find.descendant(of: find.byKey(key), matching: find.byType(TextField)),
+    );
+
+    expect(
+      field(const Key('login-email')).decoration?.hintText,
+      'Driver Email',
+    );
+    expect(field(const Key('login-password')).decoration?.hintText, 'Password');
+
+    await tester.pumpWidget(testPortalApp(locale: const Locale('ar')));
+    await tester.pumpAndSettle();
+
+    expect(
+      field(const Key('login-email')).decoration?.hintText,
+      'البريد الإلكتروني للسائق',
+    );
+    expect(
+      field(const Key('login-password')).decoration?.hintText,
+      'كلمة المرور',
+    );
+    expect(
+      Directionality.of(tester.element(find.byKey(const Key('login-email')))),
+      TextDirection.rtl,
+    );
+  });
 }
