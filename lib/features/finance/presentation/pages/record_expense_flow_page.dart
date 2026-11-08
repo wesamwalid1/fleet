@@ -1128,36 +1128,33 @@ class _ReviewStep extends StatelessWidget {
                             label: l10n.trip,
                             value: trip.code,
                             detail: tripRoute(trip, locale),
-                            stacked: true,
                           ),
                         if (settlement != null)
                           _ReviewRow(
                             key: const Key('expense-review-settlement'),
                             label: l10n.settlementType,
                             value: settlementTitle(l10n, settlement),
-                            stacked: true,
                           ),
                         _ReviewRow(
                           label: l10n.currentBalance,
                           value: _money(state.balanceEgp, locale, l10n.egp),
+                          compact: true,
                         ),
                         _ReviewRow(
                           label: l10n.balanceAfter,
                           value: _money(after, locale, l10n.egp),
                           valueColor: palette.action,
+                          compact: true,
                         ),
                         if (notes.isNotEmpty)
-                          _ReviewRow(
-                            label: l10n.notesOptional,
-                            value: notes,
-                            stacked: true,
-                          ),
+                          _ReviewRow(label: l10n.notesOptional, value: notes),
                         if (state.attachments.isNotEmpty) ...[
                           _ReviewRow(
                             label: l10n.attachments,
                             value: l10n.attachmentCount(
                               state.attachments.length,
                             ),
+                            compact: true,
                           ),
                           Align(
                             alignment: AlignmentDirectional.centerStart,
@@ -1395,7 +1392,9 @@ class _ReviewRow extends StatelessWidget {
   final String value;
   final String? detail;
   final Color? valueColor;
-  final bool stacked;
+
+  /// Compact numeric rows stay label/value horizontal when still readable.
+  final bool compact;
 
   const _ReviewRow({
     super.key,
@@ -1403,7 +1402,7 @@ class _ReviewRow extends StatelessWidget {
     required this.value,
     this.detail,
     this.valueColor,
-    this.stacked = false,
+    this.compact = false,
   });
 
   @override
@@ -1416,7 +1415,7 @@ class _ReviewRow extends StatelessWidget {
     );
     final detailStyle = AppTextStyles.helper.copyWith(color: palette.muted);
 
-    if (stacked) {
+    if (!compact) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
@@ -1442,23 +1441,11 @@ class _ReviewRow extends StatelessWidget {
           Expanded(child: Text(label, style: labelStyle)),
           const SizedBox(width: 12),
           Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  value,
-                  textAlign: TextAlign.end,
-                  softWrap: true,
-                  style: valueStyle,
-                ),
-                if (detail != null)
-                  Text(
-                    detail!,
-                    textAlign: TextAlign.end,
-                    softWrap: true,
-                    style: detailStyle,
-                  ),
-              ],
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              softWrap: true,
+              style: valueStyle,
             ),
           ),
         ],

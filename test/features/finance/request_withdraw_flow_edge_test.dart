@@ -187,6 +187,69 @@ void main() {
     expect(find.byKey(const Key('cash-request-success')), findsOneWidget);
     expect(repository.submitCalls, 1);
   });
+
+  testWidgets('duplicate withdraw submit is dropped while in flight', (
+    tester,
+  ) async {
+    final ledger = MockCashLedger(senderBalanceEgp: 2200, maxLimitEgp: 5000);
+    final repository = _GatedWithdrawRepository(ledger);
+    await _pumpWithdrawFlow(tester, ledger: ledger, repository: repository);
+
+    await tester.tap(find.byKey(const Key('withdraw-chip-500')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('withdraw-continue')));
+    await tester.pumpAndSettle();
+
+    final submit = find.byKey(const Key('withdraw-submit'));
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+    await tester.tap(submit);
+    await tester.pump();
+    expect(repository.submitCalls, 1);
+    expect(ledger.balanceOf(_me), 2200);
+
+    repository.complete();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('cash-request-success')), findsOneWidget);
+    expect(repository.submitCalls, 1);
+    expect(ledger.availableBalance(_me), 1700);
+  });
+
+  testWidgets('withdraw offline submit shows notice and does not mutate', (
+    tester,
+  ) async {
+    final monitor = FakeNetworkInterfaceMonitor(hasInterface: true);
+    final reachability = FakeInternetReachability(reachable: true);
+    final ledger = MockCashLedger(senderBalanceEgp: 2200, maxLimitEgp: 5000);
+    final repository = CashRequestRepositoryImpl(ledger);
+    await _pumpWithdrawFlow(
+      tester,
+      ledger: ledger,
+      repository: repository,
+      networkMonitor: monitor,
+      internetReachability: reachability,
+    );
+
+    await tester.tap(find.byKey(const Key('withdraw-chip-500')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('withdraw-continue')));
+    await tester.pumpAndSettle();
+
+    reachability.reachable = false;
+    monitor.setHasInterface(false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('withdraw-submit')));
+    await tester.pump();
+    expect(find.byKey(const Key('offline-action-notice')), findsOneWidget);
+    expect(find.byKey(const Key('cash-request-success')), findsNothing);
+    expect(ledger.cashRequests, isEmpty);
+    expect(ledger.balanceOf(_me), 2200);
+  });
 }
 
 Future<void> _pumpRequestFlow(
@@ -252,11 +315,19 @@ Future<void> _pumpWithdrawFlow(
   WidgetTester tester, {
   required MockCashLedger ledger,
   required CashRequestRepositoryImpl repository,
+  FakeNetworkInterfaceMonitor? networkMonitor,
+  FakeInternetReachability? internetReachability,
 }) async {
   await tester.binding.setSurfaceSize(const Size(400, 1400));
   addTearDown(() => tester.binding.setSurfaceSize(null));
+  final monitor =
+      networkMonitor ?? FakeNetworkInterfaceMonitor(hasInterface: true);
+  final reachability =
+      internetReachability ?? FakeInternetReachability(reachable: true);
   await tester.pumpWidget(
     withConnectivity(
+      networkMonitor: monitor,
+      internetReachability: reachability,
       child: MaterialApp(
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -367,6 +438,34 @@ class _GatedRequestRepository extends CashRequestRepositoryImpl {
     submitCalls += 1;
     await _gate.future;
     return super.submitRequestCash(
+      driverId: driverId,
+      amountEgp: amountEgp,
+      createdAt: createdAt,
+      note: note,
+    );
+  }
+}
+
+class _GatedWithdrawRepository extends CashRequestRepositoryImpl {
+  int submitCalls = 0;
+  final Completer<void> _gate = Completer<void>();
+
+  _GatedWithdrawRepository(super.ledger);
+
+  void complete() {
+    if (!_gate.isCompleted) _gate.complete();
+  }
+
+  @override
+  Future<CashRequest> submitWithdraw({
+    required String driverId,
+    required int amountEgp,
+    required DateTime createdAt,
+    String? note,
+  }) async {
+    submitCalls += 1;
+    await _gate.future;
+    return super.submitWithdraw(
       driverId: driverId,
       amountEgp: amountEgp,
       createdAt: createdAt,

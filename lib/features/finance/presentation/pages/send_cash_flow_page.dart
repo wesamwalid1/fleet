@@ -731,8 +731,12 @@ class _ReviewStep extends StatelessWidget {
                     border: Border.all(color: palette.hairline),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _ReviewRow(
                           label: l10n.sendCashRecipientLabel,
@@ -742,9 +746,6 @@ class _ReviewStep extends StatelessWidget {
                               '—',
                           detail: recipient?.id ?? state.recipientId,
                         ),
-                        const SizedBox(height: 14),
-                        Divider(height: 1, color: palette.hairline),
-                        const SizedBox(height: 14),
                         _ReviewRow(
                           label: l10n.amount,
                           value: _money(
@@ -752,14 +753,13 @@ class _ReviewStep extends StatelessWidget {
                             locale.toString(),
                             l10n.egp,
                           ),
+                          compact: true,
                         ),
-                        const SizedBox(height: 14),
-                        Divider(height: 1, color: palette.hairline),
-                        const SizedBox(height: 14),
                         _ReviewRow(
                           label: l10n.yourBalanceAfter,
                           value: _money(after, locale.toString(), l10n.egp),
                           valueColor: palette.error,
+                          compact: true,
                         ),
                       ],
                     ),
@@ -774,6 +774,7 @@ class _ReviewStep extends StatelessWidget {
                 if (state.error != null) ...[
                   const SizedBox(height: 12),
                   Text(
+                    key: const Key('send-cash-error'),
                     _errorText(state.error!, l10n),
                     textAlign: TextAlign.center,
                     style: AppTextStyles.helper.copyWith(color: palette.error),
@@ -855,50 +856,62 @@ class _ReviewRow extends StatelessWidget {
   final String? detail;
   final Color? valueColor;
 
+  /// Compact numeric rows stay label/value horizontal when still readable.
+  final bool compact;
+
   const _ReviewRow({
     required this.label,
     required this.value,
     this.detail,
     this.valueColor,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                textAlign: TextAlign.end,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: valueColor ?? palette.title,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (detail != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  detail!,
-                  textAlign: TextAlign.end,
-                  style: AppTextStyles.helper.copyWith(color: palette.muted),
-                ),
-              ],
+    final labelStyle = AppTextStyles.bodyMedium.copyWith(color: palette.muted);
+    final valueStyle = AppTextStyles.bodyLarge.copyWith(
+      color: valueColor ?? palette.title,
+      fontWeight: FontWeight.w700,
+    );
+    final detailStyle = AppTextStyles.helper.copyWith(color: palette.muted);
+
+    if (!compact) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: labelStyle),
+            const SizedBox(height: 4),
+            Text(value, softWrap: true, style: valueStyle),
+            if (detail != null) ...[
+              const SizedBox(height: 2),
+              Text(detail!, softWrap: true, style: detailStyle),
             ],
-          ),
+          ],
         ),
-      ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(label, style: labelStyle)),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              softWrap: true,
+              style: valueStyle,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

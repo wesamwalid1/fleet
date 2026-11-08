@@ -135,6 +135,7 @@ class ExpenseRecordedPage extends StatelessWidget {
                           backgroundColor: palette.action,
                           foregroundColor: palette.onAction,
                           minimumSize: const Size.fromHeight(52),
+                          textStyle: AppTextStyles.buttonLarge,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -169,24 +170,20 @@ class _SuccessRow extends StatelessWidget {
     final palette = AppPalette.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
-            ),
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
           ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: valueColor ?? palette.title,
-                fontWeight: FontWeight.w700,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            softWrap: true,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: valueColor ?? palette.title,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

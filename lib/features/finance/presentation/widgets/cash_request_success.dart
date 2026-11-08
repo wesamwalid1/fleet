@@ -66,7 +66,7 @@ class CashRequestSubmittedPage extends StatelessWidget {
               Text(
                 l10n.pendingConfirm,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.helper.copyWith(
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: palette.body,
                   fontWeight: FontWeight.w700,
                 ),

@@ -149,6 +149,7 @@ class RequestSentPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: palette.field,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: palette.hairline),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -173,6 +174,7 @@ class RequestSentPage extends StatelessWidget {
                           backgroundColor: palette.action,
                           foregroundColor: palette.onAction,
                           minimumSize: const Size.fromHeight(52),
+                          textStyle: AppTextStyles.buttonLarge,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -194,6 +196,7 @@ class RequestSentPage extends StatelessWidget {
                           foregroundColor: palette.title,
                           minimumSize: const Size.fromHeight(52),
                           side: BorderSide(color: palette.fieldBorder),
+                          textStyle: AppTextStyles.buttonLarge,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
