@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-label="Fleet L4 compact badge lockup light">
+  <!-- L4  Compact Badge: denser mark-to-type ratio for nav, headers, dense UI chrome. -->
+  <rect width="520" height="160" fill="#EEF1F7"/>
+  <g transform="translate(28,28) scale(0.102)">
+    <path fill="#111522" fill-rule="evenodd" d="
+      M248 232 H776 A88 88 0 0 1 864 320 V704 A88 88 0 0 1 776 792
+      H248 A88 88 0 0 1 160 704 V320 A88 88 0 0 1 248 232 Z
+      M864 512 m-78 0 a78 78 0 1 0 156 0 a78 78 0 1 0 -156 0 Z"/>
+  </g>
+  <text x="162" y="104"
+        font-family="Segoe UI, system-ui, sans-serif"
+        font-size="64"
+        font-weight="700"
+        letter-spacing="1.5"
+        fill="#111522">Fleet</text>
+</svg>

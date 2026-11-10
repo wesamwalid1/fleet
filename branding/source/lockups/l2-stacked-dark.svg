@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" role="img" aria-label="Fleet L2 stacked lockup dark">
+  <rect width="640" height="560" fill="#111522"/>
+  <g transform="translate(188,48) scale(0.258)">
+    <path fill="#DCE3EF" fill-rule="evenodd" d="
+      M248 232 H776 A88 88 0 0 1 864 320 V704 A88 88 0 0 1 776 792
+      H248 A88 88 0 0 1 160 704 V320 A88 88 0 0 1 248 232 Z
+      M864 512 m-78 0 a78 78 0 1 0 156 0 a78 78 0 1 0 -156 0 Z"/>
+  </g>
+  <text x="320" y="448"
+        text-anchor="middle"
+        font-family="Segoe UI, system-ui, sans-serif"
+        font-size="96"
+        font-weight="700"
+        letter-spacing="10"
+        fill="#DCE3EF">Fleet</text>
+</svg>

@@ -10,7 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get driverPortal => 'Driver Portal';
+  String get driverPortal => 'Fleet';
 
   @override
   String get welcomeBack => 'Welcome back!';

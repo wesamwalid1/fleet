@@ -28,8 +28,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-/// The session is checked before [runApp], so the platform's default launch
-/// screen stays up until the first frame and no extra startup screen shows.
+/// The session is checked before [runApp], so the platform's native splash
+/// stays up until the first frame and no extra Flutter splash shows.
 /// The check is time-bounded and falls back to Login on any failure, so
 /// [runApp] is always reached.
 Future<void> main() async {
@@ -145,7 +145,7 @@ class _DriverMaterialApp extends StatelessWidget {
           builder: (context, themeState) {
             return MaterialApp(
               debugShowCheckedModeBanner: false,
-              title: 'Driver Portal',
+              title: 'Fleet',
               locale: localeState.locale ?? locale,
               localizationsDelegates: const [
                 AppLocalizations.delegate,

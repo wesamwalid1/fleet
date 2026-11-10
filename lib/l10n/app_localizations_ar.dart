@@ -10,7 +10,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get driverPortal => 'بوابة السائق';
+  String get driverPortal => 'Fleet';
 
   @override
   String get welcomeBack => 'مرحباً بعودتك!';

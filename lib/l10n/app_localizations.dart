@@ -98,10 +98,10 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
-  /// Application name shown on the login header
+  /// Brand name shown on the login header and product surfaces
   ///
   /// In en, this message translates to:
-  /// **'Driver Portal'**
+  /// **'Fleet'**
   String get driverPortal;
 
   /// No description provided for @welcomeBack.

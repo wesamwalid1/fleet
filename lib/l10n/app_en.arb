@@ -1,8 +1,8 @@
 {
   "@@locale": "en",
-  "driverPortal": "Driver Portal",
+  "driverPortal": "Fleet",
   "@driverPortal": {
-    "description": "Application name shown on the login header"
+    "description": "Brand name shown on the login header and product surfaces"
   },
   "welcomeBack": "Welcome back!",
   "signInSubtitle": "Sign in to your driver account",
