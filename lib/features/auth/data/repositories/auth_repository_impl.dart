@@ -21,6 +21,8 @@ class AuthRepositoryImpl implements AuthRepository {
       return user.toEntity();
     } on InvalidCredentialsException {
       throw const InvalidCredentialsFailure();
+    } on AuthSessionStorageException {
+      throw const SessionPersistenceFailure();
     } catch (_) {
       throw const UnexpectedAuthFailure();
     }

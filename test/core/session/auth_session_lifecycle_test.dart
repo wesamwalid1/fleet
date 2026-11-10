@@ -48,6 +48,57 @@ void main() {
       );
     });
 
+    test('saveEmail persists the email when setString succeeds', () async {
+      final preferences = _ControllablePreferences();
+      final source = SharedPreferencesAuthSessionDataSource(
+        preferences: () async => preferences,
+      );
+
+      await source.saveEmail(MockAuthDataSource.email);
+
+      expect(preferences.values[_key], MockAuthDataSource.email);
+    });
+
+    test('saveEmail fails when SharedPreferences cannot initialize', () async {
+      final source = SharedPreferencesAuthSessionDataSource(
+        preferences: () => Future.error(Exception('storage unavailable')),
+      );
+
+      await expectLater(source.saveEmail(MockAuthDataSource.email), throwsA(anything));
+    });
+
+    test('saveEmail fails when setString returns false', () async {
+      final preferences = _ControllablePreferences(setStringResult: false);
+      final source = SharedPreferencesAuthSessionDataSource(
+        preferences: () async => preferences,
+      );
+
+      await expectLater(
+        source.saveEmail(MockAuthDataSource.email),
+        throwsA(isA<AuthSessionStorageException>()),
+      );
+      expect(preferences.values.containsKey(_key), isFalse);
+    });
+
+    test('login maps a save failure to SessionPersistenceFailure', () async {
+      final repository = AuthRepositoryImpl(
+        const MockAuthDataSource(),
+        SharedPreferencesAuthSessionDataSource(
+          preferences: () async =>
+              _ControllablePreferences(setStringResult: false),
+        ),
+      );
+
+      await expectLater(
+        repository.login(
+          email: MockAuthDataSource.email,
+          password: MockAuthDataSource.password,
+        ),
+        throwsA(isA<SessionPersistenceFailure>()),
+      );
+      expect(await repository.restoreSession(), isNull);
+    });
+
     test('a failed login saves nothing', () async {
       await expectLater(
         _repository.login(email: MockAuthDataSource.email, password: 'nope'),
@@ -286,23 +337,69 @@ void main() {
   });
 
   group('logout persistence failures', () {
-    test('removal reporting false is a storage failure', () async {
+    test('clear succeeds when the session key is already missing', () async {
+      final preferences = _ControllablePreferences();
       final source = SharedPreferencesAuthSessionDataSource(
-        preferences: () async => _FakePreferences(removeResult: false),
+        preferences: () async => preferences,
+      );
+
+      await source.clear();
+
+      expect(preferences.removeCalls, 0);
+    });
+
+    test('clear removes an existing session key', () async {
+      final preferences = _ControllablePreferences(
+        initial: {_key: MockAuthDataSource.email},
+      );
+      final source = SharedPreferencesAuthSessionDataSource(
+        preferences: () async => preferences,
+      );
+
+      await source.clear();
+
+      expect(preferences.containsKey(_key), isFalse);
+      expect(preferences.removeCalls, 1);
+    });
+
+    test('removal reporting false is a storage failure', () async {
+      final preferences = _ControllablePreferences(
+        initial: {_key: MockAuthDataSource.email},
+        removeResult: false,
+      );
+      final source = SharedPreferencesAuthSessionDataSource(
+        preferences: () async => preferences,
       );
 
       await expectLater(
         source.clear(),
         throwsA(isA<AuthSessionStorageException>()),
       );
+      expect(preferences.containsKey(_key), isTrue);
     });
 
     test('a removal exception reaches the caller', () async {
+      final preferences = _ControllablePreferences(
+        initial: {_key: MockAuthDataSource.email},
+        removeThrows: true,
+      );
       final source = SharedPreferencesAuthSessionDataSource(
-        preferences: () async => _FakePreferences(removeThrows: true),
+        preferences: () async => preferences,
       );
 
       await expectLater(source.clear(), throwsA(isA<StateError>()));
+    });
+
+    test('logout treats a missing key as success', () async {
+      final repository = AuthRepositoryImpl(
+        const MockAuthDataSource(),
+        SharedPreferencesAuthSessionDataSource(
+          preferences: () async => _ControllablePreferences(),
+        ),
+      );
+
+      await repository.logout();
+      expect(await repository.restoreSession(), isNull);
     });
 
     test('logout retries a bounded number of times then succeeds', () async {
@@ -389,6 +486,46 @@ void main() {
       expect(session.clearCalls, 2);
     });
   });
+
+  group('session save failures block authentication', () {
+    testWidgets('a failed session save stays on Login and shows an error', (
+      tester,
+    ) async {
+      final preferences = _ControllablePreferences(setStringResult: false);
+      final repository = AuthRepositoryImpl(
+        const MockAuthDataSource(),
+        SharedPreferencesAuthSessionDataSource(
+          preferences: () async => preferences,
+        ),
+      );
+
+      await _coldStart(tester, repository: repository);
+      await _login(tester);
+
+      expect(find.byKey(const Key('login-email')), findsOneWidget);
+      expect(find.byKey(const Key('home-page')), findsNothing);
+      expect(
+        find.text("Couldn't save your sign-in. Please try again."),
+        findsOneWidget,
+      );
+      expect(preferences.values.containsKey(_key), isFalse);
+      expect(await repository.restoreSession(), isNull);
+    });
+
+    testWidgets('save then logout then cold start opens Login', (tester) async {
+      await _coldStart(tester);
+      await _login(tester);
+      expect(find.byKey(const Key('home-page')), findsOneWidget);
+
+      await _confirmLogout(tester);
+      expect(find.byKey(const Key('login-email')), findsOneWidget);
+
+      await _terminate(tester);
+      await _coldStart(tester);
+      expect(find.byKey(const Key('login-email')), findsOneWidget);
+      expect(find.byKey(const Key('home-page')), findsNothing);
+    });
+  });
 }
 
 Future<void> _confirmLogout(WidgetTester tester) async {
@@ -442,16 +579,50 @@ class _MemorySession implements AuthSessionLocalDataSource {
   }
 }
 
-class _FakePreferences extends Fake implements SharedPreferences {
+/// Controllable SharedPreferences stand-in for save/remove failure paths.
+class _ControllablePreferences extends Fake implements SharedPreferences {
+  final Map<String, Object> values;
+  final bool setStringResult;
   final bool removeResult;
   final bool removeThrows;
+  int removeCalls = 0;
 
-  _FakePreferences({this.removeResult = true, this.removeThrows = false});
+  _ControllablePreferences({
+    Map<String, Object>? initial,
+    this.setStringResult = true,
+    this.removeResult = true,
+    this.removeThrows = false,
+  }) : values = Map<String, Object>.from(initial ?? const {});
+
+  @override
+  dynamic get(String key) => values[key];
+
+  @override
+  String? getString(String key) {
+    final value = values[key];
+    return value is String ? value : null;
+  }
+
+  @override
+  bool containsKey(String key) => values.containsKey(key);
+
+  @override
+  Set<String> getKeys() => values.keys.toSet();
+
+  @override
+  Future<bool> setString(String key, String value) async {
+    if (!setStringResult) return false;
+    values[key] = value;
+    return true;
+  }
 
   @override
   Future<bool> remove(String key) async {
+    removeCalls += 1;
     if (removeThrows) throw StateError('remove failed');
-    return removeResult;
+    if (!removeResult) return false;
+    values.remove(key);
+    return true;
   }
 }
 

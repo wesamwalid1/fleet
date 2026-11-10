@@ -22,10 +22,17 @@ abstract interface class AuthSessionLocalDataSource {
   /// string, and lets storage errors propagate.
   Future<String?> readEmail();
 
+  /// Persists [email] as the signed-in session.
+  ///
+  /// Throws [AuthSessionStorageException] when storage reports the write
+  /// failed, and lets storage initialization errors propagate.
   Future<void> saveEmail(String email);
 
-  /// Throws [AuthSessionStorageException] when storage reports the removal
-  /// failed, and lets storage errors propagate.
+  /// Clears the persisted session.
+  ///
+  /// Succeeds immediately when no session key is present. Throws
+  /// [AuthSessionStorageException] when a present key cannot be removed, and
+  /// lets storage errors propagate.
   Future<void> clear();
 }
 
@@ -49,21 +56,16 @@ class SharedPreferencesAuthSessionDataSource
 
   @override
   Future<void> saveEmail(String email) async {
-    final preferences = await _preferencesOrNull();
-    await preferences?.setString(storageKey, email);
+    final preferences = await _getPreferences();
+    final saved = await preferences.setString(storageKey, email);
+    if (!saved) throw const AuthSessionStorageException();
   }
 
   @override
   Future<void> clear() async {
-    final removed = await (await _getPreferences()).remove(storageKey);
+    final preferences = await _getPreferences();
+    if (!preferences.containsKey(storageKey)) return;
+    final removed = await preferences.remove(storageKey);
     if (!removed) throw const AuthSessionStorageException();
-  }
-
-  Future<SharedPreferences?> _preferencesOrNull() async {
-    try {
-      return await _getPreferences();
-    } catch (_) {
-      return null;
-    }
   }
 }

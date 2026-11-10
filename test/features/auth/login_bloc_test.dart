@@ -97,6 +97,25 @@ void main() {
     await bloc.close();
   });
 
+  test('session persistence failure does not emit login success', () async {
+    final repository = _FakeAuthRepository(
+      onLogin: (_, _) async => throw const SessionPersistenceFailure(),
+    );
+    final bloc = LoginBloc(LoginUseCase(repository));
+
+    bloc.add(
+      const LoginSubmitted(email: 'driver@test.com', password: '123456'),
+    );
+    await expectLater(
+      bloc.stream,
+      emitsInOrder([
+        const LoginLoading(),
+        const LoginFailure(authError: AuthError.sessionSaveFailed),
+      ]),
+    );
+    await bloc.close();
+  });
+
   test('a second submit is ignored while login is in progress', () async {
     final completer = Completer<User>();
     final repository = _FakeAuthRepository(onLogin: (_, _) => completer.future);

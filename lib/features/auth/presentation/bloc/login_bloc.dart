@@ -45,6 +45,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(LoginSuccess(user));
     } on InvalidCredentialsFailure {
       emit(const LoginFailure(authError: AuthError.invalidCredentials));
+    } on SessionPersistenceFailure {
+      emit(const LoginFailure(authError: AuthError.sessionSaveFailed));
     } on AuthFailure {
       emit(const LoginFailure(authError: AuthError.unexpected));
     }

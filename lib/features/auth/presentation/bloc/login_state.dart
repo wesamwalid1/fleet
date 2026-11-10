@@ -6,7 +6,7 @@ enum EmailError { empty, invalidFormat }
 
 enum PasswordError { empty }
 
-enum AuthError { invalidCredentials, unexpected, offline }
+enum AuthError { invalidCredentials, unexpected, offline, sessionSaveFailed }
 
 sealed class LoginState extends Equatable {
   const LoginState();

@@ -12,6 +12,7 @@
   "emptyPassword": "يرجى إدخال كلمة المرور",
   "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
   "unexpectedError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "loginSessionSaveFailed": "تعذر حفظ تسجيل الدخول. يرجى المحاولة مرة أخرى.",
   "signingIn": "جارٍ تسجيل الدخول",
   "showPassword": "إظهار كلمة المرور",
   "hidePassword": "إخفاء كلمة المرور",

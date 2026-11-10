@@ -47,6 +47,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unexpectedError => 'Something went wrong. Please try again.';
 
   @override
+  String get loginSessionSaveFailed =>
+      'Couldn\'t save your sign-in. Please try again.';
+
+  @override
   String get signingIn => 'Signing in';
 
   @override

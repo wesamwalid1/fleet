@@ -170,6 +170,12 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Please try again.'**
   String get unexpectedError;
 
+  /// No description provided for @loginSessionSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your sign-in. Please try again.'**
+  String get loginSessionSaveFailed;
+
   /// No description provided for @signingIn.
   ///
   /// In en, this message translates to:

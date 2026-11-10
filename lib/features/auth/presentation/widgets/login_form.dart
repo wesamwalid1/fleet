@@ -124,6 +124,7 @@ class _LoginFormState extends State<LoginForm> {
       AuthError.invalidCredentials => l10n.invalidCredentials,
       AuthError.unexpected => l10n.unexpectedError,
       AuthError.offline => l10n.loginRequiresInternet,
+      AuthError.sessionSaveFailed => l10n.loginSessionSaveFailed,
     };
   }
 }

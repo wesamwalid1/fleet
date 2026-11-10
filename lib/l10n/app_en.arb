@@ -15,6 +15,7 @@
   "emptyPassword": "Please enter your password",
   "invalidCredentials": "Invalid email or password",
   "unexpectedError": "Something went wrong. Please try again.",
+  "loginSessionSaveFailed": "Couldn't save your sign-in. Please try again.",
   "signingIn": "Signing in",
   "showPassword": "Show password",
   "hidePassword": "Hide password",
