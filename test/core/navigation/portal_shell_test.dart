@@ -1,5 +1,6 @@
 import 'package:driver_portal_app/core/session/home_scope.dart';
 import 'package:driver_portal_app/core/theme/app_surfaces.dart';
+import 'package:driver_portal_app/features/approvals/presentation/pages/approvals_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -393,6 +394,163 @@ void main() {
       expect(widths.toSet(), hasLength(1));
     }
   });
+
+  testWidgets('reselecting home scrolls its primary content to the top', (
+    tester,
+  ) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700));
+    final home = _homeScroll(tester);
+    await _scrollPrimaryDown(tester, _homeScrollView());
+    expect(home.offset, greaterThan(0));
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+
+    expect(home.offset, 0);
+    _expectSelected(tester, const Key('nav-home'));
+    expect(find.byKey(const Key('send-cash')), findsOneWidget);
+  });
+
+  testWidgets('reselecting profile scrolls its primary content to the top', (
+    tester,
+  ) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700));
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pumpAndSettle();
+
+    final profile = _profileScroll(tester);
+    await _scrollPrimaryDown(tester, find.byKey(const Key('profile-scroll')));
+    expect(profile.offset, greaterThan(0));
+
+    await tester.tap(find.byKey(const Key('nav-profile')));
+    await tester.pumpAndSettle();
+
+    expect(profile.offset, 0);
+    _expectSelected(tester, const Key('nav-profile'));
+    expect(find.byKey(const Key('profile-header')), findsOneWidget);
+  });
+
+  testWidgets('reselecting history scrolls its primary content to the top', (
+    tester,
+  ) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700));
+    await tester.tap(find.byKey(const Key('nav-history')));
+    await tester.pumpAndSettle();
+
+    final history = _historyScroll(tester);
+    await _scrollPrimaryDown(tester, _historyScrollView());
+    expect(history.offset, greaterThan(0));
+
+    await tester.tap(find.byKey(const Key('nav-history')));
+    await tester.pumpAndSettle();
+
+    expect(history.offset, 0);
+    _expectSelected(tester, const Key('nav-history'));
+    expect(find.byKey(const Key('history-title')), findsOneWidget);
+  });
+
+  testWidgets('reselect only scrolls the active tab', (tester) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700));
+
+    final home = _homeScroll(tester);
+    await _scrollPrimaryDown(tester, _homeScrollView());
+    expect(home.offset, greaterThan(0));
+
+    await tester.tap(find.byKey(const Key('nav-approvals')));
+    await tester.pumpAndSettle();
+    final approvals = _approvalsScroll(tester);
+    await _scrollPrimaryDown(tester, _approvalsScrollView());
+    expect(approvals.offset, greaterThan(0));
+    // PageView may have disposed Home; only assert sibling offset when attached.
+    final homeOffset = home.hasClients ? home.offset : null;
+
+    await tester.tap(find.byKey(const Key('nav-approvals')));
+    await tester.pumpAndSettle();
+    expect(approvals.offset, 0);
+    _expectSelected(tester, const Key('nav-approvals'));
+    if (homeOffset != null) {
+      expect(home.offset, closeTo(homeOffset, 1));
+    }
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    _expectSelected(tester, const Key('nav-home'));
+    expect(find.byKey(const Key('send-cash')), findsOneWidget);
+  });
+
+  testWidgets('repeated reselect and already-at-top are safe', (tester) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700));
+    final home = _homeScroll(tester);
+    expect(home.offset, 0);
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    expect(home.offset, 0);
+
+    await _scrollPrimaryDown(tester, _homeScrollView());
+    expect(home.offset, greaterThan(0));
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    expect(home.offset, 0);
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pumpAndSettle();
+    expect(home.offset, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reselect with no scroll clients is a safe no-op', (tester) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700), false);
+    await tester.tap(find.byKey(const Key('nav-approvals')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('approvals-empty')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ApprovalsPage),
+        matching: find.byType(CustomScrollView),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const Key('nav-approvals')));
+    await tester.pumpAndSettle();
+
+    _expectSelected(tester, const Key('nav-approvals'));
+    expect(find.byKey(const Key('approvals-empty')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reselect jumps when animations are disabled', (tester) async {
+    await _pump(
+      tester,
+      const Locale('en'),
+      const Size(400, 700),
+      true,
+      1,
+      true,
+    );
+    final home = _homeScroll(tester);
+    await _scrollPrimaryDown(tester, _homeScrollView());
+    expect(home.offset, greaterThan(0));
+
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pump();
+
+    expect(home.offset, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shell disposes its tab scroll controllers', (tester) async {
+    await _pump(tester, const Locale('en'), const Size(400, 700));
+    final home = _homeScroll(tester);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    expect(home.hasClients, isFalse);
+    expect(() => home.dispose(), throwsFlutterError);
+  });
 }
 
 Future<void> _pump(
@@ -401,6 +559,7 @@ Future<void> _pump(
   Size size = const Size(400, 900),
   bool seedApprovals = true,
   double textScale = 1,
+  bool disableAnimations = false,
 ]) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -417,8 +576,10 @@ Future<void> _pump(
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(textScale)),
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(textScale),
+          disableAnimations: disableAnimations,
+        ),
         child: child!,
       ),
       home: HomeScope(
@@ -427,6 +588,53 @@ Future<void> _pump(
       ),
     ),
   );
+  await tester.pumpAndSettle();
+}
+
+Finder _homeScrollView() {
+  return find.descendant(
+    of: find.byKey(const Key('home-page')),
+    matching: find.byType(CustomScrollView),
+  );
+}
+
+Finder _approvalsScrollView() {
+  return find.descendant(
+    of: find.byType(ApprovalsPage),
+    matching: find.byType(CustomScrollView),
+  );
+}
+
+Finder _historyScrollView() {
+  return find.descendant(
+    of: find.ancestor(
+      of: find.byKey(const Key('history-title')),
+      matching: find.byType(Column),
+    ),
+    matching: find.byType(CustomScrollView),
+  );
+}
+
+ScrollController _homeScroll(WidgetTester tester) {
+  return tester.widget<CustomScrollView>(_homeScrollView()).controller!;
+}
+
+ScrollController _approvalsScroll(WidgetTester tester) {
+  return tester.widget<CustomScrollView>(_approvalsScrollView()).controller!;
+}
+
+ScrollController _profileScroll(WidgetTester tester) {
+  return tester
+      .widget<ListView>(find.byKey(const Key('profile-scroll')))
+      .controller!;
+}
+
+ScrollController _historyScroll(WidgetTester tester) {
+  return tester.widget<CustomScrollView>(_historyScrollView()).controller!;
+}
+
+Future<void> _scrollPrimaryDown(WidgetTester tester, Finder scrollable) async {
+  await tester.drag(scrollable, const Offset(0, -2400));
   await tester.pumpAndSettle();
 }
 

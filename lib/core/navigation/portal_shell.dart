@@ -48,6 +48,10 @@ class _PortalShellState extends State<PortalShell> {
   static const _flingVelocity = 700.0;
 
   final PageController _controller = PageController();
+  late final List<ScrollController> _tabScrolls = List.generate(
+    _tabCount,
+    (_) => ScrollController(),
+  );
   int _index = 0;
   bool _swipeEnabled = true;
 
@@ -69,14 +73,38 @@ class _PortalShellState extends State<PortalShell> {
 
   @override
   void dispose() {
+    for (final scroller in _tabScrolls) {
+      scroller.dispose();
+    }
     _controller.dispose();
     super.dispose();
   }
 
   void _select(int index) {
-    if (index < 0 || index >= _tabCount || index == _index) return;
+    if (index < 0 || index >= _tabCount) return;
+    if (index == _index) {
+      _scrollTabToTop(index);
+      return;
+    }
     if (!_controller.hasClients) return;
     _controller.jumpToPage(index);
+  }
+
+  void _scrollTabToTop(int index) {
+    final scroller = _tabScrolls[index];
+    if (!scroller.hasClients) return;
+    final offset = scroller.offset;
+    if (offset <= 0) return;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion) {
+      scroller.jumpTo(0);
+      return;
+    }
+    scroller.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _onPageChanged(int index) {
@@ -354,14 +382,19 @@ class _PortalShellState extends State<PortalShell> {
                     children: [
                       HomePage(
                         now: widget.now,
+                        scrollController: _tabScrolls[0],
                         onOpenApprovals: () => _select(1),
                         onOpenHistory: () => _select(2),
                         onOpenProfile: () => _select(3),
                         onOpenNotifications: _openNotifications,
                       ),
-                      const ApprovalsPage(),
-                      HistoryPage(now: widget.now),
+                      ApprovalsPage(scrollController: _tabScrolls[1]),
+                      HistoryPage(
+                        now: widget.now,
+                        scrollController: _tabScrolls[2],
+                      ),
                       ProfilePage(
+                        scrollController: _tabScrolls[3],
                         onOpenHome: () => _select(0),
                         onOpenApprovals: () => _select(1),
                         onOpenHistory: () => _select(2),

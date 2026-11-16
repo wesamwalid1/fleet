@@ -23,8 +23,13 @@ import '../widgets/transaction_detail_sheet.dart';
 /// one list of days, each day's label pinned while its rows scroll beneath.
 class HistoryPage extends StatefulWidget {
   final DateTime Function() now;
+  final ScrollController? scrollController;
 
-  const HistoryPage({super.key, required this.now});
+  const HistoryPage({
+    super.key,
+    required this.now,
+    this.scrollController,
+  });
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -33,19 +38,22 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   static const _revealAttempts = 20;
 
-  final _scroll = ScrollController();
+  late final ScrollController _scroll;
+  late final bool _ownsScroll;
   final _search = TextEditingController();
   final _highlightKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _ownsScroll = widget.scrollController == null;
+    _scroll = widget.scrollController ?? ScrollController();
     context.read<HistoryBloc>().add(const HistoryStarted());
   }
 
   @override
   void dispose() {
-    _scroll.dispose();
+    if (_ownsScroll) _scroll.dispose();
     _search.dispose();
     super.dispose();
   }

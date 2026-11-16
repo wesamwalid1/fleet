@@ -21,7 +21,9 @@ import '../widgets/approval_sheets.dart';
 
 /// Action Inbox — The Desk: pending decisions first, finalized quieter below.
 class ApprovalsPage extends StatefulWidget {
-  const ApprovalsPage({super.key});
+  final ScrollController? scrollController;
+
+  const ApprovalsPage({super.key, this.scrollController});
 
   @override
   State<ApprovalsPage> createState() => _ApprovalsPageState();
@@ -154,6 +156,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                                   title: l10n.approvalsAllCaughtUp,
                                 )
                               : CustomScrollView(
+                                  controller: widget.scrollController,
                                   slivers: [
                                     SliverPadding(
                                       padding: const EdgeInsets.fromLTRB(

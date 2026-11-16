@@ -48,6 +48,7 @@ import '../bloc/home_state.dart';
 /// recent transactions — one shared surface language across Light and Dark.
 class HomePage extends StatefulWidget {
   final DateTime Function() now;
+  final ScrollController? scrollController;
   final VoidCallback? onOpenApprovals;
   final VoidCallback? onOpenHistory;
   final VoidCallback? onOpenProfile;
@@ -56,6 +57,7 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.now,
+    this.scrollController,
     this.onOpenApprovals,
     this.onOpenHistory,
     this.onOpenProfile,
@@ -89,6 +91,7 @@ class _HomePageState extends State<HomePage> {
                   _TripLoader(
                     driverId: driver.id,
                     builder: (context, trip) => CustomScrollView(
+                      controller: widget.scrollController,
                       slivers: [
                         SliverToBoxAdapter(
                           child: Builder(

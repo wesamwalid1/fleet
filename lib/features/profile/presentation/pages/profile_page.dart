@@ -25,12 +25,14 @@ import '../logout_dialog.dart';
 /// badge says who is signed in, and the rows that change things sit loose on
 /// the ground below it, divided by hairlines.
 class ProfilePage extends StatelessWidget {
+  final ScrollController? scrollController;
   final VoidCallback onOpenHome;
   final VoidCallback onOpenApprovals;
   final VoidCallback onOpenHistory;
 
   const ProfilePage({
     super.key,
+    this.scrollController,
     required this.onOpenHome,
     required this.onOpenApprovals,
     required this.onOpenHistory,
@@ -56,6 +58,7 @@ class ProfilePage extends StatelessWidget {
             return switch (state) {
               HomeReady(:final driver, :final summary, :final financeStatus) =>
                 _ProfileBody(
+                  scrollController: scrollController,
                   driver: driver,
                   summary: financeStatus == HomeFinanceStatus.ready
                       ? summary
@@ -118,6 +121,7 @@ class _ProfileFailure extends StatelessWidget {
 }
 
 class _ProfileBody extends StatelessWidget {
+  final ScrollController? scrollController;
   final Driver driver;
   final FinancialSummary? summary;
   final bool financeFailed;
@@ -126,6 +130,7 @@ class _ProfileBody extends StatelessWidget {
   final VoidCallback onOpenHistory;
 
   const _ProfileBody({
+    this.scrollController,
     required this.driver,
     required this.summary,
     required this.financeFailed,
@@ -164,6 +169,7 @@ class _ProfileBody extends StatelessWidget {
         // scroll fully above it.
         return ListView(
           key: const Key('profile-scroll'),
+          controller: scrollController,
           padding: EdgeInsets.only(
             bottom: 32 + MediaQuery.paddingOf(context).bottom,
           ),
