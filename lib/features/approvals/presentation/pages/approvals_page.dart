@@ -5,6 +5,7 @@ import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_event.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/section_title.dart';
@@ -64,6 +65,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
         listenWhen: (previous, current) => current.failed && !previous.failed,
         listener: (context, state) {
           if (state.items.isNotEmpty) {
+            HapticsHelper.error();
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(l10n.approvalFailed)));
           }

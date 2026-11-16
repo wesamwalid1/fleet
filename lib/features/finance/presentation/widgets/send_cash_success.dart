@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -7,7 +8,7 @@ import '../../../home/presentation/amount_format.dart';
 import '../../domain/entities/send_cash_result.dart';
 
 /// Success screen for a completed Send Cash request.
-class RequestSentPage extends StatelessWidget {
+class RequestSentPage extends StatefulWidget {
   final SendCashResult result;
   final String recipientName;
   final String recipientGivenName;
@@ -24,18 +25,29 @@ class RequestSentPage extends StatelessWidget {
   });
 
   @override
+  State<RequestSentPage> createState() => _RequestSentPageState();
+}
+
+class _RequestSentPageState extends State<RequestSentPage> {
+  @override
+  void initState() {
+    super.initState();
+    HapticsHelper.success();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
     final amount = formatHomeAmount(
-      result.transfer.amountEgp,
+      widget.result.transfer.amountEgp,
       locale: locale,
       withCurrency: true,
       currency: l10n.egp,
     );
     final balance = formatHomeAmount(
-      result.senderBalanceEgp,
+      widget.result.senderBalanceEgp,
       locale: locale,
       withCurrency: true,
       currency: l10n.egp,
@@ -65,7 +77,7 @@ class RequestSentPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      l10n.requestSentDetail(amount, recipientName),
+                      l10n.requestSentDetail(amount, widget.recipientName),
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: palette.muted,
@@ -93,7 +105,9 @@ class RequestSentPage extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                l10n.waitingForApproval(recipientGivenName),
+                                l10n.waitingForApproval(
+                                  widget.recipientGivenName,
+                                ),
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   color: palette.body,
                                   fontWeight: FontWeight.w600,
@@ -157,7 +171,7 @@ class RequestSentPage extends StatelessWidget {
                           vertical: 6,
                         ),
                         child: Text(
-                          result.transfer.id,
+                          widget.result.transfer.id,
                           style: AppTextStyles.helper.copyWith(
                             color: palette.muted,
                           ),
@@ -169,7 +183,8 @@ class RequestSentPage extends StatelessWidget {
                       width: double.infinity,
                       child: FilledButton(
                         key: const Key('send-cash-home'),
-                        onPressed: onGoHome ?? () => Navigator.pop(context),
+                        onPressed:
+                            widget.onGoHome ?? () => Navigator.pop(context),
                         style: FilledButton.styleFrom(
                           backgroundColor: palette.action,
                           foregroundColor: palette.onAction,
@@ -188,9 +203,9 @@ class RequestSentPage extends StatelessWidget {
                       child: OutlinedButton(
                         key: const Key('send-cash-view'),
                         onPressed: () {
-                          final transferId = result.transfer.id;
+                          final transferId = widget.result.transfer.id;
                           Navigator.pop(context);
-                          onViewTransaction?.call(transferId);
+                          widget.onViewTransaction?.call(transferId);
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: palette.title,

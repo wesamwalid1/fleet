@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -8,7 +9,7 @@ import '../../domain/entities/cash_request.dart';
 import '../../domain/entities/cash_request_result.dart';
 
 /// Shared success content for Request Cash and Withdraw submissions.
-class CashRequestSubmittedPage extends StatelessWidget {
+class CashRequestSubmittedPage extends StatefulWidget {
   final CashRequestResult result;
   final void Function(String requestId)? onViewTransaction;
   final VoidCallback? onGoHome;
@@ -21,11 +22,23 @@ class CashRequestSubmittedPage extends StatelessWidget {
   });
 
   @override
+  State<CashRequestSubmittedPage> createState() =>
+      _CashRequestSubmittedPageState();
+}
+
+class _CashRequestSubmittedPageState extends State<CashRequestSubmittedPage> {
+  @override
+  void initState() {
+    super.initState();
+    HapticsHelper.success();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final request = result.request;
+    final request = widget.result.request;
     final amount = formatHomeAmount(
       request.amountEgp,
       locale: locale,
@@ -94,7 +107,8 @@ class CashRequestSubmittedPage extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   key: const Key('cash-request-home'),
-                  onPressed: onGoHome ?? () => Navigator.pop(context),
+                  onPressed:
+                      widget.onGoHome ?? () => Navigator.pop(context),
                   style: FilledButton.styleFrom(
                     backgroundColor: palette.action,
                     foregroundColor: palette.onAction,
@@ -114,8 +128,8 @@ class CashRequestSubmittedPage extends StatelessWidget {
                   key: const Key('cash-request-view'),
                   onPressed: () {
                     final id = request.id;
-                    final view = onViewTransaction;
-                    (onGoHome ?? () => Navigator.pop(context))();
+                    final view = widget.onViewTransaction;
+                    (widget.onGoHome ?? () => Navigator.pop(context))();
                     view?.call(id);
                   },
                   style: OutlinedButton.styleFrom(

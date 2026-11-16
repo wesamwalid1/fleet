@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/localization/localized_string.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -863,6 +864,7 @@ bool _blockApprovalIfOffline(BuildContext context) {
   final connectivity = context.read<ConnectivityBloc>().state;
   if (!connectivity.blocksOnlineWork) return false;
   final l10n = AppLocalizations.of(context);
+  HapticsHelper.error();
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(

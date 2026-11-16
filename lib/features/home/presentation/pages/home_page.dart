@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/assets/app_icons.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -980,6 +981,7 @@ class _TripSection extends StatelessWidget {
 
 void _showOfflineActionNotice(BuildContext context) {
   final l10n = AppLocalizations.of(context);
+  HapticsHelper.error();
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       key: const Key('offline-action-notice'),

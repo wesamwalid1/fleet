@@ -30,6 +30,7 @@ import '../connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../connectivity/presentation/bloc/connectivity_event.dart';
 import '../connectivity/presentation/bloc/connectivity_state.dart';
 import '../connectivity/presentation/widgets/offline_banner.dart';
+import '../haptics/haptics_helper.dart';
 import '../theme/app_surfaces.dart';
 import 'widgets/portal_bottom_nav.dart';
 
@@ -87,6 +88,7 @@ class _PortalShellState extends State<PortalShell> {
       return;
     }
     if (!_controller.hasClients) return;
+    HapticsHelper.selection();
     _controller.jumpToPage(index);
   }
 

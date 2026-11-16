@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -8,7 +9,7 @@ import '../../domain/entities/record_expense_result.dart';
 import '../settlement_style.dart';
 
 /// Success screen for a completed Record Expense submission.
-class ExpenseRecordedPage extends StatelessWidget {
+class ExpenseRecordedPage extends StatefulWidget {
   final RecordExpenseResult result;
   final String? tripCode;
   final VoidCallback? onDone;
@@ -21,11 +22,22 @@ class ExpenseRecordedPage extends StatelessWidget {
   });
 
   @override
+  State<ExpenseRecordedPage> createState() => _ExpenseRecordedPageState();
+}
+
+class _ExpenseRecordedPageState extends State<ExpenseRecordedPage> {
+  @override
+  void initState() {
+    super.initState();
+    HapticsHelper.success();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
-    final expense = result.expense;
+    final expense = widget.result.expense;
     final settlement = settlementTitle(l10n, expense.settlementType);
 
     return Scaffold(
@@ -107,7 +119,7 @@ class ExpenseRecordedPage extends StatelessWidget {
                             _SuccessRow(
                               label: l10n.newBalance,
                               value: _money(
-                                result.balanceEgp,
+                                widget.result.balanceEgp,
                                 locale,
                                 l10n.egp,
                               ),
@@ -115,7 +127,7 @@ class ExpenseRecordedPage extends StatelessWidget {
                             ),
                             _SuccessRow(
                               label: l10n.tripCode,
-                              value: tripCode ?? expense.tripId,
+                              value: widget.tripCode ?? expense.tripId,
                             ),
                             _SuccessRow(
                               label: l10n.reference,
@@ -130,7 +142,8 @@ class ExpenseRecordedPage extends StatelessWidget {
                       width: double.infinity,
                       child: FilledButton(
                         key: const Key('expense-done'),
-                        onPressed: onDone ?? () => Navigator.pop(context),
+                        onPressed:
+                            widget.onDone ?? () => Navigator.pop(context),
                         style: FilledButton.styleFrom(
                           backgroundColor: palette.action,
                           foregroundColor: palette.onAction,

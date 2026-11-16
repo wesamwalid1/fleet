@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/presentation/bloc/theme_bloc.dart';
@@ -247,6 +248,8 @@ class _ProfileBody extends StatelessWidget {
                   builder: (context, themeState) {
                     final dark = themeState.mode == ThemeMode.dark;
                     void select(bool value) {
+                      if (value == dark) return;
+                      HapticsHelper.selection();
                       context.read<ThemeBloc>().add(
                         ThemeModeSelected(
                           value ? ThemeMode.dark : ThemeMode.light,

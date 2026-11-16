@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/fade_through_route.dart';
 import '../../../../core/theme/app_surfaces.dart';
@@ -836,6 +837,7 @@ String? _message(
 bool _blockIfOffline(BuildContext context, AppLocalizations l10n) {
   final connectivity = context.read<ConnectivityBloc>().state;
   if (!connectivity.blocksOnlineWork) return false;
+  HapticsHelper.error();
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       key: const Key('offline-action-notice'),
