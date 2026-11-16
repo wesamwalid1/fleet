@@ -7,6 +7,7 @@ import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart'
 import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/section_title.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/bloc/home_event.dart';
@@ -299,26 +300,28 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(
-              l10n.approvals,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.display.copyWith(color: palette.title),
-            ),
-          ),
-        ),
-        if (count > 0)
-          Text(
-            key: const Key('pending-count'),
-            l10n.pendingCount(count),
-            style: AppTextStyles.label.copyWith(color: palette.muted),
-          ),
-      ],
+    final title = Semantics(
+      header: true,
+      child: Text(
+        l10n.approvals,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.display.copyWith(color: palette.title),
+      ),
+    );
+    if (count <= 0) return title;
+    // SplitRow keeps the count readable at large text scales without
+    // overflowing the narrow header row (see text-scale audit).
+    return SplitRow(
+      leading: title,
+      trailing: Text(
+        key: const Key('pending-count'),
+        l10n.pendingCount(count),
+        maxLines: 1,
+        softWrap: false,
+        style: AppTextStyles.label.copyWith(color: palette.muted),
+      ),
+      maxFraction: 0.5,
     );
   }
 }
@@ -554,6 +557,7 @@ class _FilterChip extends StatelessWidget {
                   label,
                   maxLines: 1,
                   softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.label.copyWith(
                     color: selected ? palette.onAction : palette.body,
                   ),

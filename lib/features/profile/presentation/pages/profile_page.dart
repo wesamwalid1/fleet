@@ -501,12 +501,20 @@ class _BadgeField extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
+            // Flex both sides so long AR labels at large text scales cannot
+            // blow past the badge width (text-scale audit @ 1.6 / 320).
+            Expanded(
+              flex: 2,
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMedium.copyWith(color: palette.muted),
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
+              flex: 3,
               child: _Swap(
                 value: value,
                 child: Text(
