@@ -11,6 +11,7 @@ import 'package:driver_portal_app/core/locale/presentation/bloc/locale_bloc.dart
 import 'package:driver_portal_app/core/locale/presentation/bloc/locale_event.dart';
 import 'package:driver_portal_app/core/locale/presentation/bloc/locale_state.dart';
 import 'package:driver_portal_app/core/routing/app_router.dart';
+import 'package:driver_portal_app/core/theme/always_scrollbar_behavior.dart';
 import 'package:driver_portal_app/core/theme/app_theme.dart';
 import 'package:driver_portal_app/core/theme/data/theme_repository_impl.dart';
 import 'package:driver_portal_app/core/theme/domain/theme_repository.dart';
@@ -164,6 +165,7 @@ class _DriverMaterialApp extends StatelessWidget {
                 AppRoute.onGenerateRoute(RouteSettings(name: initialRoute)),
               ],
               onGenerateRoute: AppRoute.onGenerateRoute,
+              scrollBehavior: const AlwaysScrollbarBehavior(),
               theme: AppTheme.light,
               darkTheme: AppTheme.dark,
               themeMode: themeState.mode,
