@@ -170,6 +170,24 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Please try again.'**
   String get unexpectedError;
 
+  /// Title shown when a widget fails to build (ErrorWidget fallback)
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get widgetErrorTitle;
+
+  /// Hint under the widget build-failure title
+  ///
+  /// In en, this message translates to:
+  /// **'This section couldn\'t be shown.'**
+  String get widgetErrorHint;
+
+  /// Accessibility label for the widget build-failure fallback
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. This section couldn\'t be shown.'**
+  String get widgetErrorSemantics;
+
   /// No description provided for @loginSessionSaveFailed.
   ///
   /// In en, this message translates to:

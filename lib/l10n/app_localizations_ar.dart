@@ -46,6 +46,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unexpectedError => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 
   @override
+  String get widgetErrorTitle => 'حدث خطأ ما';
+
+  @override
+  String get widgetErrorHint => 'تعذر عرض هذا الجزء.';
+
+  @override
+  String get widgetErrorSemantics => 'حدث خطأ ما. تعذر عرض هذا الجزء.';
+
+  @override
   String get loginSessionSaveFailed =>
       'تعذر حفظ تسجيل الدخول. يرجى المحاولة مرة أخرى.';
 

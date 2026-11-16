@@ -15,6 +15,18 @@
   "emptyPassword": "Please enter your password",
   "invalidCredentials": "Invalid email or password",
   "unexpectedError": "Something went wrong. Please try again.",
+  "widgetErrorTitle": "Something went wrong",
+  "@widgetErrorTitle": {
+    "description": "Title shown when a widget fails to build (ErrorWidget fallback)"
+  },
+  "widgetErrorHint": "This section couldn't be shown.",
+  "@widgetErrorHint": {
+    "description": "Hint under the widget build-failure title"
+  },
+  "widgetErrorSemantics": "Something went wrong. This section couldn't be shown.",
+  "@widgetErrorSemantics": {
+    "description": "Accessibility label for the widget build-failure fallback"
+  },
   "loginSessionSaveFailed": "Couldn't save your sign-in. Please try again.",
   "signingIn": "Signing in",
   "showPassword": "Show password",

@@ -47,6 +47,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unexpectedError => 'Something went wrong. Please try again.';
 
   @override
+  String get widgetErrorTitle => 'Something went wrong';
+
+  @override
+  String get widgetErrorHint => 'This section couldn\'t be shown.';
+
+  @override
+  String get widgetErrorSemantics =>
+      'Something went wrong. This section couldn\'t be shown.';
+
+  @override
   String get loginSessionSaveFailed =>
       'Couldn\'t save your sign-in. Please try again.';
 

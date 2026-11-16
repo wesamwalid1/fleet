@@ -4,6 +4,7 @@ import 'package:driver_portal_app/core/connectivity/domain/internet_reachability
 import 'package:driver_portal_app/core/connectivity/domain/network_interface_monitor.dart';
 import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import 'package:driver_portal_app/core/connectivity/presentation/bloc/connectivity_event.dart';
+import 'package:driver_portal_app/core/errors/friendly_error_view.dart';
 import 'package:driver_portal_app/core/locale/data/locale_repository_impl.dart';
 import 'package:driver_portal_app/core/locale/domain/locale_repository.dart';
 import 'package:driver_portal_app/core/locale/presentation/bloc/locale_bloc.dart';
@@ -34,6 +35,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 /// [runApp] is always reached.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installFriendlyErrorWidget();
   const authRepository = AuthRepositoryImpl(
     MockAuthDataSource(),
     SharedPreferencesAuthSessionDataSource(),
