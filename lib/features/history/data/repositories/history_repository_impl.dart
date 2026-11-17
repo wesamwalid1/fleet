@@ -1,3 +1,4 @@
+import '../../../../core/debug/mock_network_delay.dart';
 import '../../../finance/data/datasources/mock_cash_ledger.dart';
 import '../../../finance/domain/entities/cash_request.dart';
 import '../../../finance/domain/entities/cash_transfer.dart';
@@ -9,14 +10,17 @@ import '../../domain/repositories/history_repository.dart';
 
 class HistoryRepositoryImpl implements HistoryRepository {
   final MockCashLedger _ledger;
+  final Duration _networkDelay;
 
-  const HistoryRepositoryImpl(this._ledger);
+  HistoryRepositoryImpl(this._ledger, {Duration? networkDelay})
+    : _networkDelay = MockNetworkDelay.resolve(override: networkDelay);
 
   @override
   Stream<void> get changes => _ledger.changes;
 
   @override
   Future<List<HistoryEntry>> getHistory(String driverId) async {
+    await MockNetworkDelay.wait(override: _networkDelay);
     final entries = <HistoryEntry>[
       for (final expense in _ledger.expenses)
         if (expense.driverId == driverId) _expense(expense),

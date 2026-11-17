@@ -500,25 +500,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('reselect with no scroll clients is a safe no-op', (tester) async {
+  testWidgets('reselect on empty approvals is a safe no-op', (tester) async {
     await _pump(tester, const Locale('en'), const Size(400, 700), false);
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('approvals-empty')), findsOneWidget);
-    expect(
+    // Empty content still uses AlwaysScrollable for pull-to-refresh.
+    final scroll = tester.widget<CustomScrollView>(
       find.descendant(
         of: find.byType(ApprovalsPage),
         matching: find.byType(CustomScrollView),
       ),
-      findsNothing,
     );
+    expect(scroll.physics, isA<AlwaysScrollableScrollPhysics>());
+    expect(scroll.controller!.hasClients, isTrue);
+    expect(scroll.controller!.offset, 0);
 
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
 
     _expectSelected(tester, const Key('nav-approvals'));
     expect(find.byKey(const Key('approvals-empty')), findsOneWidget);
+    expect(scroll.controller!.offset, 0);
     expect(tester.takeException(), isNull);
   });
 

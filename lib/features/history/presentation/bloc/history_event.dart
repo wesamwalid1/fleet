@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/loading/minimum_loading_window.dart';
 import '../../domain/entities/history_entry.dart';
 import 'history_state.dart';
 
@@ -16,8 +19,17 @@ final class HistoryStarted extends HistoryEvent {
 
 /// The session ledger changed; reload entries in place, keeping the filter
 /// and highlight.
+///
+/// [done] completes after the attempt finishes (including refresh failures that
+/// keep existing entries). It is not part of [props].
 final class HistoryRefreshed extends HistoryEvent {
-  const HistoryRefreshed();
+  final Completer<void>? done;
+
+  /// When set, the result is held until this pull's sections reveal together.
+  /// Not part of [props].
+  final MinimumLoadingWindow? window;
+
+  const HistoryRefreshed({this.done, this.window});
 }
 
 final class HistoryFilterSelected extends HistoryEvent {

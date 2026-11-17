@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -5,8 +7,12 @@ import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_event.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/loading/minimum_loading_window.dart';
+import '../../../../core/widgets/fleet_refresh_indicator.dart';
+import '../../../../core/widgets/fleet_skeleton.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/app_notification.dart';
 import '../bloc/notifications_bloc.dart';
@@ -22,7 +28,15 @@ class NotificationsPage extends StatefulWidget {
   /// Marks [AppNotification] read, then navigates to its destination.
   final Future<void> Function(AppNotification notification) onOpen;
 
-  const NotificationsPage({super.key, required this.now, required this.onOpen});
+  /// Clock for a manual pull's minimum loading window. Defaults to wall time.
+  final DateTime Function()? loadingNow;
+
+  const NotificationsPage({
+    super.key,
+    required this.now,
+    required this.onOpen,
+    this.loadingNow,
+  });
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -30,6 +44,8 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final _search = TextEditingController();
+  Future<void>? _pullInFlight;
+  var _pulling = false;
 
   @override
   void initState() {
@@ -57,6 +73,34 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   void _selectFilter(NotificationFilter filter) {
     context.read<NotificationsBloc>().add(NotificationsFilterSelected(filter));
+  }
+
+  Future<void> _onPullToRefresh() {
+    final connectivity = context.read<ConnectivityBloc>().state;
+    if (connectivity.blocksOnlineWork) {
+      _showOfflineActionNotice(context);
+      return Future<void>.value();
+    }
+    return _pullInFlight ??= _performPull().whenComplete(() {
+      _pullInFlight = null;
+    });
+  }
+
+  Future<void> _performPull() async {
+    if (mounted) setState(() => _pulling = true);
+    final window = MinimumLoadingWindow(
+      participants: 1,
+      now: widget.loadingNow,
+    );
+    final done = Completer<void>();
+    try {
+      context.read<NotificationsBloc>().add(
+        NotificationsRefreshed(done: done, window: window),
+      );
+      await done.future;
+    } finally {
+      if (mounted) setState(() => _pulling = false);
+    }
   }
 
   @override
@@ -116,7 +160,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       child: _Body(
                         state: state,
                         now: widget.now,
+                        pulling: _pulling,
                         onOpen: widget.onOpen,
+                        onRefresh: _onPullToRefresh,
                         onRetry: () => context.read<NotificationsBloc>().add(
                           const NotificationsStarted(),
                         ),
@@ -133,16 +179,37 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 }
 
+Widget _loadingScroll(Future<void> Function() onRefresh) {
+  return FleetRefreshIndicator(
+    onRefresh: onRefresh,
+    child: const CustomScrollView(
+      physics: AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
+          sliver: SliverToBoxAdapter(
+            child: FleetRowSkeleton(key: Key('notifications-loading')),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class _Body extends StatelessWidget {
   final NotificationsState state;
   final DateTime Function() now;
+  final bool pulling;
   final Future<void> Function(AppNotification notification) onOpen;
+  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
 
   const _Body({
     required this.state,
     required this.now,
+    required this.pulling,
     required this.onOpen,
+    required this.onRefresh,
     required this.onRetry,
   });
 
@@ -151,13 +218,26 @@ class _Body extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
-    if (state.loading && state.items.isEmpty) {
+    if (state.loading && state.items.isEmpty && !pulling) {
       return Center(
         child: CircularProgressIndicator(
           color: palette.action,
           strokeWidth: 2.2,
         ),
       );
+    }
+    if (state.loading && state.items.isNotEmpty) {
+      // Keep the same Column > indicator slot the ready list uses, so the
+      // pull indicator is not recreated when the rows become skeletons.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: _loadingScroll(onRefresh)),
+        ],
+      );
+    }
+    if (state.loading && pulling) {
+      return _loadingScroll(onRefresh);
     }
     if (state.failed && state.items.isEmpty) {
       return _LoadError(onRetry: onRetry);
@@ -168,51 +248,63 @@ class _Body extends StatelessWidget {
         if (notificationMatches(l10n, item, locale, state.query)) item,
     ];
     if (visible.isEmpty) {
-      if (filtered.isNotEmpty) {
-        return _MessageState(
-          key: const Key('notifications-no-results'),
-          icon: Icons.search_off_rounded,
-          title: l10n.notificationsNoResults,
-          hint: l10n.notificationsNoResultsHint,
-        );
-      }
-      return switch (state.filter) {
-        NotificationFilter.unread => _MessageState(
-          key: const Key('notifications-empty-unread'),
-          icon: Icons.mark_email_read_outlined,
-          title: l10n.notificationsNoUnread,
-          hint: l10n.notificationsNoUnreadHint,
+      final empty = filtered.isNotEmpty
+          ? _MessageState(
+              key: const Key('notifications-no-results'),
+              icon: Icons.search_off_rounded,
+              title: l10n.notificationsNoResults,
+              hint: l10n.notificationsNoResultsHint,
+            )
+          : switch (state.filter) {
+              NotificationFilter.unread => _MessageState(
+                key: const Key('notifications-empty-unread'),
+                icon: Icons.mark_email_read_outlined,
+                title: l10n.notificationsNoUnread,
+                hint: l10n.notificationsNoUnreadHint,
+              ),
+              NotificationFilter.read => _MessageState(
+                key: const Key('notifications-empty-read'),
+                icon: Icons.mark_email_unread_outlined,
+                title: l10n.notificationsNoRead,
+                hint: l10n.notificationsNoReadHint,
+              ),
+              NotificationFilter.all => _MessageState(
+                key: const Key('notifications-empty'),
+                icon: Icons.notifications_none_rounded,
+                title: l10n.notificationsEmpty,
+                hint: l10n.notificationsEmptyHint,
+              ),
+            };
+      return FleetRefreshIndicator(
+        onRefresh: onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(hasScrollBody: false, child: empty),
+          ],
         ),
-        NotificationFilter.read => _MessageState(
-          key: const Key('notifications-empty-read'),
-          icon: Icons.mark_email_unread_outlined,
-          title: l10n.notificationsNoRead,
-          hint: l10n.notificationsNoReadHint,
-        ),
-        NotificationFilter.all => _MessageState(
-          key: const Key('notifications-empty'),
-          icon: Icons.notifications_none_rounded,
-          title: l10n.notificationsEmpty,
-          hint: l10n.notificationsEmptyHint,
-        ),
-      };
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (state.failed) _RefreshFailedBanner(onRetry: onRetry),
         Expanded(
-          child: ListView.separated(
-            key: const Key('notifications-list'),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            itemCount: visible.length,
-            separatorBuilder: (_, _) =>
-                Divider(height: 1, thickness: 1, color: palette.hairline),
-            itemBuilder: (context, index) => _NotificationTile(
-              notification: visible[index],
-              now: now,
-              onOpen: onOpen,
+          child: FleetRefreshIndicator(
+            onRefresh: onRefresh,
+            child: ListView.separated(
+              key: const Key('notifications-list'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              itemCount: visible.length,
+              separatorBuilder: (_, _) =>
+                  Divider(height: 1, thickness: 1, color: palette.hairline),
+              itemBuilder: (context, index) => _NotificationTile(
+                notification: visible[index],
+                now: now,
+                onOpen: onOpen,
+              ),
             ),
           ),
         ),
@@ -508,6 +600,17 @@ class _FilterChip extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showOfflineActionNotice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  HapticsHelper.error();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('offline-action-notice'),
+      content: Text(l10n.offlineActionRequiresInternet),
+    ),
+  );
 }
 
 class _NotificationTile extends StatelessWidget {

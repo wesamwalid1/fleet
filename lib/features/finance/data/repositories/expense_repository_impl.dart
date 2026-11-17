@@ -1,3 +1,4 @@
+import '../../../../core/debug/mock_network_delay.dart';
 import '../../domain/entities/assigned_trip.dart';
 import '../../domain/entities/expense_attachment.dart';
 import '../../domain/entities/expense_request.dart';
@@ -8,11 +9,14 @@ import '../datasources/mock_cash_ledger.dart';
 
 class ExpenseRepositoryImpl implements ExpenseRepository {
   final MockCashLedger _ledger;
+  final Duration _networkDelay;
 
-  const ExpenseRepositoryImpl(this._ledger);
+  ExpenseRepositoryImpl(this._ledger, {Duration? networkDelay})
+    : _networkDelay = MockNetworkDelay.resolve(override: networkDelay);
 
   @override
   Future<List<AssignedTrip>> getAssignedTrips(String driverId) async {
+    await MockNetworkDelay.wait(override: _networkDelay);
     return _ledger.eligibleTrips(driverId);
   }
 

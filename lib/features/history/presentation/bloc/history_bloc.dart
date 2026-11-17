@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/frame/after_next_frame.dart';
+
 import '../../domain/entities/history_entry.dart';
 import '../../domain/repositories/history_repository.dart';
 import 'history_event.dart';
@@ -40,6 +42,8 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
   ) async {
     final load = ++_loads;
     emit(state.copyWith(loading: true, failed: false, refreshFailed: false));
+    await afterNextFrame();
+    if (isClosed || load != _loads) return;
     try {
       final entries = await repository.getHistory(driverId);
       if (load != _loads) return;
@@ -62,9 +66,23 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
     Emitter<HistoryState> emit,
   ) async {
     final load = ++_loads;
+    final window = event.window;
+    // Keep the current entries in state for failure restore. Home and History
+    // paint skeletons from [loading]; a manual pull passes [window].
+    emit(state.copyWith(loading: true, refreshFailed: false));
     try {
+      await afterNextFrame();
+      window?.markPainted();
+      if (isClosed || load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
       final entries = await repository.getHistory(driverId);
-      if (load != _loads) return;
+      if (load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
+      await window?.participantFinished();
       emit(
         state.copyWith(
           loading: false,
@@ -74,9 +92,18 @@ class HistoryBloc extends Bloc<HistoryEvent, HistoryState> {
         ),
       );
     } catch (_) {
-      if (load != _loads) return;
+      if (load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
+      await window?.participantFinished();
       // Keep the current entries; surface a compact retry banner.
       emit(state.copyWith(loading: false, refreshFailed: true));
+    } finally {
+      final done = event.done;
+      if (done != null && !done.isCompleted) {
+        done.complete();
+      }
     }
   }
 

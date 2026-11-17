@@ -424,7 +424,7 @@ void main() {
                   create: (_) => HistoryBloc(
                     driverId: MockCashLedger.senderId,
                     repository: repository,
-                  ),
+                  )..add(const HistoryStarted()),
                 ),
                 BlocProvider(
                   create: (_) => ApprovalsBloc(

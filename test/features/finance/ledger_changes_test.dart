@@ -33,6 +33,8 @@ import 'package:driver_portal_app/features/home/presentation/bloc/home_event.dar
 import 'package:driver_portal_app/features/home/presentation/bloc/home_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/paint_frame.dart';
+
 const _me = MockCashLedger.senderId;
 
 void main() {
@@ -203,7 +205,7 @@ void main() {
       bool Function(ApprovalsState state) test,
     ) async {
       if (test(bloc.state)) return bloc.state;
-      return bloc.stream.firstWhere(test);
+      return withFrames(bloc.stream.firstWhere(test));
     }
 
     test('a new pending item appears without changing the revision', () async {
@@ -358,7 +360,7 @@ void main() {
         driverId: _me,
         repository: HistoryRepositoryImpl(ledger),
       )..add(const HistoryStarted());
-      await bloc.stream.firstWhere((state) => !state.loading);
+      await withFrames(bloc.stream.firstWhere((state) => !state.loading));
       bloc
         ..add(const HistoryEntryHighlighted('DSB-2025-0441'))
         ..add(const HistoryFilterSelected(HistoryFilter.expenses));
@@ -375,8 +377,10 @@ void main() {
         attachments: const [],
         createdAt: DateTime(2026, 10, 30),
       );
-      final state = await bloc.stream.firstWhere(
-        (state) => state.entries.any((entry) => entry.id == expense.id),
+      final state = await withFrames(
+        bloc.stream.firstWhere(
+          (state) => state.entries.any((entry) => entry.id == expense.id),
+        ),
       );
       expect(state.filter, HistoryFilter.expenses);
       expect(state.highlightedId, 'DSB-2025-0441');
@@ -403,10 +407,12 @@ void main() {
         watchFinanceChanges: WatchFinanceChanges(finance),
       )..add(const HomeStarted());
       HomeReady ready(HomeState state) => state as HomeReady;
-      await bloc.stream.firstWhere(
-        (state) =>
-            state is HomeReady &&
-            state.financeStatus == HomeFinanceStatus.ready,
+      await withFrames(
+        bloc.stream.firstWhere(
+          (state) =>
+              state is HomeReady &&
+              state.financeStatus == HomeFinanceStatus.ready,
+        ),
       );
       final before = ready(bloc.state).summary!.balanceEgp;
 
@@ -419,15 +425,19 @@ void main() {
         attachments: const [],
         createdAt: DateTime(2026, 10, 30),
       );
-      await bloc.stream.firstWhere(
-        (state) =>
-            state is HomeReady && state.summary?.balanceEgp == before - 300,
+      await withFrames(
+        bloc.stream.firstWhere(
+          (state) =>
+              state is HomeReady && state.summary?.balanceEgp == before - 300,
+        ),
       );
 
       ledger.approveVaultReceipt('DSB-2025-0441');
-      await bloc.stream.firstWhere(
-        (state) =>
-            state is HomeReady && state.summary?.balanceEgp == before + 1700,
+      await withFrames(
+        bloc.stream.firstWhere(
+          (state) =>
+              state is HomeReady && state.summary?.balanceEgp == before + 1700,
+        ),
       );
       await bloc.close();
     });

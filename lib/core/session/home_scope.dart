@@ -46,6 +46,7 @@ import '../../features/notifications/presentation/bloc/notifications_event.dart'
 import '../connectivity/data/always_online_connectivity.dart';
 import '../connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../connectivity/presentation/bloc/connectivity_event.dart';
+import '../debug/mock_network_delay.dart';
 import '../navigation/portal_shell.dart';
 import '../theme/data/theme_repository_impl.dart';
 import '../theme/presentation/bloc/theme_bloc.dart';
@@ -54,7 +55,14 @@ import '../theme/presentation/bloc/theme_event.dart';
 class HomeScope extends StatelessWidget {
   final DriverRepository? repository;
   final FinanceRepository? financeRepository;
+  final ExpenseRepository? expenseRepository;
+  final ApprovalRepository? approvalRepository;
+  final HistoryRepository? historyRepository;
   final DateTime Function()? now;
+
+  /// Clock for the Home pull's minimum loading window. Tests pass the
+  /// binding clock so the 800ms floor is deterministic.
+  final DateTime Function()? loadingNow;
   final bool seedApprovals;
   final void Function(MockCashLedger ledger)? configureLedger;
   final NotificationRepository? notificationRepository;
@@ -63,15 +71,24 @@ class HomeScope extends StatelessWidget {
   /// session starts, the demo notifications are put back to unread.
   final bool resetDemoNotifications;
 
+  /// Optional mock I/O delay for Home-related repositories. Defaults to
+  /// [MockNetworkDelay.resolve] (`MOCK_NETWORK_DELAY_MS` in debug only).
+  final Duration? mockNetworkDelay;
+
   const HomeScope({
     super.key,
     this.repository,
     this.financeRepository,
+    this.expenseRepository,
+    this.approvalRepository,
+    this.historyRepository,
     this.now,
+    this.loadingNow,
     this.seedApprovals = true,
     this.configureLedger,
     this.notificationRepository,
     this.resetDemoNotifications = false,
+    this.mockNetworkDelay,
   });
 
   @override
@@ -89,6 +106,7 @@ class HomeScope extends StatelessWidget {
     );
     if (seedApprovals) ledger.seedDriverApprovals();
     configureLedger?.call(ledger);
+    final networkDelay = MockNetworkDelay.resolve(override: mockNetworkDelay);
 
     return RepositoryProvider<DriverRepository>(
       create: (_) =>
@@ -96,17 +114,33 @@ class HomeScope extends StatelessWidget {
       child: RepositoryProvider<FinanceRepository>(
         create: (_) =>
             financeRepository ??
-            SessionFinanceRepository(const MockFinanceDataSource(), ledger),
+            SessionFinanceRepository(
+              const MockFinanceDataSource(),
+              ledger,
+              networkDelay: networkDelay,
+            ),
         child: RepositoryProvider<CashTransferRepository>(
           create: (_) => CashTransferRepositoryImpl(ledger),
           child: RepositoryProvider<ExpenseRepository>(
-            create: (_) => ExpenseRepositoryImpl(ledger),
+            create: (_) =>
+                expenseRepository ??
+                ExpenseRepositoryImpl(ledger, networkDelay: networkDelay),
             child: RepositoryProvider<CashRequestRepository>(
               create: (_) => CashRequestRepositoryImpl(ledger),
               child: RepositoryProvider<ApprovalRepository>(
-                create: (_) => ApprovalRepositoryImpl(ledger),
+                create: (_) =>
+                    approvalRepository ??
+                    ApprovalRepositoryImpl(
+                      ledger,
+                      networkDelay: networkDelay,
+                    ),
                 child: RepositoryProvider<HistoryRepository>(
-                  create: (_) => HistoryRepositoryImpl(ledger),
+                  create: (_) =>
+                      historyRepository ??
+                      HistoryRepositoryImpl(
+                        ledger,
+                        networkDelay: networkDelay,
+                      ),
                   child: RepositoryProvider<NotificationRepository>(
                     create: (_) =>
                         notificationRepository ??
@@ -185,7 +219,10 @@ class HomeScope extends StatelessWidget {
                             child: _DevNotificationReset(
                               enabled: kDebugMode && resetDemoNotifications,
                               child: _EnsureAppLevelBlocs(
-                                child: PortalShell(now: now ?? DateTime.now),
+                                child: PortalShell(
+                                  now: now ?? DateTime.now,
+                                  loadingNow: loadingNow,
+                                ),
                               ),
                             ),
                           );

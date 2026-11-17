@@ -12,6 +12,8 @@ import 'package:driver_portal_app/features/home/presentation/bloc/home_event.dar
 import 'package:driver_portal_app/features/home/presentation/bloc/home_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/paint_frame.dart';
+
 void main() {
   const driver = Driver(
     fullName: LocalizedString(en: 'Ahmed Ali', ar: 'أحمد علي'),
@@ -42,11 +44,10 @@ void main() {
     final finance = _FakeFinanceRepository(onGet: () async => summary);
     final bloc = _bloc(drivers, finance);
 
+    final states = _record(bloc);
     bloc.add(const HomeStarted());
-    await expectLater(
-      bloc.stream,
-      emitsInOrder([const HomeLoading(), loading, ready]),
-    );
+    await paintFrame();
+    expect(states, [const HomeLoading(), loading, ready]);
 
     expect(drivers.calls, 1);
     expect(finance.calls, 1);
@@ -62,15 +63,16 @@ void main() {
       );
       final bloc = _bloc(drivers, finance);
 
+      final started = _record(bloc);
       bloc.add(const HomeStarted());
-      await expectLater(
-        bloc.stream,
-        emitsInOrder([const HomeLoading(), loading, failed]),
-      );
+      await paintFrame();
+      expect(started, [const HomeLoading(), loading, failed]);
 
       finance.onGet = () async => summary;
+      final retried = _record(bloc);
       bloc.add(const HomeFinanceRetried());
-      await expectLater(bloc.stream, emitsInOrder([loading, ready]));
+      await paintFrame();
+      expect(retried, [loading, ready]);
 
       expect(drivers.calls, 1);
       expect(finance.calls, 2);
@@ -88,14 +90,15 @@ void main() {
       );
       final bloc = _bloc(drivers, finance);
 
+      final started = _record(bloc);
       bloc.add(const HomeStarted());
-      await expectLater(
-        bloc.stream,
-        emitsInOrder([const HomeLoading(), loading, failed]),
-      );
+      await paintFrame();
+      expect(started, [const HomeLoading(), loading, failed]);
 
+      final retried = _record(bloc);
       bloc.add(const HomeFinanceRetried());
-      await expectLater(bloc.stream, emitsInOrder([loading, failed]));
+      await paintFrame();
+      expect(retried, [loading, failed]);
 
       expect(drivers.calls, 1);
       expect(finance.calls, 2);
@@ -112,15 +115,16 @@ void main() {
     );
     final bloc = _bloc(drivers, finance);
 
+    final started = _record(bloc);
     bloc.add(const HomeStarted());
-    await expectLater(
-      bloc.stream,
-      emitsInOrder([const HomeLoading(), loading, failed]),
-    );
+    await paintFrame();
+    expect(started, [const HomeLoading(), loading, failed]);
 
     finance.onGet = () => completer.future;
+    final retried = _record(bloc);
     bloc.add(const HomeFinanceRetried());
-    await expectLater(bloc.stream, emits(loading));
+    await paintFrame();
+    expect(retried, [loading]);
 
     bloc.add(const HomeFinanceRetried());
     await Future<void>.delayed(Duration.zero);
@@ -144,29 +148,110 @@ void main() {
       maxLimitEgp: 5000,
     );
 
+    final started = _record(bloc);
     bloc.add(const HomeStarted());
-    await expectLater(
-      bloc.stream,
-      emitsInOrder([const HomeLoading(), loading, ready]),
-    );
+    await paintFrame();
+    expect(started, [const HomeLoading(), loading, ready]);
 
     finance.onGet = () async => updated;
+    final refreshed = _record(bloc);
     bloc.add(const HomeSummaryRefreshed());
-    await expectLater(
-      bloc.stream,
-      emits(
-        const HomeReady(
-          driver: driver,
-          summary: updated,
-          financeStatus: HomeFinanceStatus.ready,
-        ),
+    await paintFrame();
+    expect(refreshed, [
+      const HomeReady(
+        driver: driver,
+        summary: summary,
+        financeStatus: HomeFinanceStatus.loading,
       ),
-    );
+      const HomeReady(
+        driver: driver,
+        summary: updated,
+        financeStatus: HomeFinanceStatus.ready,
+      ),
+    ]);
 
     expect(drivers.calls, 1);
     expect(finance.calls, 2);
     await bloc.close();
   });
+
+  test(
+    'HomeSummaryRefreshed failure keeps the last summary and completes done',
+    () async {
+      final drivers = _FakeDriverRepository(onGet: () async => driver);
+      final finance = _FakeFinanceRepository(onGet: () async => summary);
+      final bloc = _bloc(drivers, finance);
+
+      final started = _record(bloc);
+      bloc.add(const HomeStarted());
+      await paintFrame();
+      expect(started, [const HomeLoading(), loading, ready]);
+
+      finance.onGet = () async => throw StateError('summary failed');
+      final done = Completer<void>();
+      bloc.add(HomeSummaryRefreshed(done: done));
+      await paintFrame();
+      await done.future;
+      expect(bloc.state, ready);
+      expect((bloc.state as HomeReady).summary, summary);
+      expect(drivers.calls, 1);
+      expect(finance.calls, 2);
+
+      const updated = FinancialSummary(
+        balanceEgp: 1900,
+        chargeEgp: 3200,
+        maxLimitEgp: 5000,
+      );
+      finance.onGet = () async => updated;
+      final refreshed = _record(bloc);
+      bloc.add(const HomeSummaryRefreshed());
+      await paintFrame();
+      expect(refreshed, [
+        const HomeReady(
+          driver: driver,
+          summary: summary,
+          financeStatus: HomeFinanceStatus.loading,
+        ),
+        const HomeReady(
+          driver: driver,
+          summary: updated,
+          financeStatus: HomeFinanceStatus.ready,
+        ),
+      ]);
+      await bloc.close();
+    },
+  );
+
+  test(
+    'HomeSummaryRefreshed failure with no prior summary stays failed',
+    () async {
+      final drivers = _FakeDriverRepository(onGet: () async => driver);
+      final finance = _FakeFinanceRepository(
+        onGet: () async => throw StateError('initial failed'),
+      );
+      final bloc = _bloc(drivers, finance);
+
+      final started = _record(bloc);
+      bloc.add(const HomeStarted());
+      await paintFrame();
+      expect(started, [const HomeLoading(), loading, failed]);
+
+      final done = Completer<void>();
+      bloc.add(HomeSummaryRefreshed(done: done));
+      await paintFrame();
+      await done.future;
+      expect(bloc.state, failed);
+      expect((bloc.state as HomeReady).summary, isNull);
+      await bloc.close();
+    },
+  );
+}
+
+List<HomeState> _record(HomeBloc bloc) {
+  final states = <HomeState>[];
+  final sub = bloc.stream.listen(states.add);
+  addTearDown(sub.cancel);
+  return states;
 }
 
 HomeBloc _bloc(_FakeDriverRepository drivers, _FakeFinanceRepository finance) {

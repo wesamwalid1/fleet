@@ -1,3 +1,4 @@
+import '../../../../core/debug/mock_network_delay.dart';
 import '../../../finance/data/datasources/mock_cash_ledger.dart';
 import '../../../finance/domain/entities/cash_transfer.dart';
 import '../../../finance/domain/entities/custody_receipt.dart';
@@ -8,14 +9,17 @@ import '../../domain/repositories/approval_repository.dart';
 
 class ApprovalRepositoryImpl implements ApprovalRepository {
   final MockCashLedger _ledger;
+  final Duration _networkDelay;
 
-  const ApprovalRepositoryImpl(this._ledger);
+  ApprovalRepositoryImpl(this._ledger, {Duration? networkDelay})
+    : _networkDelay = MockNetworkDelay.resolve(override: networkDelay);
 
   @override
   Stream<void> get changes => _ledger.changes;
 
   @override
   Future<List<ApprovalItem>> getApprovals(String driverId) async {
+    await MockNetworkDelay.wait(override: _networkDelay);
     final items = <ApprovalItem>[
       for (final receipt in _ledger.custodyReceipts)
         if (receipt.driverId == driverId) _vault(receipt),

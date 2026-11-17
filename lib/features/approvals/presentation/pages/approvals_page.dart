@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,6 +10,9 @@ import '../../../../core/connectivity/presentation/widgets/offline_unavailable.d
 import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/loading/minimum_loading_window.dart';
+import '../../../../core/widgets/fleet_refresh_indicator.dart';
+import '../../../../core/widgets/fleet_skeleton.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
@@ -24,7 +29,10 @@ import '../widgets/approval_sheets.dart';
 class ApprovalsPage extends StatefulWidget {
   final ScrollController? scrollController;
 
-  const ApprovalsPage({super.key, this.scrollController});
+  /// Clock for a manual pull's minimum loading window. Defaults to wall time.
+  final DateTime Function()? loadingNow;
+
+  const ApprovalsPage({super.key, this.scrollController, this.loadingNow});
 
   @override
   State<ApprovalsPage> createState() => _ApprovalsPageState();
@@ -32,6 +40,8 @@ class ApprovalsPage extends StatefulWidget {
 
 class _ApprovalsPageState extends State<ApprovalsPage> {
   final _search = TextEditingController();
+  Future<void>? _pullInFlight;
+  var _pulling = false;
 
   @override
   void dispose() {
@@ -50,6 +60,34 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
 
   void _selectFilter(ApprovalFilter filter) {
     context.read<ApprovalsBloc>().add(ApprovalsFilterSelected(filter));
+  }
+
+  Future<void> _onPullToRefresh() {
+    final connectivity = context.read<ConnectivityBloc>().state;
+    if (connectivity.blocksOnlineWork) {
+      _showOfflineActionNotice(context);
+      return Future<void>.value();
+    }
+    return _pullInFlight ??= _performPull().whenComplete(() {
+      _pullInFlight = null;
+    });
+  }
+
+  Future<void> _performPull() async {
+    if (mounted) setState(() => _pulling = true);
+    final window = MinimumLoadingWindow(
+      participants: 1,
+      now: widget.loadingNow,
+    );
+    final done = Completer<void>();
+    try {
+      context.read<ApprovalsBloc>().add(
+        ApprovalsRefreshed(done: done, window: window),
+      );
+      await done.future;
+    } finally {
+      if (mounted) setState(() => _pulling = false);
+    }
   }
 
   @override
@@ -93,7 +131,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                 final actionsLocked = connectivity.blocksOnlineWork;
                 return BlocBuilder<ApprovalsBloc, ApprovalsState>(
                   builder: (context, state) {
-                    if (state.loading && state.items.isEmpty) {
+                    if (state.loading && state.items.isEmpty && !_pulling) {
                       return Center(
                         child: CircularProgressIndicator(
                           color: palette.action,
@@ -146,24 +184,106 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                           onSelected: _selectFilter,
                         ),
                         Expanded(
-                          child: noSearchHits
-                              ? _MessageState(
-                                  key: const Key('approvals-no-results'),
-                                  title: l10n.approvalsNoResults,
-                                  hint: l10n.approvalsNoResultsHint,
-                                )
-                              : allCaughtUp
-                              ? _MessageState(
-                                  key: const Key('approvals-empty'),
-                                  title: l10n.approvalsAllCaughtUp,
-                                )
-                              : CustomScrollView(
-                                  controller: widget.scrollController,
-                                  slivers: [
+                          child: FleetRefreshIndicator(
+                            onRefresh: _onPullToRefresh,
+                            child: CustomScrollView(
+                              controller: widget.scrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              slivers: [
+                                if (state.loading)
+                                  const SliverPadding(
+                                    padding: EdgeInsets.fromLTRB(20, 16, 20, 24),
+                                    sliver: SliverToBoxAdapter(
+                                      child: FleetRowSkeleton(
+                                        key: Key('approvals-loading'),
+                                      ),
+                                    ),
+                                  )
+                                else if (noSearchHits)
+                                  SliverFillRemaining(
+                                    hasScrollBody: false,
+                                    child: _MessageState(
+                                      key: const Key('approvals-no-results'),
+                                      title: l10n.approvalsNoResults,
+                                      hint: l10n.approvalsNoResultsHint,
+                                    ),
+                                  )
+                                else if (allCaughtUp)
+                                  SliverFillRemaining(
+                                    hasScrollBody: false,
+                                    child: _MessageState(
+                                      key: const Key('approvals-empty'),
+                                      title: l10n.approvalsAllCaughtUp,
+                                    ),
+                                  )
+                                else ...[
+                                  SliverPadding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      20,
+                                      16,
+                                      20,
+                                      0,
+                                    ),
+                                    sliver: SliverToBoxAdapter(
+                                      child: Semantics(
+                                        header: true,
+                                        child: Text(
+                                          l10n.approvalsNeedsDecision,
+                                          style: AppTextStyles.label.copyWith(
+                                            color: palette.muted,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (pending.isEmpty)
                                     SliverPadding(
                                       padding: const EdgeInsets.fromLTRB(
                                         20,
-                                        16,
+                                        8,
+                                        20,
+                                        8,
+                                      ),
+                                      sliver: SliverToBoxAdapter(
+                                        child: Text(
+                                          key: const Key(
+                                            'approvals-no-pending-hint',
+                                          ),
+                                          l10n.approvalsNoPendingHint,
+                                          style: AppTextStyles.bodyMedium
+                                              .copyWith(color: palette.muted),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    SliverPadding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      sliver: SliverList.separated(
+                                        itemCount: pending.length,
+                                        separatorBuilder: (_, _) =>
+                                            const ApprovalInboxDivider(),
+                                        itemBuilder: (context, index) {
+                                          final item = pending[index];
+                                          return ApprovalInboxRow(
+                                            item: item,
+                                            busy: state.busy,
+                                            actionsLocked: actionsLocked,
+                                            onOpen: () => openApprovalRequest(
+                                              context,
+                                              item,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  if (completed.isNotEmpty) ...[
+                                    // Already decided section.
+                                    SliverPadding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        20,
+                                        28,
                                         20,
                                         0,
                                       ),
@@ -171,117 +291,56 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                                         child: Semantics(
                                           header: true,
                                           child: Text(
-                                            l10n.approvalsNeedsDecision,
-                                            style: AppTextStyles.label.copyWith(
-                                              color: palette.muted,
-                                            ),
+                                            l10n.approvalsAlreadyDecided,
+                                            style: AppTextStyles.label
+                                                .copyWith(
+                                                  color: palette.muted,
+                                                ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                    if (pending.isEmpty)
-                                      SliverPadding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          20,
-                                          8,
-                                          20,
-                                          8,
-                                        ),
-                                        sliver: SliverToBoxAdapter(
-                                          child: Text(
-                                            key: const Key(
-                                              'approvals-no-pending-hint',
+                                    // Completed list.
+                                    SliverPadding(
+                                      padding: EdgeInsets.fromLTRB(
+                                        20,
+                                        0,
+                                        20,
+                                        32 +
+                                            MediaQuery.paddingOf(context)
+                                                .bottom,
+                                      ),
+                                      sliver: SliverList.separated(
+                                        itemCount: completed.length,
+                                        separatorBuilder: (_, _) =>
+                                            const ApprovalInboxDivider(),
+                                        itemBuilder: (context, index) {
+                                          final item = completed[index];
+                                          return ApprovalInboxRow(
+                                            item: item,
+                                            busy: state.busy,
+                                            onOpen: () => openApprovalRequest(
+                                              context,
+                                              item,
+                                              readOnly: true,
                                             ),
-                                            l10n.approvalsNoPendingHint,
-                                            style: AppTextStyles.bodyMedium
-                                                .copyWith(color: palette.muted),
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      SliverPadding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                        ),
-                                        sliver: SliverList.separated(
-                                          itemCount: pending.length,
-                                          separatorBuilder: (_, _) =>
-                                              const ApprovalInboxDivider(),
-                                          itemBuilder: (context, index) {
-                                            final item = pending[index];
-                                            return ApprovalInboxRow(
-                                              item: item,
-                                              busy: state.busy,
-                                              actionsLocked: actionsLocked,
-                                              onOpen: () => openApprovalRequest(
-                                                context,
-                                                item,
-                                              ),
-                                            );
-                                          },
-                                        ),
+                                          );
+                                        },
                                       ),
-                                    if (completed.isNotEmpty) ...[
-                                      // Already decided section.
-                                      SliverPadding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          20,
-                                          28,
-                                          20,
-                                          0,
-                                        ),
-                                        sliver: SliverToBoxAdapter(
-                                          child: Semantics(
-                                            header: true,
-                                            child: Text(
-                                              l10n.approvalsAlreadyDecided,
-                                              style: AppTextStyles.label
-                                                  .copyWith(
-                                                    color: palette.muted,
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
+                                    ),
+                                  ] else
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(
+                                        height:
+                                            32 +
+                                            MediaQuery.paddingOf(context)
+                                                .bottom,
                                       ),
-                                      // Completed list.
-                                      SliverPadding(
-                                        padding: EdgeInsets.fromLTRB(
-                                          20,
-                                          0,
-                                          20,
-                                          32 +
-                                              MediaQuery.paddingOf(context)
-                                                  .bottom,
-                                        ),
-                                        sliver: SliverList.separated(
-                                          itemCount: completed.length,
-                                          separatorBuilder: (_, _) =>
-                                              const ApprovalInboxDivider(),
-                                          itemBuilder: (context, index) {
-                                            final item = completed[index];
-                                            return ApprovalInboxRow(
-                                              item: item,
-                                              busy: state.busy,
-                                              onOpen: () => openApprovalRequest(
-                                                context,
-                                                item,
-                                                readOnly: true,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ] else
-                                      SliverToBoxAdapter(
-                                        child: SizedBox(
-                                          height:
-                                              32 +
-                                              MediaQuery.paddingOf(context)
-                                                  .bottom,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                                    ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     );
@@ -574,4 +633,15 @@ class _FilterChip extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showOfflineActionNotice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  HapticsHelper.error();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('offline-action-notice'),
+      content: Text(l10n.offlineActionRequiresInternet),
+    ),
+  );
 }

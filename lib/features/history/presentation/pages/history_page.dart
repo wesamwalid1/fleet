@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -5,8 +7,12 @@ import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_event.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/connectivity/presentation/widgets/offline_unavailable.dart';
+import '../../../../core/haptics/haptics_helper.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/loading/minimum_loading_window.dart';
+import '../../../../core/widgets/fleet_refresh_indicator.dart';
+import '../../../../core/widgets/fleet_skeleton.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../approvals/presentation/bloc/approvals_bloc.dart';
 import '../../../approvals/presentation/bloc/approvals_state.dart';
@@ -25,30 +31,42 @@ class HistoryPage extends StatefulWidget {
   final DateTime Function() now;
   final ScrollController? scrollController;
 
+  /// Clock for a manual pull's minimum loading window. Defaults to wall time.
+  final DateTime Function()? loadingNow;
+
   const HistoryPage({
     super.key,
     required this.now,
     this.scrollController,
+    this.loadingNow,
   });
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> {
+class _HistoryPageState extends State<HistoryPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   static const _revealAttempts = 20;
 
   late final ScrollController _scroll;
   late final bool _ownsScroll;
   final _search = TextEditingController();
   final _highlightKey = GlobalKey();
+  Future<void>? _pullInFlight;
+  var _pulling = false;
 
   @override
   void initState() {
     super.initState();
     _ownsScroll = widget.scrollController == null;
     _scroll = widget.scrollController ?? ScrollController();
-    context.read<HistoryBloc>().add(const HistoryStarted());
+    final history = context.read<HistoryBloc>().state;
+    if (history.highlightedId != null && !history.loading) {
+      _scheduleReveal();
+    }
   }
 
   @override
@@ -74,6 +92,34 @@ class _HistoryPageState extends State<HistoryPage> {
 
   void _applyDraft(HistoryFilterDraft draft) {
     context.read<HistoryBloc>().add(HistoryFiltersApplied(draft));
+  }
+
+  Future<void> _onPullToRefresh() {
+    final connectivity = context.read<ConnectivityBloc>().state;
+    if (connectivity.blocksOnlineWork) {
+      _showOfflineActionNotice(context);
+      return Future<void>.value();
+    }
+    return _pullInFlight ??= _performPull().whenComplete(() {
+      _pullInFlight = null;
+    });
+  }
+
+  Future<void> _performPull() async {
+    if (mounted) setState(() => _pulling = true);
+    final window = MinimumLoadingWindow(
+      participants: 1,
+      now: widget.loadingNow,
+    );
+    final done = Completer<void>();
+    try {
+      context.read<HistoryBloc>().add(
+        HistoryRefreshed(done: done, window: window),
+      );
+      await done.future;
+    } finally {
+      if (mounted) setState(() => _pulling = false);
+    }
   }
 
   void _scheduleReveal() {
@@ -110,6 +156,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return BlocListener<HistoryBloc, HistoryState>(
       listenWhen: (previous, current) =>
           current.highlightedId != null &&
@@ -165,7 +212,7 @@ class _HistoryPageState extends State<HistoryPage> {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
-    if (state.loading) {
+    if (state.loading && state.entries.isEmpty && !_pulling) {
       return Center(
         child: CircularProgressIndicator(
           color: palette.action,
@@ -222,83 +269,100 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         _FilterPills(state: state, onApply: _applyDraft),
         Expanded(
-          child: CustomScrollView(
-            controller: _scroll,
-            slivers: [
-              if (groups.isEmpty)
-                SliverToBoxAdapter(
-                  child: _EmptyState(
-                    key: hasQueryOrFilters
-                        ? const Key('history-no-results')
-                        : const Key('history-empty'),
-                    icon: hasQueryOrFilters
-                        ? Icons.search_off_rounded
-                        : Icons.receipt_long_outlined,
-                    title: hasQueryOrFilters
-                        ? l10n.historyNoResults
-                        : l10n.noTransactions,
-                    hint: hasQueryOrFilters ? l10n.historyNoResultsHint : null,
-                    action: hasQueryOrFilters
-                        ? TextButton(
-                            key: const Key('history-clear-filters'),
-                            onPressed: _clearFiltersAndSearch,
-                            style: TextButton.styleFrom(
-                              foregroundColor: palette.action,
-                              minimumSize: const Size(48, 48),
-                              textStyle: Theme.of(context).textTheme.labelLarge
-                                  ?.merge(AppTextStyles.buttonLarge),
-                            ),
-                            child: Text(l10n.clearFilters),
-                          )
-                        : null,
-                  ),
-                )
-              else
-                for (final group in groups)
-                  SliverMainAxisGroup(
-                    slivers: [
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: _DayLabel(
-                          label: historyDayHeader(
-                            l10n,
-                            group.day,
-                            widget.now(),
-                            locale,
-                          ),
-                          extent: dayLabelExtent,
-                          ground: palette.ground,
-                          color: palette.muted,
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverList.builder(
-                          itemCount: group.entries.length,
-                          itemBuilder: (context, index) {
-                            final entry = group.entries[index];
-                            final highlighted = state.highlightedId == entry.id;
-                            return HistoryLedgerRow(
-                              key: highlighted ? _highlightKey : null,
-                              entry: entry,
-                              highlighted: highlighted,
-                              when: historyClock(entry.updatedAt, locale),
-                              onTap: () => showTransactionDetailSheet(
-                                context,
-                                entry: entry,
+          child: FleetRefreshIndicator(
+            onRefresh: _onPullToRefresh,
+            child: CustomScrollView(
+              controller: _scroll,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                if (state.loading)
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    sliver: SliverToBoxAdapter(
+                      child: FleetRowSkeleton(key: Key('history-loading')),
+                    ),
+                  )
+                else if (groups.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyState(
+                      key: hasQueryOrFilters
+                          ? const Key('history-no-results')
+                          : const Key('history-empty'),
+                      icon: hasQueryOrFilters
+                          ? Icons.search_off_rounded
+                          : Icons.receipt_long_outlined,
+                      title: hasQueryOrFilters
+                          ? l10n.historyNoResults
+                          : l10n.noTransactions,
+                      hint: hasQueryOrFilters
+                          ? l10n.historyNoResultsHint
+                          : null,
+                      action: hasQueryOrFilters
+                          ? TextButton(
+                              key: const Key('history-clear-filters'),
+                              onPressed: _clearFiltersAndSearch,
+                              style: TextButton.styleFrom(
+                                foregroundColor: palette.action,
+                                minimumSize: const Size(48, 48),
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.merge(AppTextStyles.buttonLarge),
                               ),
-                            );
-                          },
+                              child: Text(l10n.clearFilters),
+                            )
+                          : null,
+                    ),
+                  )
+                else
+                  for (final group in groups)
+                    SliverMainAxisGroup(
+                      slivers: [
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _DayLabel(
+                            label: historyDayHeader(
+                              l10n,
+                              group.day,
+                              widget.now(),
+                              locale,
+                            ),
+                            extent: dayLabelExtent,
+                            ground: palette.ground,
+                            color: palette.muted,
+                          ),
                         ),
-                      ),
-                    ],
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          sliver: SliverList.builder(
+                            itemCount: group.entries.length,
+                            itemBuilder: (context, index) {
+                              final entry = group.entries[index];
+                              final highlighted =
+                                  state.highlightedId == entry.id;
+                              return HistoryLedgerRow(
+                                key: highlighted ? _highlightKey : null,
+                                entry: entry,
+                                highlighted: highlighted,
+                                when: historyClock(entry.updatedAt, locale),
+                                onTap: () => showTransactionDetailSheet(
+                                  context,
+                                  entry: entry,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    bottom: 32 + MediaQuery.paddingOf(context).bottom,
                   ),
-              SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: 32 + MediaQuery.paddingOf(context).bottom,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -807,4 +871,15 @@ class _LoadError extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showOfflineActionNotice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  HapticsHelper.error();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('offline-action-notice'),
+      content: Text(l10n.offlineActionRequiresInternet),
+    ),
+  );
 }

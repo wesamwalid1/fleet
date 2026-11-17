@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/paint_frame.dart';
+
 void main() {
   group('History trips multi-select matching', () {
     final tripA = _expense(id: 'e-a', tripId: 'trip-a');
@@ -289,7 +291,7 @@ void main() {
           repository: HistoryRepositoryImpl(ledger),
         )..add(const HistoryStarted());
         addTearDown(bloc.close);
-        await bloc.stream.firstWhere((state) => !state.loading);
+        await withFrames(bloc.stream.firstWhere((state) => !state.loading));
 
         bloc.add(
           HistoryFiltersApplied(

@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/paint_frame.dart';
+
 const _driverId = MockCashLedger.senderId;
 
 void main() {
@@ -243,7 +245,7 @@ void main() {
         );
         addTearDown(bloc.close);
         bloc.add(const HistoryStarted());
-        await bloc.stream.firstWhere((state) => !state.loading);
+        await withFrames(bloc.stream.firstWhere((state) => !state.loading));
 
         expect(bloc.state.expenseCount, 0);
         expect(
@@ -255,11 +257,13 @@ void main() {
           'RE-2026-1041',
           finalizedAt: DateTime(2026, 10, 21),
         );
-        await bloc.stream.firstWhere(
-          (state) => state.entries.any(
-            (entry) =>
-                entry.id == 'RE-2026-1041' &&
-                entry.status == HistoryDisplayStatus.approved,
+        await withFrames(
+          bloc.stream.firstWhere(
+            (state) => state.entries.any(
+              (entry) =>
+                  entry.id == 'RE-2026-1041' &&
+                  entry.status == HistoryDisplayStatus.approved,
+            ),
           ),
         );
         expect(bloc.state.expenseCount, 1);

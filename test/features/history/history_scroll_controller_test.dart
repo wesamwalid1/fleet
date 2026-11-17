@@ -8,6 +8,7 @@ import 'package:driver_portal_app/features/approvals/presentation/bloc/approvals
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:driver_portal_app/features/history/data/repositories/history_repository_impl.dart';
 import 'package:driver_portal_app/features/history/presentation/bloc/history_bloc.dart';
+import 'package:driver_portal_app/features/history/presentation/bloc/history_event.dart';
 import 'package:driver_portal_app/features/history/presentation/pages/history_page.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -88,7 +89,7 @@ Future<void> _pumpHistory(
               create: (_) => HistoryBloc(
                 driverId: MockCashLedger.senderId,
                 repository: history,
-              ),
+              )..add(const HistoryStarted()),
             ),
             BlocProvider(
               create: (_) => ApprovalsBloc(

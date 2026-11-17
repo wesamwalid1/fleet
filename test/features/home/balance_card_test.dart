@@ -113,6 +113,12 @@ void main() {
 
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.byKey(const Key('balance-loading')), findsOneWidget);
+    // Skeleton mirrors the finance card: label, total, available + frozen.
+    final loading = find.byKey(const Key('balance-loading'));
+    expect(
+      find.descendant(of: loading, matching: find.byType(DecoratedBox)),
+      findsWidgets,
+    );
     expect(find.byKey(const Key('home-balance')), findsNothing);
     expect(find.text('Available Balance'), findsNothing);
 

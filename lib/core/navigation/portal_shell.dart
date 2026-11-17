@@ -36,7 +36,11 @@ import 'widgets/portal_bottom_nav.dart';
 
 class PortalShell extends StatefulWidget {
   final DateTime Function() now;
-  const PortalShell({super.key, required this.now});
+
+  /// Clock for the Home pull's minimum loading window. Defaults to wall time.
+  final DateTime Function()? loadingNow;
+
+  const PortalShell({super.key, required this.now, this.loadingNow});
 
   @override
   State<PortalShell> createState() => _PortalShellState();
@@ -125,7 +129,11 @@ class _PortalShellState extends State<PortalShell> {
             BlocProvider.value(value: notifications),
             BlocProvider.value(value: connectivity),
           ],
-          child: NotificationsPage(now: widget.now, onOpen: _openNotification),
+          child: NotificationsPage(
+            now: widget.now,
+            loadingNow: widget.loadingNow,
+            onOpen: _openNotification,
+          ),
         ),
       ),
     );
@@ -384,19 +392,25 @@ class _PortalShellState extends State<PortalShell> {
                     children: [
                       HomePage(
                         now: widget.now,
+                        loadingNow: widget.loadingNow,
                         scrollController: _tabScrolls[0],
                         onOpenApprovals: () => _select(1),
                         onOpenHistory: () => _select(2),
                         onOpenProfile: () => _select(3),
                         onOpenNotifications: _openNotifications,
                       ),
-                      ApprovalsPage(scrollController: _tabScrolls[1]),
+                      ApprovalsPage(
+                        scrollController: _tabScrolls[1],
+                        loadingNow: widget.loadingNow,
+                      ),
                       HistoryPage(
                         now: widget.now,
+                        loadingNow: widget.loadingNow,
                         scrollController: _tabScrolls[2],
                       ),
                       ProfilePage(
                         scrollController: _tabScrolls[3],
+                        loadingNow: widget.loadingNow,
                         onOpenHome: () => _select(0),
                         onOpenApprovals: () => _select(1),
                         onOpenHistory: () => _select(2),

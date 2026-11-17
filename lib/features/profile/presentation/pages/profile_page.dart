@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,8 +12,12 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/presentation/bloc/theme_bloc.dart';
 import '../../../../core/theme/presentation/bloc/theme_event.dart';
 import '../../../../core/theme/presentation/bloc/theme_state.dart';
+import '../../../../core/loading/minimum_loading_window.dart';
+import '../../../../core/widgets/fleet_refresh_indicator.dart';
+import '../../../../core/widgets/fleet_skeleton.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../approvals/presentation/bloc/approvals_bloc.dart';
+import '../../../approvals/presentation/bloc/approvals_event.dart';
 import '../../../approvals/presentation/bloc/approvals_state.dart';
 import '../../../home/domain/entities/driver.dart';
 import '../../../home/domain/entities/financial_summary.dart';
@@ -25,11 +31,14 @@ import '../logout_dialog.dart';
 /// Account and settings, laid out as the driver's company ID: one raised
 /// badge says who is signed in, and the rows that change things sit loose on
 /// the ground below it, divided by hairlines.
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   final ScrollController? scrollController;
   final VoidCallback onOpenHome;
   final VoidCallback onOpenApprovals;
   final VoidCallback onOpenHistory;
+
+  /// Clock for a manual pull's minimum loading window. Defaults to wall time.
+  final DateTime Function()? loadingNow;
 
   const ProfilePage({
     super.key,
@@ -37,7 +46,42 @@ class ProfilePage extends StatelessWidget {
     required this.onOpenHome,
     required this.onOpenApprovals,
     required this.onOpenHistory,
+    this.loadingNow,
   });
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  Future<void>? _pullInFlight;
+
+  Future<void> _onPullToRefresh() {
+    final connectivity = context.read<ConnectivityBloc>().state;
+    if (connectivity.blocksOnlineWork) {
+      _showOfflineActionNotice(context);
+      return Future<void>.value();
+    }
+    return _pullInFlight ??= _performPull().whenComplete(() {
+      _pullInFlight = null;
+    });
+  }
+
+  Future<void> _performPull() async {
+    final window = MinimumLoadingWindow(
+      participants: 2,
+      now: widget.loadingNow,
+    );
+    final summaryDone = Completer<void>();
+    final approvalsDone = Completer<void>();
+    context.read<HomeBloc>().add(
+      HomeSummaryRefreshed(done: summaryDone, window: window),
+    );
+    context.read<ApprovalsBloc>().add(
+      ApprovalsRefreshed(done: approvalsDone, window: window),
+    );
+    await Future.wait<void>([summaryDone.future, approvalsDone.future]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,15 +103,17 @@ class ProfilePage extends StatelessWidget {
             return switch (state) {
               HomeReady(:final driver, :final summary, :final financeStatus) =>
                 _ProfileBody(
-                  scrollController: scrollController,
+                  scrollController: widget.scrollController,
                   driver: driver,
                   summary: financeStatus == HomeFinanceStatus.ready
                       ? summary
                       : null,
+                  financeLoading: financeStatus == HomeFinanceStatus.loading,
                   financeFailed: financeStatus == HomeFinanceStatus.failed,
-                  onOpenHome: onOpenHome,
-                  onOpenApprovals: onOpenApprovals,
-                  onOpenHistory: onOpenHistory,
+                  onOpenHome: widget.onOpenHome,
+                  onOpenApprovals: widget.onOpenApprovals,
+                  onOpenHistory: widget.onOpenHistory,
+                  onRefresh: _onPullToRefresh,
                 ),
               HomeFailure() => const _ProfileFailure(),
               _ => Center(
@@ -82,6 +128,17 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showOfflineActionNotice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  HapticsHelper.error();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      key: const Key('offline-action-notice'),
+      content: Text(l10n.offlineActionRequiresInternet),
+    ),
+  );
 }
 
 class _ProfileFailure extends StatelessWidget {
@@ -125,19 +182,23 @@ class _ProfileBody extends StatelessWidget {
   final ScrollController? scrollController;
   final Driver driver;
   final FinancialSummary? summary;
+  final bool financeLoading;
   final bool financeFailed;
   final VoidCallback onOpenHome;
   final VoidCallback onOpenApprovals;
   final VoidCallback onOpenHistory;
+  final Future<void> Function() onRefresh;
 
   const _ProfileBody({
     this.scrollController,
     required this.driver,
     required this.summary,
+    required this.financeLoading,
     required this.financeFailed,
     required this.onOpenHome,
     required this.onOpenApprovals,
     required this.onOpenHistory,
+    required this.onRefresh,
   });
 
   @override
@@ -168,13 +229,16 @@ class _ProfileBody extends StatelessWidget {
         // The shell extends its body behind the floating navigation bar and
         // reports the bar's height as bottom padding, so the last group can
         // scroll fully above it.
-        return ListView(
-          key: const Key('profile-scroll'),
-          controller: scrollController,
-          padding: EdgeInsets.only(
-            bottom: 32 + MediaQuery.paddingOf(context).bottom,
-          ),
-          children: [
+        return FleetRefreshIndicator(
+          onRefresh: onRefresh,
+          child: ListView(
+            key: const Key('profile-scroll'),
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.only(
+              bottom: 32 + MediaQuery.paddingOf(context).bottom,
+            ),
+            children: [
             _Header(
               title: l10n.navProfile,
               initials: driver.initials(locale),
@@ -183,6 +247,7 @@ class _ProfileBody extends StatelessWidget {
               vault: l10n.driversVault,
               balance: balance,
               balanceIsStatus: amount == null,
+              balanceLoading: financeLoading,
             ),
             _SectionLabel(l10n.profileQuickAccess),
             _MenuGroup(
@@ -193,7 +258,11 @@ class _ProfileBody extends StatelessWidget {
                   icon: Icons.account_balance_wallet_outlined,
                   title: l10n.myBalance,
                   onTap: onOpenHome,
-                  trailing: amount == null
+                  trailing: financeLoading
+                      ? const FleetValueSkeleton(
+                          key: Key('profile-menu-balance-loading'),
+                        )
+                      : amount == null
                       ? null
                       : _Swap(
                           value: amount,
@@ -301,6 +370,7 @@ class _ProfileBody extends StatelessWidget {
               ],
             ),
           ],
+          ),
         );
       },
     );
@@ -318,6 +388,7 @@ class _Header extends StatelessWidget {
 
   /// [balance] is a status line (offline or failed), not an amount.
   final bool balanceIsStatus;
+  final bool balanceLoading;
 
   const _Header({
     required this.title,
@@ -327,6 +398,7 @@ class _Header extends StatelessWidget {
     required this.vault,
     required this.balance,
     required this.balanceIsStatus,
+    required this.balanceLoading,
   });
 
   @override
@@ -401,7 +473,15 @@ class _Header extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (balance != null) ...[
+                        if (balanceLoading) ...[
+                          _Rule(palette),
+                          _BadgeField(
+                            key: const Key('profile-balance-loading'),
+                            label: l10n.profileBadgeBalance,
+                            value: '',
+                            valueChild: const FleetValueSkeleton(width: 88),
+                          ),
+                        ] else if (balance != null) ...[
                           _Rule(palette),
                           _BadgeField(
                             key: const Key('profile-balance'),
@@ -493,12 +573,14 @@ class _BadgeField extends StatelessWidget {
   final String label;
   final String value;
   final bool status;
+  final Widget? valueChild;
 
   const _BadgeField({
     super.key,
     required this.label,
     required this.value,
     this.status = false,
+    this.valueChild,
   });
 
   @override
@@ -524,7 +606,12 @@ class _BadgeField extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               flex: 3,
-              child: _Swap(
+              child: valueChild != null
+                  ? Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: valueChild,
+                    )
+                  : _Swap(
                 value: value,
                 child: Text(
                   value,
@@ -596,7 +683,14 @@ class _PendingCount extends StatelessWidget {
           previous.pendingCount != current.pendingCount ||
           previous.loading != current.loading,
       builder: (context, state) {
-        if (state.loading || state.pendingCount == 0) {
+        if (state.loading) {
+          return const FleetValueSkeleton(
+            key: Key('profile-pending-loading'),
+            width: 28,
+            height: 22,
+          );
+        }
+        if (state.pendingCount == 0) {
           return const SizedBox.shrink();
         }
         final count = state.pendingCount.toString();

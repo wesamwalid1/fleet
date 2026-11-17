@@ -14,6 +14,8 @@ import 'package:driver_portal_app/features/notifications/presentation/bloc/notif
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/paint_frame.dart';
+
 const _driver = MockCashLedger.senderId;
 
 NotificationRepositoryImpl _repository() => NotificationRepositoryImpl(
@@ -265,7 +267,7 @@ void main() {
       ..add(const NotificationsStarted());
     Future<void> until(bool Function(NotificationsState state) test) async {
       if (test(bloc.state)) return;
-      await bloc.stream.firstWhere(test);
+      await withFrames(bloc.stream.firstWhere(test));
     }
 
     await until((state) => !state.loading);
@@ -291,7 +293,7 @@ void main() {
       final repository = _repository();
       final bloc = NotificationsBloc(driverId: _driver, repository: repository)
         ..add(const NotificationsStarted());
-      await bloc.stream.firstWhere((state) => !state.loading);
+      await withFrames(bloc.stream.firstWhere((state) => !state.loading));
 
       bloc
         ..add(const NotificationsFilterSelected(NotificationFilter.unread))
@@ -312,11 +314,11 @@ void main() {
     final repository = _repository();
     final bloc = NotificationsBloc(driverId: _driver, repository: repository)
       ..add(const NotificationsStarted());
-    await bloc.stream.firstWhere((state) => !state.loading);
+    await withFrames(bloc.stream.firstWhere((state) => !state.loading));
     expect(bloc.state.unreadCount, 3);
 
     await repository.add(_notification());
-    await bloc.stream.firstWhere((state) => state.unreadCount == 4);
+    await withFrames(bloc.stream.firstWhere((state) => state.unreadCount == 4));
     expect(bloc.state.items.first.entityId, 'TRF-2026-0500');
 
     await repository.add(_notification(driverId: 'DR-003'));
@@ -332,7 +334,9 @@ void main() {
       bloc.add(const NotificationsStarted());
       bloc.add(const NotificationsRefreshed());
     }
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    for (var frame = 0; frame < 8; frame++) {
+      await paintFrame();
+    }
     expect(await repository.getNotifications(_driver), hasLength(4));
     await bloc.close();
   });
@@ -346,15 +350,15 @@ void main() {
       addTearDown(bloc.close);
 
       bloc.add(const NotificationsStarted());
-      final failed = await bloc.stream.firstWhere(
-        (state) => state.failed && !state.loading,
+      final failed = await withFrames(
+        bloc.stream.firstWhere((state) => state.failed && !state.loading),
       );
       expect(failed.items, isEmpty);
 
       failing.fail = false;
       bloc.add(const NotificationsStarted());
-      final recovered = await bloc.stream.firstWhere(
-        (state) => !state.failed && !state.loading,
+      final recovered = await withFrames(
+        bloc.stream.firstWhere((state) => !state.failed && !state.loading),
       );
       expect(recovered.items, isNotEmpty);
     },

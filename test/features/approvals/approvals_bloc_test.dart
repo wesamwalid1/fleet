@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:driver_portal_app/features/approvals/data/repositories/approval_repository_impl.dart';
 import 'package:driver_portal_app/features/approvals/domain/entities/approval_item.dart';
 import 'package:driver_portal_app/features/approvals/domain/repositories/approval_repository.dart';
@@ -12,13 +14,15 @@ import 'package:driver_portal_app/features/approvals/presentation/bloc/approvals
 import 'package:driver_portal_app/features/finance/data/datasources/mock_cash_ledger.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/paint_frame.dart';
+
 void main() {
   test('pending count ignores completed history and filters', () async {
     final harness = _Harness(seed: true);
     final bloc = harness.bloc;
     addTearDown(bloc.close);
     bloc.add(const ApprovalsStarted());
-    await bloc.stream.firstWhere((state) => !state.loading);
+    await withFrames(bloc.stream.firstWhere((state) => !state.loading));
 
     expect(bloc.state.pendingCount, 3);
     expect(bloc.state.visiblePending, hasLength(3));
@@ -59,7 +63,9 @@ void main() {
     final bloc = harness.bloc;
     addTearDown(bloc.close);
     bloc.add(const ApprovalsStarted());
-    final state = await bloc.stream.firstWhere((state) => !state.loading);
+    final state = await withFrames(
+      bloc.stream.firstWhere((state) => !state.loading),
+    );
 
     expect(state.pendingCount, 0);
     expect(state.visiblePending, isEmpty);
@@ -87,7 +93,9 @@ void main() {
       final bloc = harness.bloc;
       addTearDown(bloc.close);
       bloc.add(const ApprovalsStarted());
-      final state = await bloc.stream.firstWhere((s) => !s.loading);
+      final state = await withFrames(
+        bloc.stream.firstWhere((s) => !s.loading),
+      );
 
       expect(state.balanceEgp, 1700);
       expect(await harness.repository.getAvailableBalance('DR-001'), 1700);
@@ -109,15 +117,15 @@ void main() {
     addTearDown(bloc.close);
 
     bloc.add(const ApprovalsStarted());
-    final failed = await bloc.stream.firstWhere(
-      (state) => state.failed && !state.loading,
+    final failed = await withFrames(
+      bloc.stream.firstWhere((state) => state.failed && !state.loading),
     );
     expect(failed.items, isEmpty);
 
     failing.fail = false;
     bloc.add(const ApprovalsStarted());
-    final recovered = await bloc.stream.firstWhere(
-      (state) => !state.failed && !state.loading,
+    final recovered = await withFrames(
+      bloc.stream.firstWhere((state) => !state.failed && !state.loading),
     );
     expect(recovered.items, isEmpty);
   });
@@ -127,7 +135,7 @@ void main() {
     final bloc = harness.bloc;
     addTearDown(bloc.close);
     bloc.add(const ApprovalsStarted());
-    await bloc.stream.firstWhere((state) => !state.loading);
+    await withFrames(bloc.stream.firstWhere((state) => !state.loading));
 
     bloc.add(
       const ApprovalActionRequested(
@@ -135,7 +143,16 @@ void main() {
         command: ApprovalCommand.approveVault,
       ),
     );
-    await bloc.stream.firstWhere((state) => state.revision == 1);
+    await withFrames(
+      bloc.stream.firstWhere(
+        (state) =>
+            state.revision == 1 &&
+            !state.loading &&
+            state.items.any(
+              (item) => item.id == 'DSB-2025-0441' && !item.isPending,
+            ),
+      ),
+    );
 
     expect(harness.ledger.balanceOf('DR-001'), 4200);
     expect(
@@ -162,6 +179,51 @@ void main() {
     expect(harness.ledger.balanceOf('DR-001'), 4200);
     expect(bloc.state.pendingCount, 2);
   });
+
+  test(
+    'a refresh during the initial frame does not start a second read',
+    () async {
+      final pending = ApprovalItem(
+        id: 'vault-1',
+        kind: ApprovalKind.vault,
+        outcome: ApprovalOutcome.pending,
+        amountEgp: 500,
+        occurredAt: DateTime(2026, 10, 20),
+        reference: 'DSB-1',
+      );
+      final repository = _CountingApprovals(pending);
+      final bloc = ApprovalsBloc(
+        driverId: MockCashLedger.senderId,
+        repository: repository,
+        approveVaultReceipt: ApproveVaultReceipt(repository),
+        approveIncomingTransfer: ApproveIncomingTransfer(repository),
+        declineIncomingTransfer: DeclineIncomingTransfer(repository),
+        confirmRoadExpense: ConfirmRoadExpense(repository),
+        rejectRoadExpense: RejectRoadExpense(repository),
+      );
+      addTearDown(bloc.close);
+
+      bloc.add(const ApprovalsStarted());
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.reads, 0);
+      expect(bloc.state.loading, isTrue);
+
+      final done = Completer<void>();
+      bloc.add(ApprovalsRefreshed(done: done));
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.reads, 0);
+
+      await paintFrame();
+      await done.future;
+
+      expect(repository.reads, 1);
+      expect(bloc.state.loading, isFalse);
+      expect(bloc.state.failed, isFalse);
+      expect(bloc.state.revision, 0);
+      expect(bloc.state.items, [pending]);
+      expect(bloc.state.balanceEgp, 2200);
+    },
+  );
 }
 
 class _Harness {
@@ -187,6 +249,60 @@ class _Harness {
       rejectRoadExpense: RejectRoadExpense(repository),
     );
   }
+}
+
+class _CountingApprovals implements ApprovalRepository {
+  _CountingApprovals(this.item);
+
+  final ApprovalItem item;
+  int reads = 0;
+
+  @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
+  Future<List<ApprovalItem>> getApprovals(String driverId) async {
+    reads += 1;
+    return [item];
+  }
+
+  @override
+  Future<int> getAvailableBalance(String driverId) async => 2200;
+
+  @override
+  Future<void> approveVaultReceipt({
+    required String driverId,
+    required String receiptId,
+    DateTime? finalizedAt,
+  }) async {}
+
+  @override
+  Future<void> approveIncomingTransfer({
+    required String driverId,
+    required String transferId,
+    DateTime? finalizedAt,
+  }) async {}
+
+  @override
+  Future<void> declineIncomingTransfer({
+    required String driverId,
+    required String transferId,
+    DateTime? finalizedAt,
+  }) async {}
+
+  @override
+  Future<void> confirmRoadExpense({
+    required String driverId,
+    required String approvalId,
+    DateTime? finalizedAt,
+  }) async {}
+
+  @override
+  Future<void> rejectRoadExpense({
+    required String driverId,
+    required String approvalId,
+    DateTime? finalizedAt,
+  }) async {}
 }
 
 class _FailingApprovals implements ApprovalRepository {

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/frame/after_next_frame.dart';
+
 import '../../domain/entities/driver.dart';
 import '../../domain/entities/financial_summary.dart';
 import '../../domain/usecases/get_current_driver.dart';
@@ -22,6 +24,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   /// A change arrived while the summary was loading; refresh once it lands.
   bool _refreshWhenReady = false;
+
+  /// Completer from a pull that arrived while finance was still loading.
+  Completer<void>? _queuedRefreshDone;
 
   HomeBloc(
     this._getCurrentDriver,
@@ -83,40 +88,97 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     Emitter<HomeState> emit,
   ) async {
     final current = state;
-    if (current is! HomeReady) return;
+    if (current is! HomeReady) {
+      _completeDone(event.done);
+      await event.window?.participantFinished();
+      return;
+    }
     if (current.financeStatus == HomeFinanceStatus.loading) {
       _refreshWhenReady = true;
+      _queueRefreshDone(event.done);
+      await event.window?.participantFinished();
       return;
     }
 
-    final load = ++_loads;
-    final FinancialSummary summary;
-    try {
-      summary = await _getFinancialSummary();
-    } catch (_) {
-      if (load != _loads) return;
-      emit(
-        HomeReady(
-          driver: current.driver,
-          summary: null,
-          financeStatus: HomeFinanceStatus.failed,
-        ),
-      );
-      return;
-    }
-    if (load != _loads) return;
+    final prior = current.summary;
+    // Enter loading so Home can show finance skeletons; keep [prior] for
+    // failure restore. LimitMeter unmounts while loading and remounts from
+    // zero when ready — including when the returned target is unchanged.
     emit(
       HomeReady(
         driver: current.driver,
-        summary: summary,
-        financeStatus: HomeFinanceStatus.ready,
+        summary: prior,
+        financeStatus: HomeFinanceStatus.loading,
       ),
     );
+
+    final load = ++_loads;
+    final window = event.window;
+    try {
+      await afterNextFrame();
+      window?.markPainted();
+      if (isClosed || load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
+      final FinancialSummary summary;
+      try {
+        summary = await _getFinancialSummary();
+      } catch (_) {
+        if (load != _loads) {
+          await window?.participantFinished();
+          return;
+        }
+        await window?.participantFinished();
+        if (prior != null) {
+          emit(
+            HomeReady(
+              driver: current.driver,
+              summary: prior,
+              financeStatus: HomeFinanceStatus.ready,
+            ),
+          );
+        } else {
+          emit(
+            HomeReady(
+              driver: current.driver,
+              summary: null,
+              financeStatus: HomeFinanceStatus.failed,
+            ),
+          );
+        }
+        return;
+      }
+      if (load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
+      await window?.participantFinished();
+      emit(
+        HomeReady(
+          driver: current.driver,
+          summary: summary,
+          financeStatus: HomeFinanceStatus.ready,
+        ),
+      );
+    } finally {
+      _completeDone(event.done);
+    }
+    if (_refreshWhenReady) {
+      _refreshWhenReady = false;
+      final queued = _queuedRefreshDone;
+      _queuedRefreshDone = null;
+      add(HomeSummaryRefreshed(done: queued));
+    }
   }
 
   Future<void> _loadSummary(Emitter<HomeState> emit, Driver driver) async {
     final load = ++_loads;
     _refreshWhenReady = false;
+    // Loading was already emitted by the caller. Paint that frame before
+    // the summary read can replace it.
+    await afterNextFrame();
+    if (isClosed || load != _loads) return;
     try {
       final summary = await _getFinancialSummary();
       if (load != _loads) return;
@@ -139,7 +201,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
     if (_refreshWhenReady) {
       _refreshWhenReady = false;
-      add(const HomeSummaryRefreshed());
+      final queued = _queuedRefreshDone;
+      _queuedRefreshDone = null;
+      add(HomeSummaryRefreshed(done: queued));
+    }
+  }
+
+  void _queueRefreshDone(Completer<void>? done) {
+    if (done == null) return;
+    final previous = _queuedRefreshDone;
+    _queuedRefreshDone = done;
+    if (previous != null && previous != done && !previous.isCompleted) {
+      // Link older waiters to the newest queued completer.
+      done.future.whenComplete(() => _completeDone(previous));
+    }
+  }
+
+  void _completeDone(Completer<void>? done) {
+    if (done != null && !done.isCompleted) {
+      done.complete();
     }
   }
 

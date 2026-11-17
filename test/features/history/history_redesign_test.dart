@@ -13,6 +13,7 @@ import 'package:driver_portal_app/features/finance/domain/entities/settlement_ty
 import 'package:driver_portal_app/features/history/domain/entities/history_entry.dart';
 import 'package:driver_portal_app/features/history/domain/repositories/history_repository.dart';
 import 'package:driver_portal_app/features/history/presentation/bloc/history_bloc.dart';
+import 'package:driver_portal_app/features/history/presentation/bloc/history_event.dart';
 import 'package:driver_portal_app/features/history/presentation/pages/history_page.dart';
 import 'package:driver_portal_app/features/history/presentation/widgets/transaction_detail_sheet.dart';
 import 'package:driver_portal_app/l10n/app_localizations.dart';
@@ -412,7 +413,7 @@ void main() {
                 create: (_) => HistoryBloc(
                   driverId: MockCashLedger.senderId,
                   repository: repository,
-                ),
+                )..add(const HistoryStarted()),
               ),
               BlocProvider(
                 create: (_) => ApprovalsBloc(

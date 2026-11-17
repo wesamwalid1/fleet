@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/assets/app_icons.dart';
+import '../../../../core/frame/after_next_frame.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_bloc.dart';
 import '../../../../core/connectivity/presentation/bloc/connectivity_state.dart';
 import '../../../../core/haptics/haptics_helper.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_surfaces.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/fleet_refresh_indicator.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/text_link.dart';
@@ -18,6 +21,7 @@ import '../../../approvals/domain/entities/approval_item.dart';
 import '../../../approvals/domain/latest_pending_approvals.dart';
 import '../../../approvals/presentation/approval_format.dart';
 import '../../../approvals/presentation/bloc/approvals_bloc.dart';
+import '../../../approvals/presentation/bloc/approvals_event.dart';
 import '../../../approvals/presentation/bloc/approvals_state.dart';
 import '../../../approvals/presentation/widgets/approval_inbox_row.dart';
 import '../../../approvals/presentation/widgets/approval_inline_actions.dart';
@@ -44,6 +48,7 @@ import '../amount_format.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../../../../core/loading/minimum_loading_window.dart';
 
 /// Home tab: balance and limit, active trip, actions, pending approvals, and
 /// recent transactions — one shared surface language across Light and Dark.
@@ -55,6 +60,9 @@ class HomePage extends StatefulWidget {
   final VoidCallback? onOpenProfile;
   final VoidCallback? onOpenNotifications;
 
+  /// Clock for the pull's minimum loading window. Defaults to [DateTime.now].
+  final DateTime Function()? loadingNow;
+
   const HomePage({
     super.key,
     required this.now,
@@ -63,15 +71,72 @@ class HomePage extends StatefulWidget {
     this.onOpenHistory,
     this.onOpenProfile,
     this.onOpenNotifications,
+    this.loadingNow,
   });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  final GlobalKey<_TripLoaderState> _tripKey = GlobalKey<_TripLoaderState>();
+  Future<void>? _pullInFlight;
+
+  /// Mirrors PortalShell's reconnect latch so trip reload still runs when
+  /// connectivity passes through [NetworkStatus.checking] before online.
+  var _needsTripReconnect = false;
+
+  Future<void> _onPullToRefresh() {
+    final connectivity = context.read<ConnectivityBloc>().state;
+    if (connectivity.blocksOnlineWork) {
+      _showOfflineActionNotice(context);
+      return Future<void>.value();
+    }
+    return _pullInFlight ??= _performPull().whenComplete(() {
+      _pullInFlight = null;
+    });
+  }
+
+  Future<void> _performPull() async {
+    final window = MinimumLoadingWindow(
+      participants: 4,
+      now: widget.loadingNow,
+    );
+    final summaryDone = Completer<void>();
+    final approvalsDone = Completer<void>();
+    final historyDone = Completer<void>();
+    context.read<HomeBloc>().add(
+      HomeSummaryRefreshed(done: summaryDone, window: window),
+    );
+    context.read<ApprovalsBloc>().add(
+      ApprovalsRefreshed(done: approvalsDone, window: window),
+    );
+    context.read<HistoryBloc>().add(
+      HistoryRefreshed(done: historyDone, window: window),
+    );
+    final tripState = _tripKey.currentState;
+    final Future<void> tripReload;
+    if (tripState == null) {
+      tripReload = Future<void>.value();
+      unawaited(window.participantFinished());
+    } else {
+      tripReload = tripState.reload(window: window);
+    }
+    // Completers always finish; trip.reload swallows domain failures.
+    await Future.wait<void>([
+      summaryDone.future,
+      approvalsDone.future,
+      historyDone.future,
+      tripReload,
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -81,7 +146,25 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: palette.ground,
         body: SafeArea(
           bottom: false,
-          child: BlocBuilder<HomeBloc, HomeState>(
+          // Trip reload on reconnect; finance/approvals/history come from
+          // PortalShell._onReconnected without bumping Approvals revision.
+          child: BlocListener<ConnectivityBloc, ConnectivityState>(
+            listenWhen: (previous, current) =>
+                previous.status != current.status &&
+                (current.isUnavailable || current.isOnline),
+            listener: (context, state) {
+              if (state.isUnavailable) {
+                _needsTripReconnect = true;
+                return;
+              }
+              if (state.isOnline && _needsTripReconnect) {
+                _needsTripReconnect = false;
+                unawaited(
+                  _tripKey.currentState?.reload() ?? Future<void>.value(),
+                );
+              }
+            },
+            child: BlocBuilder<HomeBloc, HomeState>(
             builder: (context, state) {
               return switch (state) {
                 HomeReady(
@@ -90,43 +173,49 @@ class _HomePageState extends State<HomePage> {
                   :final financeStatus,
                 ) =>
                   _TripLoader(
+                    key: _tripKey,
                     driverId: driver.id,
-                    builder: (context, trip) => CustomScrollView(
-                      controller: widget.scrollController,
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: Builder(
-                            builder: (context) {
-                              final locale = Localizations.localeOf(context);
-                              return _HomeHeader(
-                                fullName: driver.displayName(locale),
-                                initials: driver.initials(locale),
-                                onNotifications: widget.onOpenNotifications,
-                                onProfile: widget.onOpenProfile,
-                              );
-                            },
+                    builder: (context, trip, tripLoading) => FleetRefreshIndicator(
+                      onRefresh: _onPullToRefresh,
+                      child: CustomScrollView(
+                        controller: widget.scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Builder(
+                              builder: (context) {
+                                final locale = Localizations.localeOf(context);
+                                return _HomeHeader(
+                                  fullName: driver.displayName(locale),
+                                  initials: driver.initials(locale),
+                                  onNotifications: widget.onOpenNotifications,
+                                  onProfile: widget.onOpenProfile,
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _BalanceSection(
-                            summary: summary,
-                            financeStatus: financeStatus,
+                          SliverToBoxAdapter(
+                            child: _BalanceSection(
+                              summary: summary,
+                              financeStatus: financeStatus,
+                            ),
                           ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _HomeBody(
-                            now: widget.now,
-                            driverId: driver.id,
-                            trip: trip,
-                            onOpenApprovals: widget.onOpenApprovals,
-                            onOpenHistory: widget.onOpenHistory,
+                          SliverToBoxAdapter(
+                            child: _HomeBody(
+                              now: widget.now,
+                              driverId: driver.id,
+                              trip: trip,
+                              tripLoading: tripLoading,
+                              onOpenApprovals: widget.onOpenApprovals,
+                              onOpenHistory: widget.onOpenHistory,
+                            ),
                           ),
-                        ),
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: ColoredBox(color: palette.ground),
-                        ),
-                      ],
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: ColoredBox(color: palette.ground),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 HomeFailure() => Center(
@@ -163,6 +252,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               };
             },
+            ),
           ),
         ),
       ),
@@ -181,35 +271,48 @@ String _money(BuildContext context, int amountEgp) {
   );
 }
 
-/// Loads the driver's trips once and hands the active one (or null) to the
-/// trip section.
+/// Loads the driver's trips and exposes an explicit [loading] flag so Home can
+/// show the Active Trip skeleton during initial load and refresh.
 class _TripLoader extends StatefulWidget {
   final String driverId;
-  final Widget Function(BuildContext context, AsyncSnapshot<AssignedTrip?>)
+  final Widget Function(
+    BuildContext context,
+    AssignedTrip? trip,
+    bool loading,
+  )
   builder;
 
-  const _TripLoader({required this.driverId, required this.builder});
+  const _TripLoader({
+    super.key,
+    required this.driverId,
+    required this.builder,
+  });
 
   @override
   State<_TripLoader> createState() => _TripLoaderState();
 }
 
 class _TripLoaderState extends State<_TripLoader> {
-  late Future<AssignedTrip?> _active;
+  AssignedTrip? _trip;
+  AssignedTrip? _lastSuccessful;
+  var _loading = true;
+  Future<void>? _reloadInFlight;
 
   @override
   void initState() {
     super.initState();
-    _active = _load();
+    unawaited(reload());
   }
 
   @override
   void didUpdateWidget(_TripLoader oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.driverId != widget.driverId) _active = _load();
+    if (oldWidget.driverId != widget.driverId) {
+      unawaited(reload());
+    }
   }
 
-  Future<AssignedTrip?> _load() async {
+  Future<AssignedTrip?> _fetch() async {
     final trips = await context.read<ExpenseRepository>().getAssignedTrips(
       widget.driverId,
     );
@@ -219,12 +322,55 @@ class _TripLoaderState extends State<_TripLoader> {
     return null;
   }
 
+  /// Reloads the active trip. On failure, keeps the previously displayed trip.
+  ///
+  /// [window] is set only for a manual Home pull so the trip reveals with the
+  /// other sections. A reload already in flight does not join it.
+  Future<void> reload({MinimumLoadingWindow? window}) {
+    if (_reloadInFlight != null) {
+      unawaited(window?.participantFinished());
+      return _reloadInFlight!;
+    }
+    return _reloadInFlight = _performReload(window).whenComplete(() {
+      _reloadInFlight = null;
+    });
+  }
+
+  Future<void> _performReload(MinimumLoadingWindow? window) async {
+    if (mounted) {
+      setState(() => _loading = true);
+    } else {
+      _loading = true;
+    }
+    // Paint the trip skeleton before an immediate read can replace it.
+    await afterNextFrame();
+    window?.markPainted();
+    if (!mounted) {
+      await window?.participantFinished();
+      return;
+    }
+    try {
+      final trip = await _fetch();
+      await window?.participantFinished();
+      if (!mounted) return;
+      setState(() {
+        _trip = trip;
+        _lastSuccessful = trip;
+        _loading = false;
+      });
+    } catch (_) {
+      await window?.participantFinished();
+      if (!mounted) return;
+      setState(() {
+        _trip = _lastSuccessful;
+        _loading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<AssignedTrip?>(
-      future: _active,
-      builder: widget.builder,
-    );
+    return widget.builder(context, _trip, _loading);
   }
 }
 
@@ -395,7 +541,10 @@ class _BalanceSection extends StatelessWidget {
   final FinancialSummary? summary;
   final HomeFinanceStatus financeStatus;
 
-  const _BalanceSection({required this.summary, required this.financeStatus});
+  const _BalanceSection({
+    required this.summary,
+    required this.financeStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -419,14 +568,18 @@ class _BalanceSection extends StatelessWidget {
             children: [
               switch (financeStatus) {
                 HomeFinanceStatus.loading => const _BalanceLoading(),
-                HomeFinanceStatus.ready when summary != null => _BalanceFigures(
-                  summary: summary,
-                ),
+                HomeFinanceStatus.ready when summary != null =>
+                  _BalanceFigures(summary: summary),
                 _ => const _BalanceError(),
               },
+              // Remount LimitMeter on each successful summary instance so
+              // identical Charge/Max still replay empty → target.
               if (ready) ...[
                 const SizedBox(height: 12),
-                _LimitMeter(summary: summary),
+                _LimitMeter(key: ObjectKey(summary), summary: summary),
+              ] else if (financeStatus == HomeFinanceStatus.loading) ...[
+                const SizedBox(height: 12),
+                const _LimitMeterLoading(),
               ],
             ],
           ),
@@ -632,6 +785,7 @@ class _BalanceLoading extends StatelessWidget {
     return Semantics(
       label: AppLocalizations.of(context).loadingBalance,
       child: DecoratedBox(
+        key: const Key('balance-loading'),
         decoration: BoxDecoration(
           color: palette.surface,
           borderRadius: BorderRadius.circular(20),
@@ -640,13 +794,105 @@ class _BalanceLoading extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 28, 18, 28),
           child: Column(
-            key: const Key('balance-loading'),
             children: [
               _Skeleton(width: 120, height: 14, color: bar),
               const SizedBox(height: 16),
               _Skeleton(width: 220, height: 44, color: bar, radius: 12),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Skeleton(width: 90, height: 12, color: bar),
+                        const SizedBox(height: 8),
+                        _Skeleton(width: 110, height: 18, color: bar),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Skeleton(width: 80, height: 12, color: bar),
+                        const SizedBox(height: 8),
+                        _Skeleton(width: 100, height: 18, color: bar),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LimitMeterLoading extends StatelessWidget {
+  const _LimitMeterLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final bar = palette.hairline;
+    return DecoratedBox(
+      key: const Key('home-limit-loading'),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.hairline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Skeleton(width: 100, height: 12, color: bar),
+                      const SizedBox(height: 8),
+                      _Skeleton(width: 120, height: 18, color: bar),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _Skeleton(width: 70, height: 12, color: bar),
+                    const SizedBox(height: 8),
+                    _Skeleton(width: 90, height: 16, color: bar),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                key: const Key('home-charge-progress'),
+                value: 0,
+                minHeight: 6,
+                color: palette.action,
+                backgroundColor: palette.hairline,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _Skeleton(width: 48, height: 12, color: bar),
+                const SizedBox(width: 8),
+                _Skeleton(width: 72, height: 12, color: bar),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -684,18 +930,90 @@ class _BalanceError extends StatelessWidget {
 }
 
 /// Compact Max Limit meter. Remaining = Max − Charge (not request capacity).
-class _LimitMeter extends StatelessWidget {
+class _LimitMeter extends StatefulWidget {
   final FinancialSummary summary;
 
-  const _LimitMeter({required this.summary});
+  const _LimitMeter({super.key, required this.summary});
+
+  @override
+  State<_LimitMeter> createState() => _LimitMeterState();
+}
+
+class _LimitMeterState extends State<_LimitMeter>
+    with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 420);
+
+  late final AnimationController _controller;
+  late Animation<double> _progress;
+  var _displayed = 0.0;
+  var _animGeneration = 0;
+
+  double _targetFor(FinancialSummary summary) {
+    final max = summary.maxLimitEgp;
+    if (max <= 0) return 0;
+    return (summary.chargeEgp / max).clamp(0.0, 1.0);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _duration);
+    _progress = AlwaysStoppedAnimation(_displayed);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _animateTo(_targetFor(widget.summary), fromZero: true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(_LimitMeter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = _targetFor(widget.summary);
+    final previous = _targetFor(oldWidget.summary);
+    if (next != previous) {
+      _animateTo(next);
+    }
+  }
+
+  void _animateTo(double target, {bool fromZero = false}) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    // Sample the live animation value so mid-flight retargets continue from
+    // the currently painted progress instead of a stale completed value.
+    final begin = fromZero ? 0.0 : _progress.value;
+    final generation = ++_animGeneration;
+    _controller.stop();
+    _displayed = begin;
+    if (reduceMotion || begin == target) {
+      setState(() {
+        _displayed = target;
+        _progress = AlwaysStoppedAnimation(target);
+      });
+      return;
+    }
+    final animation = Tween<double>(begin: begin, end: target).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    setState(() => _progress = animation);
+    _controller.forward(from: 0).whenComplete(() {
+      if (!mounted || generation != _animGeneration) return;
+      _displayed = target;
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
     final locale = Localizations.localeOf(context).toString();
+    final summary = widget.summary;
     final max = summary.maxLimitEgp;
-    final used = max <= 0 ? 0.0 : (summary.chargeEgp / max).clamp(0.0, 1.0);
+    final used = _targetFor(summary);
     final remaining = (max - summary.chargeEgp).clamp(0, max);
     final percent = formatHomeAmount(
       (used * 100).round(),
@@ -770,16 +1088,21 @@ class _LimitMeter extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                key: const Key('home-charge-progress'),
-                value: used,
-                minHeight: 6,
-                color: palette.action,
-                backgroundColor: palette.hairline,
-                semanticsLabel: l10n.homeLimitUsed(percent),
-              ),
+            AnimatedBuilder(
+              animation: _progress,
+              builder: (context, _) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    key: const Key('home-charge-progress'),
+                    value: _progress.value,
+                    minHeight: 6,
+                    color: palette.action,
+                    backgroundColor: palette.hairline,
+                    semanticsLabel: l10n.homeLimitUsed(percent),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -819,7 +1142,8 @@ class _LimitMeter extends StatelessWidget {
 class _HomeBody extends StatelessWidget {
   final DateTime Function() now;
   final String driverId;
-  final AsyncSnapshot<AssignedTrip?> trip;
+  final AssignedTrip? trip;
+  final bool tripLoading;
   final VoidCallback? onOpenApprovals;
   final VoidCallback? onOpenHistory;
 
@@ -827,6 +1151,7 @@ class _HomeBody extends StatelessWidget {
     required this.now,
     required this.driverId,
     required this.trip,
+    required this.tripLoading,
     this.onOpenApprovals,
     this.onOpenHistory,
   });
@@ -843,7 +1168,11 @@ class _HomeBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _TripSection(driverId: driverId, trip: trip),
+          _TripSection(
+            driverId: driverId,
+            trip: trip,
+            loading: tripLoading,
+          ),
           const SizedBox(height: 28),
           _Actions(driverId: driverId, onOpenHistory: onOpenHistory),
           const SizedBox(height: 28),
@@ -860,9 +1189,14 @@ class _HomeBody extends StatelessWidget {
 /// action, grouped on one surface.
 class _TripSection extends StatelessWidget {
   final String driverId;
-  final AsyncSnapshot<AssignedTrip?> trip;
+  final AssignedTrip? trip;
+  final bool loading;
 
-  const _TripSection({required this.driverId, required this.trip});
+  const _TripSection({
+    required this.driverId,
+    required this.trip,
+    required this.loading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -875,8 +1209,7 @@ class _TripSection extends StatelessWidget {
       builder: (context, connectivity) {
         final offline = connectivity.isUnavailable;
         final locked = connectivity.blocksOnlineWork;
-        final loading = trip.connectionState != ConnectionState.done;
-        final active = offline ? null : trip.data;
+        final active = offline || loading ? null : trip;
         final canRecord = !locked && !loading && active != null;
         final activeTripId = active?.id;
         return Column(
@@ -889,45 +1222,43 @@ class _TripSection extends StatelessWidget {
                   ? null
                   : StatusBadge(
                       label: l10n.tripActive,
-                      foreground: AppColors.creditText,
-                      background: AppColors.successBackground,
-                      leading: const SizedBox(
+                      foreground: palette.action,
+                      background: palette.action.withValues(alpha: 0.12),
+                      leading: SizedBox(
                         width: 8,
                         height: 8,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: AppColors.success,
+                            color: palette.action,
                             shape: BoxShape.circle,
                           ),
                         ),
                       ),
                     ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             DecoratedBox(
               decoration: BoxDecoration(
                 color: palette.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: palette.hairline),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: palette.hairline.withValues(alpha: 0.85),
+                ),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (offline)
                       const _OfflineFinancePlaceholder()
                     else if (loading)
-                      _Skeleton(
-                        width: double.infinity,
-                        height: 64,
-                        color: palette.hairline,
-                      )
+                      const _TripLoading()
                     else if (active == null)
                       _NoTrip(l10n: l10n)
                     else
                       _Journey(trip: active),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
                     FilledButton.icon(
                       key: const Key('trip-record-expense'),
                       onPressed: canRecord && activeTripId != null
@@ -975,6 +1306,40 @@ class _TripSection extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _TripLoading extends StatelessWidget {
+  const _TripLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    final bar = AppPalette.of(context).hairline;
+    return Column(
+      key: const Key('home-trip-loading'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(child: _Skeleton(width: double.infinity, height: 22, color: bar)),
+            const SizedBox(width: 10),
+            _Skeleton(width: 76, height: 28, radius: 14, color: bar),
+            const SizedBox(width: 10),
+            Expanded(child: _Skeleton(width: double.infinity, height: 22, color: bar)),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 18,
+          runSpacing: 10,
+          children: [
+            _Skeleton(width: 96, height: 14, color: bar),
+            _Skeleton(width: 72, height: 14, color: bar),
+            _Skeleton(width: 64, height: 14, color: bar),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1276,38 +1641,38 @@ class _RouteLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
-    final rail = palette.hairline;
+    final rail = palette.hairline.withValues(alpha: 0.9);
     Widget dot(Color color) => Container(
-      width: 8,
-      height: 8,
+      width: 7,
+      height: 7,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
     return SizedBox(
-      width: 72,
+      width: 76,
       child: Row(
         children: [
           dot(palette.action),
-          Expanded(child: Container(height: 2, color: rail)),
+          Expanded(child: Container(height: 1.5, color: rail)),
           Container(
             key: const Key('home-trip-arrow'),
-            width: 30,
-            height: 30,
+            width: 28,
+            height: 28,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: palette.field,
               shape: BoxShape.circle,
-              border: Border.all(color: palette.hairline),
+              border: Border.all(color: palette.hairline.withValues(alpha: 0.8)),
             ),
             child: Image.asset(
               AppIcons.bus,
-              width: 18,
-              height: 18,
+              width: 16,
+              height: 16,
               matchTextDirection: true,
               excludeFromSemantics: true,
             ),
           ),
-          Expanded(child: Container(height: 2, color: rail)),
-          dot(palette.title),
+          Expanded(child: Container(height: 1.5, color: rail)),
+          dot(palette.title.withValues(alpha: 0.85)),
         ],
       ),
     );
@@ -1406,6 +1771,9 @@ class _PendingSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
+    // revision bumps only on approval actions (_reload), not on
+    // ApprovalsRefreshed (Home pull / ledger sync). That keeps whole-Home
+    // pull from cascading a second finance refresh.
     return BlocListener<ApprovalsBloc, ApprovalsState>(
       listenWhen: (previous, current) => current.revision != previous.revision,
       listener: (context, state) {
@@ -1442,7 +1810,10 @@ class _PendingSection extends StatelessWidget {
                   if (offline)
                     const _OfflineFinancePlaceholder()
                   else if (state.loading)
-                    const _RowsLoading(rows: 2)
+                    const _RowsLoading(
+                      key: Key('home-pending-loading'),
+                      rows: 2,
+                    )
                   else if (pending.isEmpty)
                     const _AllCaughtUp()
                   else ...[
@@ -1516,7 +1887,7 @@ class _AllCaughtUp extends StatelessWidget {
 class _RowsLoading extends StatelessWidget {
   final int rows;
 
-  const _RowsLoading({required this.rows});
+  const _RowsLoading({super.key, required this.rows});
 
   @override
   Widget build(BuildContext context) {
@@ -1699,6 +2070,8 @@ class _RecentSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final palette = AppPalette.of(context);
+    // Same revision gate as pending: pull-driven ApprovalsRefreshed must not
+    // enqueue HistoryStarted (Home pull already awaits HistoryRefreshed).
     return BlocListener<ApprovalsBloc, ApprovalsState>(
       listenWhen: (previous, current) => current.revision != previous.revision,
       listener: (context, state) {
@@ -1730,8 +2103,11 @@ class _RecentSection extends StatelessWidget {
                   const SizedBox(height: 8),
                   if (offline)
                     const _OfflineFinancePlaceholder()
-                  else if (state.loading && state.entries.isEmpty)
-                    const _RowsLoading(rows: 3)
+                  else if (state.loading)
+                    const _RowsLoading(
+                      key: Key('home-recent-loading'),
+                      rows: 3,
+                    )
                   else if (latest.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),

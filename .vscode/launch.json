@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "driver_portal_app",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "driver_portal_app (mock latency)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define=MOCK_NETWORK_DELAY_MS=1200"
+      ]
+    },
+    {
+      "name": "driver_portal_app (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "driver_portal_app (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    }
+  ]
+}

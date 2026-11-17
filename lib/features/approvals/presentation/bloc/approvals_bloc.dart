@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/frame/after_next_frame.dart';
+
 import '../../domain/repositories/approval_repository.dart';
 import '../../domain/usecases/approve_incoming_transfer.dart';
 import '../../domain/usecases/approve_vault_receipt.dart';
@@ -49,7 +51,13 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     ApprovalsStarted event,
     Emitter<ApprovalsState> emit,
   ) async {
+    // Claim the generation before the frame wait. A refresh that arrives
+    // while this frame is pending takes a newer generation and is the only
+    // read; this handler must not fetch as well.
+    final load = ++_loads;
     emit(state.copyWith(loading: true, failed: false));
+    await afterNextFrame();
+    if (isClosed || load != _loads) return;
     await _reload(emit, revision: state.revision);
   }
 
@@ -58,13 +66,38 @@ class ApprovalsBloc extends Bloc<ApprovalsEvent, ApprovalsState> {
     Emitter<ApprovalsState> emit,
   ) async {
     final load = ++_loads;
+    final window = event.window;
+    // Keep the current items in state for failure restore. Home and Approvals
+    // paint skeletons from [loading]; a manual pull passes [window].
+    emit(state.copyWith(loading: true));
     try {
+      await afterNextFrame();
+      window?.markPainted();
+      if (isClosed || load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
       final items = await repository.getApprovals(driverId);
       final balance = await repository.getAvailableBalance(driverId);
-      if (load != _loads) return;
+      if (load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
+      await window?.participantFinished();
       emit(state.copyWith(loading: false, balanceEgp: balance, items: items));
     } catch (_) {
-      // Keep the current state; the next ledger change reloads again.
+      // Keep the current items; clear the loading flag.
+      if (load != _loads) {
+        await window?.participantFinished();
+        return;
+      }
+      await window?.participantFinished();
+      emit(state.copyWith(loading: false));
+    } finally {
+      final done = event.done;
+      if (done != null && !done.isCompleted) {
+        done.complete();
+      }
     }
   }
 

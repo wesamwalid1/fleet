@@ -10,6 +10,8 @@ import 'package:driver_portal_app/features/history/presentation/bloc/history_eve
 import 'package:driver_portal_app/features/history/presentation/bloc/history_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/paint_frame.dart';
+
 void main() {
   const driverId = MockCashLedger.senderId;
 
@@ -23,7 +25,7 @@ void main() {
         driverId: driverId,
         repository: HistoryRepositoryImpl(ledger),
       )..add(const HistoryStarted());
-      await bloc.stream.firstWhere((state) => !state.loading);
+      await withFrames(bloc.stream.firstWhere((state) => !state.loading));
       final entries = bloc.state.entries;
 
       final clock = Stopwatch()..start();
@@ -52,7 +54,7 @@ void main() {
         repository: HistoryRepositoryImpl(ledger),
       )..add(const HistoryStarted());
       addTearDown(bloc.close);
-      await bloc.stream.firstWhere((state) => !state.loading);
+      await withFrames(bloc.stream.firstWhere((state) => !state.loading));
 
       bloc.add(
         HistoryFiltersApplied(
@@ -277,7 +279,7 @@ void main() {
     addTearDown(bloc.close);
     final before = _balances(ledger);
     bloc.add(const HistoryStarted());
-    await bloc.stream.firstWhere((state) => !state.loading);
+    await withFrames(bloc.stream.firstWhere((state) => !state.loading));
     bloc.add(const HistoryFilterSelected(HistoryFilter.sent));
     await bloc.stream.firstWhere((state) => state.filter == HistoryFilter.sent);
 
