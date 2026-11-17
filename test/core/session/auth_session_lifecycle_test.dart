@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
+import '../../support/reveal_finance.dart';
 
 const _key = SharedPreferencesAuthSessionDataSource.storageKey;
 const _repository = AuthRepositoryImpl(
@@ -235,6 +236,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('nav-home')));
       await tester.pumpAndSettle();
+      await revealHomeFinance(tester);
       // The approval made before backgrounding is still in the same session.
       expect(find.text('4,200 EGP'), findsNWidgets(2));
       expect(await _savedEmail(tester), MockAuthDataSource.email);

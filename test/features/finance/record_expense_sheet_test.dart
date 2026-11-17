@@ -12,6 +12,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/reveal_finance.dart';
+
 void main() {
   testWidgets('cancel closes the flow and leaves the balance unchanged', (
     tester,
@@ -420,6 +422,7 @@ String _keyedText(WidgetTester tester, String key) {
 }
 
 Future<void> _revealHomeBalance(WidgetTester tester) async {
+  await revealHomeFinance(tester);
   final balance = find.byKey(const Key('home-balance'), skipOffstage: false);
   await tester.ensureVisible(balance);
   await tester.pumpAndSettle();

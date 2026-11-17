@@ -23,6 +23,7 @@ import '../../../home/domain/entities/driver.dart';
 import '../../../home/domain/entities/financial_summary.dart';
 import '../../../home/presentation/amount_format.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
+import '../../../home/presentation/finance_visibility_cubit.dart';
 import '../../../home/presentation/bloc/home_event.dart';
 import '../../../home/presentation/bloc/home_state.dart';
 import '../language_sheet.dart';
@@ -211,6 +212,10 @@ class _ProfileBody extends StatelessWidget {
           previous.isUnavailable != current.isUnavailable,
       builder: (context, connectivity) {
         final offline = connectivity.isUnavailable;
+        final balanceVisible = context
+            .watch<FinanceVisibilityCubit>()
+            .state
+            .balanceVisible;
         final amount = offline || summary == null
             ? null
             : formatHomeAmount(
@@ -219,9 +224,13 @@ class _ProfileBody extends StatelessWidget {
                 withCurrency: true,
                 currency: l10n.egp,
               );
+        final masked = '•••• ${l10n.egp}';
+        final shownAmount = amount == null || balanceVisible ? amount : masked;
         final balance = offline
             ? l10n.offlineSectionUnavailable
-            : amount ?? (financeFailed ? l10n.balanceLoadError : null);
+            : amount == null
+            ? (financeFailed ? l10n.balanceLoadError : null)
+            : shownAmount;
         final language = locale.languageCode == 'ar'
             ? l10n.languageArabic
             : l10n.languageEnglish;
@@ -247,6 +256,7 @@ class _ProfileBody extends StatelessWidget {
               vault: l10n.driversVault,
               balance: balance,
               balanceIsStatus: amount == null,
+              balanceConcealed: amount != null && !balanceVisible,
               balanceLoading: financeLoading,
             ),
             _SectionLabel(l10n.profileQuickAccess),
@@ -262,16 +272,19 @@ class _ProfileBody extends StatelessWidget {
                       ? const FleetValueSkeleton(
                           key: Key('profile-menu-balance-loading'),
                         )
-                      : amount == null
+                      : shownAmount == null
                       ? null
                       : _Swap(
-                          value: amount,
-                          child: Text(
-                            amount,
-                            key: const Key('profile-balance-amount'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: _valueStyle(palette),
+                          value: shownAmount,
+                          child: ExcludeSemantics(
+                            excluding: !balanceVisible,
+                            child: Text(
+                              shownAmount,
+                              key: const Key('profile-balance-amount'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _valueStyle(palette),
+                            ),
                           ),
                         ),
                 ),
@@ -388,6 +401,9 @@ class _Header extends StatelessWidget {
 
   /// [balance] is a status line (offline or failed), not an amount.
   final bool balanceIsStatus;
+
+  /// The amount is masked. Status lines stay readable.
+  final bool balanceConcealed;
   final bool balanceLoading;
 
   const _Header({
@@ -398,6 +414,7 @@ class _Header extends StatelessWidget {
     required this.vault,
     required this.balance,
     required this.balanceIsStatus,
+    required this.balanceConcealed,
     required this.balanceLoading,
   });
 
@@ -488,6 +505,7 @@ class _Header extends StatelessWidget {
                             label: l10n.profileBadgeBalance,
                             value: balance,
                             status: balanceIsStatus,
+                            concealValue: balanceConcealed,
                           ),
                         ],
                       ],
@@ -573,6 +591,7 @@ class _BadgeField extends StatelessWidget {
   final String label;
   final String value;
   final bool status;
+  final bool concealValue;
   final Widget? valueChild;
 
   const _BadgeField({
@@ -580,6 +599,7 @@ class _BadgeField extends StatelessWidget {
     required this.label,
     required this.value,
     this.status = false,
+    this.concealValue = false,
     this.valueChild,
   });
 
@@ -611,22 +631,27 @@ class _BadgeField extends StatelessWidget {
                       alignment: AlignmentDirectional.centerEnd,
                       child: valueChild,
                     )
-                  : _Swap(
-                value: value,
-                child: Text(
-                  value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: status
-                      ? AppTextStyles.bodyMedium.copyWith(color: palette.muted)
-                      : AppTextStyles.bodyMedium.copyWith(
-                          color: palette.title,
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: AppTextStyles.tabular,
+                  : ExcludeSemantics(
+                      excluding: concealValue,
+                      child: _Swap(
+                        value: value,
+                        child: Text(
+                          value,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: status
+                              ? AppTextStyles.bodyMedium.copyWith(
+                                  color: palette.muted,
+                                )
+                              : AppTextStyles.bodyMedium.copyWith(
+                                  color: palette.title,
+                                  fontWeight: FontWeight.w600,
+                                  fontFeatures: AppTextStyles.tabular,
+                                ),
                         ),
-                ),
-              ),
+                      ),
+                    ),
             ),
           ],
         ),

@@ -2042,6 +2042,30 @@ abstract class AppLocalizations {
   /// **'Remaining Limit'**
   String get homeRemainingLimit;
 
+  /// No description provided for @showBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Show balance'**
+  String get showBalance;
+
+  /// No description provided for @hideBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide balance'**
+  String get hideBalance;
+
+  /// No description provided for @showLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Show limit'**
+  String get showLimit;
+
+  /// No description provided for @hideLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide limit'**
+  String get hideLimit;
+
   /// No description provided for @homeActiveTrip.
   ///
   /// In en, this message translates to:

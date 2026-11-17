@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/reveal_finance.dart';
+
 void main() {
   testWidgets('recipient list excludes sender and enables continue on select', (
     tester,
@@ -341,6 +343,7 @@ String _keyedText(WidgetTester tester, String key) {
 }
 
 Future<void> _revealHomeBalance(WidgetTester tester) async {
+  await revealHomeFinance(tester);
   final balance = find.byKey(const Key('home-balance'), skipOffstage: false);
   await tester.ensureVisible(balance);
   await tester.pumpAndSettle();

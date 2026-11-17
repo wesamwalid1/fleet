@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/reveal_finance.dart';
+
 void main() {
   testWidgets('recent shows the three newest ledger rows and opens history', (
     tester,
@@ -301,4 +303,5 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
 }

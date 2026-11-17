@@ -48,6 +48,7 @@ import '../amount_format.dart';
 import '../bloc/home_bloc.dart';
 import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
+import '../finance_visibility_cubit.dart';
 import '../../../../core/loading/minimum_loading_window.dart';
 
 /// Home tab: balance and limit, active trip, actions, pending approvals, and
@@ -269,6 +270,56 @@ String _money(BuildContext context, int amountEgp) {
     withCurrency: true,
     currency: AppLocalizations.of(context).egp,
   );
+}
+
+String _maskedMoney(BuildContext context) =>
+    '•••• ${AppLocalizations.of(context).egp}';
+
+class _ConcealedFigure extends StatelessWidget {
+  final bool concealed;
+  final Widget child;
+
+  const _ConcealedFigure({required this.concealed, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(excluding: concealed, child: child);
+  }
+}
+
+class _VisibilityButton extends StatelessWidget {
+  final Key buttonKey;
+  final bool visible;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  const _VisibilityButton({
+    required this.buttonKey,
+    required this.visible,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    return IconButton(
+      key: buttonKey,
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(
+        visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        size: 20,
+      ),
+      style: IconButton.styleFrom(
+        foregroundColor: palette.muted,
+        fixedSize: const Size(40, 40),
+        minimumSize: const Size(40, 40),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
 }
 
 /// Loads the driver's trips and exposes an explicit [loading] flag so Home can
@@ -630,89 +681,125 @@ class _BalanceFigures extends StatelessWidget {
       withCurrency: false,
       currency: l10n.egp,
     );
-    return DecoratedBox(
-      key: const Key('home-finance-card'),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: palette.hairline),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-        child: Column(
-          children: [
-            Text(
-              l10n.homeTotalBalance,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(
-                color: palette.muted,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: amount),
-                    const TextSpan(
-                      text: ' ',
-                      style: TextStyle(letterSpacing: 0),
+    return BlocBuilder<FinanceVisibilityCubit, FinanceVisibilityState>(
+      builder: (context, visibility) {
+        final shown = visibility.balanceVisible;
+        return DecoratedBox(
+          key: const Key('home-finance-card'),
+          decoration: BoxDecoration(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: palette.hairline),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 40,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          l10n.homeTotalBalance,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            color: palette.muted,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                      PositionedDirectional(
+                        end: 0,
+                        top: 0,
+                        child: _VisibilityButton(
+                          buttonKey: const Key('home-balance-visibility'),
+                          visible: shown,
+                          tooltip: shown ? l10n.hideBalance : l10n.showBalance,
+                          onPressed: () => context
+                              .read<FinanceVisibilityCubit>()
+                              .toggleBalance(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ExcludeSemantics(
+                  excluding: !shown,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: shown ? amount : '••••'),
+                          const TextSpan(
+                            text: ' ',
+                            style: TextStyle(letterSpacing: 0),
+                          ),
+                          TextSpan(
+                            text: l10n.egp,
+                            style: AppTextStyles.title.copyWith(
+                              color: palette.muted,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
+                      ),
+                      key: const Key('home-total-balance'),
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.display.copyWith(
+                        color: palette.title,
+                        fontSize: 44,
+                        height: 1.05,
+                        letterSpacing: -1.5,
+                        fontWeight: FontWeight.w800,
+                        fontFeatures: _tabular,
+                      ),
                     ),
-                    TextSpan(
-                      text: l10n.egp,
-                      style: AppTextStyles.title.copyWith(
-                        color: palette.muted,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _BalanceSubFigure(
+                        label: l10n.homeAvailableBalance,
+                        value: shown
+                            ? _money(context, summary.availableBalanceEgp)
+                            : _maskedMoney(context),
+                        concealed: !shown,
+                        valueKey: const Key('home-balance'),
+                        icon: Icons.account_balance_wallet_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _BalanceSubFigure(
+                        label: l10n.homeFrozenBalance,
+                        value: shown
+                            ? _money(context, summary.frozenBalanceEgp)
+                            : _maskedMoney(context),
+                        concealed: !shown,
+                        valueKey: const Key('home-frozen-balance'),
+                        icon: Icons.lock_outline_rounded,
                       ),
                     ),
                   ],
                 ),
-                key: const Key('home-total-balance'),
-                maxLines: 1,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.display.copyWith(
-                  color: palette.title,
-                  fontSize: 44,
-                  height: 1.05,
-                  letterSpacing: -1.5,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: _tabular,
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _BalanceSubFigure(
-                    label: l10n.homeAvailableBalance,
-                    value: _money(context, summary.availableBalanceEgp),
-                    valueKey: const Key('home-balance'),
-                    icon: Icons.account_balance_wallet_outlined,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BalanceSubFigure(
-                    label: l10n.homeFrozenBalance,
-                    value: _money(context, summary.frozenBalanceEgp),
-                    valueKey: const Key('home-frozen-balance'),
-                    icon: Icons.lock_outline_rounded,
-                  ),
-                ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -720,12 +807,14 @@ class _BalanceFigures extends StatelessWidget {
 class _BalanceSubFigure extends StatelessWidget {
   final String label;
   final String value;
+  final bool concealed;
   final Key valueKey;
   final IconData icon;
 
   const _BalanceSubFigure({
     required this.label,
     required this.value,
+    required this.concealed,
     required this.valueKey,
     required this.icon,
   });
@@ -757,16 +846,19 @@ class _BalanceSubFigure extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: AlignmentDirectional.centerStart,
-          child: Text(
-            value,
-            key: valueKey,
-            maxLines: 1,
-            style: AppTextStyles.brand.copyWith(
-              color: palette.title,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
-              fontFeatures: _tabular,
+          child: ExcludeSemantics(
+            excluding: concealed,
+            child: Text(
+              value,
+              key: valueKey,
+              maxLines: 1,
+              style: AppTextStyles.brand.copyWith(
+                color: palette.title,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                height: 1.1,
+                fontFeatures: _tabular,
+              ),
             ),
           ),
         ),
@@ -1025,6 +1117,25 @@ class _LimitMeterState extends State<_LimitMeter>
       color: palette.muted,
       fontWeight: FontWeight.w600,
     );
+    final shown = context.watch<FinanceVisibilityCubit>().state.limitVisible;
+    final amountStyle = AppTextStyles.title.copyWith(
+      color: palette.title,
+      fontSize: 20,
+      fontWeight: FontWeight.w800,
+      height: 1.1,
+      letterSpacing: -0.3,
+      fontFeatures: _tabular,
+    );
+    final maxStyle = AppTextStyles.bodyLarge.copyWith(
+      color: palette.title,
+      fontWeight: FontWeight.w700,
+      fontFeatures: _tabular,
+    );
+    final chargeStyle = AppTextStyles.body.copyWith(
+      color: palette.title,
+      fontWeight: FontWeight.w700,
+      fontFeatures: _tabular,
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -1037,72 +1148,86 @@ class _LimitMeterState extends State<_LimitMeter>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SplitRow(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              maxFraction: 0.45,
-              leading: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.homeRemainingLimit,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: labelStyle,
-                  ),
-                  const SizedBox(height: 4),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Text(
-                      _money(context, remaining),
-                      key: const Key('home-remaining'),
-                      maxLines: 1,
-                      style: AppTextStyles.title.copyWith(
-                        color: palette.title,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                        letterSpacing: -0.3,
-                        fontFeatures: _tabular,
-                      ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: SplitRow(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    maxFraction: 0.45,
+                    leading: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.homeRemainingLimit,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: labelStyle,
+                        ),
+                        const SizedBox(height: 4),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerStart,
+                          child: _ConcealedFigure(
+                            concealed: !shown,
+                            child: Text(
+                              shown
+                                  ? _money(context, remaining)
+                                  : _maskedMoney(context),
+                              key: const Key('home-remaining'),
+                              maxLines: 1,
+                              style: amountStyle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(l10n.maxLimit, maxLines: 1, style: labelStyle),
+                        const SizedBox(height: 4),
+                        _ConcealedFigure(
+                          concealed: !shown,
+                          child: Text(
+                            shown ? _money(context, max) : _maskedMoney(context),
+                            key: const Key('home-max-limit'),
+                            maxLines: 1,
+                            style: maxStyle,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              trailing: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(l10n.maxLimit, maxLines: 1, style: labelStyle),
-                  const SizedBox(height: 4),
-                  Text(
-                    _money(context, max),
-                    key: const Key('home-max-limit'),
-                    maxLines: 1,
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: palette.title,
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: _tabular,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                _VisibilityButton(
+                  buttonKey: const Key('home-limit-visibility'),
+                  visible: shown,
+                  tooltip: shown ? l10n.hideLimit : l10n.showLimit,
+                  onPressed: () =>
+                      context.read<FinanceVisibilityCubit>().toggleLimit(),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            AnimatedBuilder(
-              animation: _progress,
-              builder: (context, _) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    key: const Key('home-charge-progress'),
-                    value: _progress.value,
-                    minHeight: 6,
-                    color: palette.action,
-                    backgroundColor: palette.hairline,
-                    semanticsLabel: l10n.homeLimitUsed(percent),
-                  ),
-                );
-              },
+            ExcludeSemantics(
+              excluding: !shown,
+              child: AnimatedBuilder(
+                animation: _progress,
+                builder: (context, _) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      key: const Key('home-charge-progress'),
+                      value: _progress.value,
+                      minHeight: 6,
+                      color: palette.action,
+                      backgroundColor: palette.hairline,
+                      semanticsLabel: shown ? l10n.homeLimitUsed(percent) : null,
+                    ),
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -1117,19 +1242,27 @@ class _LimitMeterState extends State<_LimitMeter>
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(l10n.charge, maxLines: 1, style: labelStyle),
-                    Text(
-                      _money(context, summary.chargeEgp),
-                      key: const Key('home-charge'),
-                      maxLines: 1,
-                      style: AppTextStyles.body.copyWith(
-                        color: palette.title,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: _tabular,
+                    _ConcealedFigure(
+                      concealed: !shown,
+                      child: Text(
+                        shown
+                            ? _money(context, summary.chargeEgp)
+                            : _maskedMoney(context),
+                        key: const Key('home-charge'),
+                        maxLines: 1,
+                        style: chargeStyle,
                       ),
                     ),
                   ],
                 ),
-                Text(l10n.homeLimitUsed(percent), style: labelStyle),
+                _ConcealedFigure(
+                  concealed: !shown,
+                  child: Text(
+                    shown ? l10n.homeLimitUsed(percent) : '••••',
+                    key: const Key('home-limit-used'),
+                    style: labelStyle,
+                  ),
+                ),
               ],
             ),
           ],

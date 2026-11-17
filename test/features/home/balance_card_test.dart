@@ -8,12 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/reveal_finance.dart';
+
 void main() {
   testWidgets('shows the header and the calculated wallet figures', (
     tester,
   ) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
+    await revealHomeFinance(tester);
 
     expect(find.text('Welcome back!'), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
@@ -130,6 +133,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await revealHomeFinance(tester);
 
     expect(_text(tester, 'home-balance'), '2,200 EGP');
     expect(find.byKey(const Key('balance-loading')), findsNothing);
@@ -151,6 +155,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('balance-retry')));
     await tester.pumpAndSettle();
+    await revealHomeFinance(tester);
 
     expect(finance.calls, 2);
     expect(_text(tester, 'home-balance'), '2,200 EGP');
@@ -175,6 +180,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await revealHomeFinance(tester);
 
     expect(_text(tester, 'home-balance'), '2,200 EGP');
     expect(tester.takeException(), isNull);

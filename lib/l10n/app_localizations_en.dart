@@ -1103,6 +1103,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeRemainingLimit => 'Remaining Limit';
 
   @override
+  String get showBalance => 'Show balance';
+
+  @override
+  String get hideBalance => 'Hide balance';
+
+  @override
+  String get showLimit => 'Show limit';
+
+  @override
+  String get hideLimit => 'Hide limit';
+
+  @override
   String get homeActiveTrip => 'Active Trip';
 
   @override

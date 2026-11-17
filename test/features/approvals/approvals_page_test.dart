@@ -10,6 +10,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/reveal_finance.dart';
+
 void main() {
   testWidgets('filters both sections and updates the pending count', (
     tester,
@@ -710,6 +712,7 @@ Future<void> _openApprovals(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
   await tester.tap(find.byKey(const Key('nav-approvals')));
   await tester.pumpAndSettle();
 }

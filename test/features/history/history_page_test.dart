@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/reveal_finance.dart';
+
 void main() {
   testWidgets('history lists shared ledger rows and filters are read-only', (
     tester,
@@ -598,6 +600,7 @@ Future<void> _openHistory(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
   await tester.tap(find.byKey(const Key('nav-history')));
   await tester.pumpAndSettle();
 }

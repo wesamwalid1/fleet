@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
+import '../../support/reveal_finance.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -165,6 +166,7 @@ void main() {
     await tester.pumpWidget(testPortalApp());
     await tester.pumpAndSettle();
     await _login(tester);
+    await revealHomeFinance(tester);
 
     await tester.tap(find.byKey(const Key('nav-approvals')));
     await tester.pumpAndSettle();
@@ -206,6 +208,7 @@ void main() {
     expect(find.text('Welcome back!'), findsOneWidget);
 
     await _login(tester);
+    await revealHomeFinance(tester);
     expect(find.text('2,200 EGP'), findsNWidgets(2));
     expect(find.text('4,200 EGP'), findsNothing);
     expect(find.text('3 pending'), findsOneWidget);
@@ -533,6 +536,7 @@ Future<void> _openProfile(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
   await tester.tap(find.byKey(const Key('nav-profile')));
   await tester.pumpAndSettle();
 }

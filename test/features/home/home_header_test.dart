@@ -80,7 +80,15 @@ void main() {
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('AA'), findsOneWidget);
     expect(find.byIcon(Icons.notifications_none_rounded), findsOneWidget);
-    expect(find.byType(IconButton), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is IconButton &&
+            widget.key != const Key('home-balance-visibility') &&
+            widget.key != const Key('home-limit-visibility'),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('the avatar opens profile and the bell opens notifications', (

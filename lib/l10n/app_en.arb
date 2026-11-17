@@ -552,6 +552,10 @@
     }
   },
   "homeRemainingLimit": "Remaining Limit",
+  "showBalance": "Show balance",
+  "hideBalance": "Hide balance",
+  "showLimit": "Show limit",
+  "hideLimit": "Hide limit",
   "homeActiveTrip": "Active Trip",
   "homeNoActiveTrip": "No Active Trip",
   "homeNoActiveTripHint": "Expenses can be recorded once a trip is active.",

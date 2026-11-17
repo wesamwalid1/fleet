@@ -10,6 +10,8 @@ import 'package:driver_portal_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/reveal_finance.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _me = MockCashLedger.senderId;
@@ -236,6 +238,7 @@ Future<MockCashLedger> _pumpHome(WidgetTester tester) async {
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
   return ledger!;
 }
 

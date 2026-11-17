@@ -30,6 +30,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
+import '../../support/reveal_finance.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -1340,6 +1341,7 @@ Future<void> _pumpHome(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
 }
 
 Future<void> _startPull(WidgetTester tester) {

@@ -33,6 +33,7 @@ import 'package:driver_portal_app/features/home/domain/usecases/get_current_driv
 import 'package:driver_portal_app/features/home/domain/usecases/get_financial_summary.dart';
 import 'package:driver_portal_app/features/home/domain/usecases/watch_finance_changes.dart';
 import 'package:driver_portal_app/features/home/presentation/bloc/home_bloc.dart';
+import 'package:driver_portal_app/features/home/presentation/finance_visibility_cubit.dart';
 import 'package:driver_portal_app/features/home/presentation/bloc/home_event.dart';
 import 'package:driver_portal_app/features/home/presentation/pages/home_page.dart';
 import 'package:driver_portal_app/features/notifications/data/datasources/mock_notification_seed.dart';
@@ -49,6 +50,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
+import '../../support/reveal_finance.dart';
 
 void main() {
   testWidgets('home shows the two newest actionable approvals', (tester) async {
@@ -349,6 +351,7 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
 }
 
 /// HomeScope wiring with a vault-approve gate so ApprovalsBloc stays busy.
@@ -419,8 +422,9 @@ Future<void> _pumpGatedApprove(
               create: (_) => CashRequestRepositoryImpl(ledger),
             ),
           ],
-          child: MultiBlocProvider(
+            child: MultiBlocProvider(
             providers: [
+              BlocProvider(create: (_) => FinanceVisibilityCubit()),
               BlocProvider(
                 create: (context) => HomeBloc(
                   GetCurrentDriver(context.read<DriverRepository>()),
@@ -461,6 +465,7 @@ Future<void> _pumpGatedApprove(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
 }
 
 class _GatedApprovalRepository implements ApprovalRepository {

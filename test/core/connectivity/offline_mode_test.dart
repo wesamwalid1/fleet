@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
+import '../../support/reveal_finance.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -165,6 +166,7 @@ void main() {
     reachability.reachable = true;
     await tester.tap(find.byKey(const Key('offline-banner-retry')));
     await tester.pumpAndSettle();
+    await revealHomeFinance(tester);
 
     expect(find.byKey(const Key('offline-banner')), findsNothing);
     expect(find.byKey(const Key('home-balance')), findsOneWidget);

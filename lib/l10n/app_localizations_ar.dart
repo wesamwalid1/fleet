@@ -1097,6 +1097,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeRemainingLimit => 'الحد المتبقي';
 
   @override
+  String get showBalance => 'إظهار الرصيد';
+
+  @override
+  String get hideBalance => 'إخفاء الرصيد';
+
+  @override
+  String get showLimit => 'إظهار الحد';
+
+  @override
+  String get hideLimit => 'إخفاء الحد';
+
+  @override
   String get homeActiveTrip => 'الرحلة النشطة';
 
   @override

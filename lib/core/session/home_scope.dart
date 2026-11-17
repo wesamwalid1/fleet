@@ -35,6 +35,7 @@ import '../../features/home/domain/usecases/get_current_driver.dart';
 import '../../features/home/domain/usecases/get_financial_summary.dart';
 import '../../features/home/domain/usecases/watch_finance_changes.dart';
 import '../../features/home/presentation/bloc/home_bloc.dart';
+import '../../features/home/presentation/finance_visibility_cubit.dart';
 import '../../features/home/presentation/bloc/home_event.dart';
 import '../../features/notifications/data/datasources/mock_notification_seed.dart';
 import '../../features/notifications/data/datasources/notification_local_data_source.dart';
@@ -171,6 +172,9 @@ class HomeScope extends StatelessWidget {
                               .read<NotificationRepository>();
                           return MultiBlocProvider(
                             providers: [
+                              BlocProvider(
+                                create: (_) => FinanceVisibilityCubit(),
+                              ),
                               BlocProvider(
                                 create: (context) => HomeBloc(
                                   GetCurrentDriver(

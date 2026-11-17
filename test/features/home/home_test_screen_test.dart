@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/reveal_finance.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/fake_connectivity.dart';
@@ -522,6 +524,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await revealHomeFinance(tester);
     expect(find.byKey(const Key('balance-loading')), findsNothing);
     expect(_text(tester, 'home-balance'), '2,200 EGP');
   });
@@ -582,6 +585,7 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  await revealHomeFinance(tester);
 }
 
 Widget _app(
